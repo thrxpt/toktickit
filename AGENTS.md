@@ -28,9 +28,18 @@ client/                 React + Vite
 server/
   prisma/               schema.prisma, migrations, seed
   src/                  Express app + routes
+  scripts/db-check.ts   database reachability probe
   tests/lab-01/         API-*.test.ts   (Supertest)
 docs/lab-01/            contract.md, tests.md, reviewer.md, ai_use.md
+docs/adr/               architecture decision records
+CONTEXT.md              glossary — the project's ubiquitous language
+compose.yaml            PostgreSQL 17 for local development
 ```
+
+The two packages are pnpm workspaces, so `pnpm dev`, `pnpm test`, and
+`pnpm build` run from the root and fan out; `pnpm --filter server <script>`
+targets one. The client fetches relative `/api/...` URLs through the Vite dev
+proxy — there is no CORS middleware, deliberately (`docs/adr/0002`).
 
 Test filenames carry the contract's IDs (`API-01`, `UI-02`). A new test lands with its row in `docs/lab-01/tests.md` in the same commit.
 
@@ -49,4 +58,4 @@ Feature branches PR into `lab1-staging`; `lab1-staging` PRs into `main`. Both in
 
 ## Secrets
 
-`DATABASE_URL` lives in git-ignored `server/.env`. `server/.env.example` carries the key with a placeholder value.
+`DATABASE_URL` lives in git-ignored `server/.env`. `server/.env.example` carries the key with a placeholder value. `compose.yaml` reads that same file via `env_file`, so the Postgres container and Prisma share one set of credentials.
