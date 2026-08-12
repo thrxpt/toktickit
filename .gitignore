@@ -13,6 +13,9 @@ server/src/generated/
 .env.*
 !.env.example
 
+# Local working notes — not graded, never committed
+docs/lab-01/.ai_use.local.md
+
 # Test output
 coverage/
 
