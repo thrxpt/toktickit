@@ -6,8 +6,11 @@ const app = express();
 
 app.use(express.json());
 
-// Routes land in later Issues: GET /api/health (Issue 2),
-// GET /api/categories (Issue 4). Unmatched paths fall through to Express's
-// default 404, which API-00 asserts.
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({ status: "ok", service: "TokTickIT API" });
+});
+
+// GET /api/categories lands in Issue 4. Unmatched paths fall through to
+// Express's default 404, which API-00 asserts.
 
 export default app;
