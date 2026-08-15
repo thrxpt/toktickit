@@ -36,6 +36,8 @@ cp server/.env.example server/.env   # values work as-is for local development
 docker compose up -d                 # starts PostgreSQL on :5432
 
 pnpm db:check                        # -> ✓ database reachable at localhost:5432
+pnpm db:migrate                      # applies migrations, creates the Category table
+pnpm db:seed                         # seeds the four request categories (idempotent)
 pnpm dev                             # client on :5173, API on :3000
 ```
 
@@ -57,6 +59,8 @@ Run from the repo root; each fans out to the workspace that owns it.
 | `pnpm db:up`     | Starts PostgreSQL (`docker compose up -d`)              |
 | `pnpm db:down`   | Stops it                                                |
 | `pnpm db:check`  | Runs `SELECT 1` through Prisma and reports reachability |
+| `pnpm db:migrate`| Applies pending Prisma migrations (`migrate deploy`)    |
+| `pnpm db:seed`   | Upserts the four request categories (idempotent)        |
 
 Per-package commands take a filter, e.g. `pnpm --filter server dev`.
 
@@ -67,7 +71,7 @@ client/                 React + Vite
   src/                  App shell (Bootstrap)
   tests/lab-01/         UI-*.test.tsx    (Vitest)
 server/
-  prisma/               schema.prisma; migrations arrive in Issue 3
+  prisma/               schema.prisma, migrations/, seed.ts
   src/                  app.ts (Express app) + index.ts (listener)
   scripts/db-check.ts   database reachability probe
   tests/lab-01/         API-*.test.ts    (Supertest)
