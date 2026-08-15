@@ -10,6 +10,8 @@
     "test": "pnpm -r test",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "db:check": "pnpm --filter server db:check"
+    "db:check": "pnpm --filter server db:check",
+    "db:migrate": "pnpm --filter server db:migrate",
+    "db:seed": "pnpm --filter server db:seed"
   }
 }
