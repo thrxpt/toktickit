@@ -9,6 +9,9 @@ IDs match the contract's test matrix; `API-00` is an addition, noted below.
 | `API-00` | `server/tests/lab-01/API-00-app.test.ts`     | Supertest + Vitest  | The Express app mounts under Supertest and answers 404 on an unknown path |
 | `API-01` | `server/tests/lab-01/API-01-health.test.ts`  | Supertest + Vitest  | `GET /api/health` returns 200 with `status: "ok"` and `service: "TokTickIT API"` |
 | `UI-02`  | `client/tests/lab-01/UI-02-health-status.test.tsx` | Vitest        | [Check System] renders System Status: Online on success, and System Status: Offline plus a useful message when the backend is unreachable |
+| `API-02` | `server/tests/lab-01/API-02-categories.test.ts` | Supertest + Vitest | `GET /api/categories` returns the four seeded categories, in ascending `id` order |
+| `UI-03`  | `client/tests/lab-01/UI-03-categories-list.test.tsx` | Vitest        | Loading resolves into the rendered Request Categories list on success |
+| `UI-04`  | `client/tests/lab-01/UI-04-categories-error.test.tsx` | Vitest        | `GET /api/categories` failure (API up, DB down) renders System Status: Offline with a categories-specific message |
 
 ## Running them
 
@@ -30,6 +33,5 @@ pnpm --filter server test  # Supertest only
   and aren't in the matrix's numbering yet at Issue 2. This `UI-02` proves
   Issue 2's own acceptance criteria — the React page shows System Status from
   a real `GET /api/health` call, success or failure — which the contract
-  requires but the matrix doesn't ID. Issue 4 will add its two UI tests as
+  requires but the matrix doesn't ID. Issue 4 added its two UI tests as
   `UI-03`/`UI-04`.
-- **Still to come:** `API-02`, `UI-03`, `UI-04` (all Issue 4).

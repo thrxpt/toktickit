@@ -1,16 +1,18 @@
 import { useState } from 'react'
 
+type Category = { id: number; name: string }
+
 type CheckState =
   | { phase: 'idle' }
   | { phase: 'loading' }
-  | { phase: 'online' }
+  | { phase: 'online'; categories: Category[] }
   | { phase: 'offline'; message: string }
 
 /**
- * Lab 1, Issue 2 — [Check System] now calls GET /api/health and renders
- * System Status from it. Issue 4 adds the Request Categories call; once that
- * lands, System Status must also reflect its outcome (see CONTEXT.md — System
- * Status is the verdict on the whole flow, not a mirror of Health alone).
+ * Lab 1, Issue 4 — [Check System] now calls both GET /api/health and
+ * GET /api/categories. System Status is the verdict on the whole flow (see
+ * CONTEXT.md): either call failing takes the page Offline, each with a
+ * message naming what failed.
  */
 function App() {
   const [state, setState] = useState<CheckState>({ phase: 'idle' })
@@ -18,17 +20,29 @@ function App() {
   async function checkSystem() {
     setState({ phase: 'loading' })
 
-    try {
-      const response = await fetch('/api/health')
-      if (!response.ok) throw new Error('non-200 response')
+    const [health, categories] = await Promise.allSettled([
+      fetch('/api/health').then(async (response) => {
+        if (!response.ok) throw new Error('non-200 response')
+        const body = await response.json()
+        if (body.status !== 'ok') throw new Error('unexpected response body')
+      }),
+      fetch('/api/categories').then(async (response) => {
+        if (!response.ok) throw new Error('non-200 response')
+        return (await response.json()) as Category[]
+      }),
+    ])
 
-      const body = await response.json()
-      if (body.status !== 'ok') throw new Error('unexpected response body')
-
-      setState({ phase: 'online' })
-    } catch {
+    if (health.status === 'rejected') {
       setState({ phase: 'offline', message: 'Unable to connect to TokTickIT API' })
+      return
     }
+
+    if (categories.status === 'rejected') {
+      setState({ phase: 'offline', message: 'Unable to load Request Categories' })
+      return
+    }
+
+    setState({ phase: 'online', categories: categories.value })
   }
 
   return (
@@ -60,7 +74,15 @@ function App() {
                 </button>
 
                 {state.phase === 'online' && (
-                  <p className="mt-3 mb-0">System Status: Online</p>
+                  <>
+                    <p className="mt-3 mb-0">System Status: Online</p>
+                    <p className="mt-3 mb-1">Supported Request Categories:</p>
+                    <ol className="mb-0">
+                      {state.categories.map((category) => (
+                        <li key={category.id}>{category.name}</li>
+                      ))}
+                    </ol>
+                  </>
                 )}
 
                 {state.phase === 'offline' && (

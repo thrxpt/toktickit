@@ -7,8 +7,8 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('UI-02 — System Status from GET /api/health', () => {
-  it('shows System Status: Online after a successful check', async () => {
+describe('UI-04 — GET /api/categories failure renders a useful error message', () => {
+  it('shows System Status: Offline with a categories-specific message when the API is up but categories fails', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
@@ -18,7 +18,7 @@ describe('UI-02 — System Status from GET /api/health', () => {
           return { ok: true, json: () => Promise.resolve({ status: 'ok', service: 'TokTickIT API' }) }
         }
 
-        return { ok: true, json: () => Promise.resolve([{ id: 1, name: 'Account and Access' }]) }
+        return { ok: false, json: () => Promise.resolve({ error: 'Unable to reach the database' }) }
       }),
     )
 
@@ -26,19 +26,8 @@ describe('UI-02 — System Status from GET /api/health', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Check System' }))
 
     await waitFor(() => {
-      expect(screen.getByText('System Status: Online')).toBeInTheDocument()
-    })
-  })
-
-  it('shows System Status: Offline and a useful message when the backend is unreachable', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network error')))
-
-    render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Check System' }))
-
-    await waitFor(() => {
       expect(screen.getByText('System Status: Offline')).toBeInTheDocument()
     })
-    expect(screen.getByText('Unable to connect to TokTickIT API')).toBeInTheDocument()
+    expect(screen.getByText('Unable to load Request Categories')).toBeInTheDocument()
   })
 })
