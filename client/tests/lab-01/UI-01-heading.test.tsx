@@ -10,9 +10,9 @@ describe('UI-01 — TokTickIT heading renders', () => {
     expect(screen.getByRole('heading', { name: 'TokTickIT' })).toBeInTheDocument()
   })
 
-  it('shows the Check System button, disabled until Issue 2 wires it', () => {
+  it('shows the Check System button, enabled', () => {
     render(<App />)
 
-    expect(screen.getByRole('button', { name: 'Check System' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Check System' })).toBeEnabled()
   })
 })

@@ -21,7 +21,7 @@
 | Issue                 | PR                                               | Reviewer | Outcome  |
 | --------------------- | ------------------------------------------------ | -------- | -------- |
 | 1. Project foundation | [#5](https://github.com/thrxpt/toktickit/pull/5) | gxjakkap | Approved |
-| 2. API health check   | TODO                                             | TODO     | TODO     |
+| 2. API health check   | [#6](https://github.com/thrxpt/toktickit/pull/6) | gxjakkap | Approved |
 | 3. Category seed      | TODO                                             | TODO     | TODO     |
 | 4. Category list      | TODO                                             | TODO     | TODO     |
 
