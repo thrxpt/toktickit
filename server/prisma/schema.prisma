@@ -1,0 +1,19 @@
+// TokTickIT data model.
+// The connection URL lives in prisma.config.ts, which reads DATABASE_URL from
+// server/.env — see prisma/config docs: https://pris.ly/prisma-config
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,17 @@
+{
+  "name": "toktickit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TokTickIT IT service desk — Lab 1 vertical slice",
+  "packageManager": "pnpm@11.20.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:check": "pnpm --filter server db:check",
+    "db:migrate": "pnpm --filter server db:migrate",
+    "db:seed": "pnpm --filter server db:seed"
+  }
+}
