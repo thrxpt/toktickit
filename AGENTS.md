@@ -89,3 +89,17 @@ Feature branches PR into `lab2-staging`; `lab2-staging` PRs into `main`. Both in
 ## Secrets
 
 `DATABASE_URL` lives in git-ignored `server/.env`. `server/.env.example` carries the key with a placeholder value. `compose.yaml` reads that same file via `env_file`, so the Postgres container and Prisma share one set of credentials. `server/.env.test` points API tests at `toktickit_test` and is git-ignored the same way.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in this repo's GitHub Issues (`thrxpt/toktickit`), driven by the `gh` CLI. See [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md).
+
+### Triage labels
+
+The five canonical triage roles, each label string equal to its name. See [`docs/agents/triage-labels.md`](docs/agents/triage-labels.md).
+
+### Domain docs
+
+Single-context — `CONTEXT.md` and `docs/adr/` at the repo root, plus the current lab contract under `docs/lab-02/`. See [`docs/agents/domain.md`](docs/agents/domain.md).
