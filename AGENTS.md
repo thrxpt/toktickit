@@ -1,36 +1,57 @@
 # TokTickIT
 
-IT service desk app, built one **vertical slice** per lab. Lab 1 proves the stack end to end: React page → Express REST → Prisma → PostgreSQL.
+IT service desk app, built one **vertical slice** per lab. Lab 1 proved the stack end to end: React page → Express REST → Prisma → PostgreSQL. Lab 2 builds the Requester-facing ticketing MVP on top of it.
 
-**Contract:** [`docs/lab-01/contract.md`](docs/lab-01/contract.md) — per-Issue acceptance criteria, endpoint payloads, the `Category` model, the test matrix, Kanban states, and resolved ambiguities. Read it before starting an Issue, opening a PR, or calling an Issue done.
+**Contract (Lab 2):** four documents that together are one contract — read before starting an Issue, opening a PR, or calling an Issue done:
+
+| Document | Authoritative for |
+| ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| [`docs/lab-02/specification.md`](docs/lab-02/specification.md) | Scope, FR-nn, BR-nn, AC-nn, data changes, Definition of Done, decisions |
+| [`docs/lab-02/api-spec.md`](docs/lab-02/api-spec.md)           | Endpoints, payloads, validation, error envelope, status codes       |
+| [`docs/lab-02/ui-spec.md`](docs/lab-02/ui-spec.md)             | Zen Green tokens, components and their states, layout, responsive, a11y |
+| [`docs/lab-02/tests.md`](docs/lab-02/tests.md)                 | Planned tests, AC→test traceability, test commands                  |
+
+Lab 1's contract stays at [`docs/lab-01/contract.md`](docs/lab-01/contract.md) as the record of what Lab 1 promised; it is history, not current scope.
+
+Behavior is cited by number, not by paraphrase — a PR description, a test name, or a code comment says `BR-35` or `AC-30`. If the code and the contract disagree, the contract wins until a PR changes it.
 
 ## Stack (locked)
 
-| Layer    | Choice                                |
-| -------- | ------------------------------------- |
-| Frontend | React + TypeScript + Vite + Bootstrap |
-| Backend  | Node.js + Express + TypeScript        |
-| Data     | PostgreSQL + Prisma                   |
-| API      | REST                                  |
-| Tests    | Vitest (UI) + Supertest (API)         |
+| Layer    | Choice                                          |
+| -------- | ----------------------------------------------- |
+| Frontend | React + TypeScript + Vite + Bootstrap + React Router |
+| Backend  | Node.js + Express + TypeScript + Multer + Zod   |
+| Data     | PostgreSQL + Prisma                             |
+| API      | REST                                            |
+| Tests    | Vitest (UI) + Supertest (API) + Playwright (E2E) |
 
-Bootstrap classes and components carry all styling. A dependency outside this table needs the contract to name it or the user to approve it — that bar covers styling especially, where Tailwind and component kits are the reflex.
+Bootstrap classes and components carry all styling; Zen Green is CSS custom properties overriding Bootstrap's own variables in one theme file (`ui-spec.md` §1). A dependency outside this table needs the contract to name it or the user to approve it — that bar covers styling especially, where Tailwind and component kits are the reflex.
 
-## Lab 1 scope
+## Lab 2 scope
 
-Ships exactly `GET /api/health`, `GET /api/categories`, and one page whose **[Check System]** button renders loading → status + category list, or an error message. Auth, tickets, uploads, and Playwright land in later labs.
+A Requester selects a Development Requester identity, creates a Ticket, receives an official Ticket Number, finds it in My Tickets with search/filter/sort/pagination, opens Ticket Detail, and adds, downloads, or soft-removes Attachments — seeing only their own data.
+
+Out of scope, and not to be helpfully added: authentication, IT Staff workflow, IT Priority, Ticket Owner, Resolution Summary, comments and notes, and every status transition beyond `NEW`. The handout's illustrations show several of these; `specification.md` §3 and decision D-03 explain why they are absent.
+
+The **Development Requester** is a testing mechanism, never authentication (`CONTEXT.md`). It travels in `X-Requester-Id`; a `requesterId` in a request body is an error, not a fallback (ADR-0003). Ownership is enforced server-side regardless, and an ownership failure answers 404, identically to a missing row (ADR-0005).
 
 ## Layout
 
 ```text
-client/                 React + Vite
+client/
+  src/styles/theme.css  Zen Green tokens — the only file with hex values
   tests/lab-01/         UI-*.test.tsx   (Vitest)
+  tests/lab-02/         *.test.tsx + style/  (Vitest + Testing Library)
 server/
   prisma/               schema.prisma, migrations, seed
   src/                  Express app + routes
   scripts/db-check.ts   database reachability probe
   tests/lab-01/         API-*.test.ts   (Supertest)
-docs/lab-01/            contract.md, tests.md, reviewer.md, ai_use.md
+  tests/lab-02/         *.api.test.ts, *.unit.test.ts
+  uploads/              attachment bytes, git-ignored (ADR-0004)
+e2e/lab-02/             Playwright specs
+artifacts/lab-02/       committed screenshots, generated by Playwright
+docs/lab-02/            specification.md, api-spec.md, ui-spec.md, tests.md, reviewer.md, ai-use.md
 docs/adr/               architecture decision records
 CONTEXT.md              glossary — the project's ubiquitous language
 compose.yaml            PostgreSQL 17 for local development
@@ -41,21 +62,30 @@ The two packages are pnpm workspaces, so `pnpm dev`, `pnpm test`, and
 targets one. The client fetches relative `/api/...` URLs through the Vite dev
 proxy — there is no CORS middleware, deliberately (`docs/adr/0002`).
 
-Test filenames carry the contract's IDs (`API-01`, `UI-02`). A new test lands with its row in `docs/lab-01/tests.md` in the same commit.
+`pnpm test` is unit + API + UI + style. Playwright runs separately as `pnpm test:e2e`, so a browser failure can never redden the Definition-of-Done run. API tests use a separate `toktickit_test` database configured by `server/.env.test` — never the development database.
+
+Test filenames carry the contract's IDs (`API-01`, `UI-02`), which restart per lab and are disambiguated by directory. A new test lands with its row in `docs/lab-02/tests.md` in the same commit.
 
 ## Git flow
 
-Each Issue owns one branch, and every commit for that Issue lands on it:
+Each Issue owns one branch, and every commit for that Issue lands on it. Issue numbers run continuously across labs and are independent of GitHub's shared issue/PR sequence:
 
-| Issue                 | Branch                         |
-| --------------------- | ------------------------------ |
-| 1. Project foundation | `feature/1-project-foundation` |
-| 2. API health check   | `feature/2-health-check`       |
-| 3. Category seed      | `feature/3-category-seed`      |
-| 4. Category list      | `feature/4-category-list`      |
+| Issue                          | Branch                          | Depends on |
+| ------------------------------ | ------------------------------- | ---------- |
+| 5. Lab 2 contract (docs only)  | `feature/5-lab2-contract`       | —          |
+| 6. Data model, migration, seed | `feature/6-data-model-seed`     | 5          |
+| 7. App shell, routing, theme   | `feature/7-app-shell-theme`     | 5          |
+| 8. Development Requester context | `feature/8-requester-context` | 6, 7       |
+| 9. Create Ticket               | `feature/9-create-ticket`       | 8          |
+| 10. My Tickets                 | `feature/10-my-tickets`         | 8          |
+| 11. Ticket Detail              | `feature/11-ticket-detail`      | 10         |
+| 12. Attachment lifecycle       | `feature/12-attachments`        | 11         |
+| 13. E2E, visual evidence, release | `feature/13-e2e-visual-release` | 12      |
 
-Feature branches PR into `lab1-staging`; `lab1-staging` PRs into `main`. Both integration branches move only through a peer-reviewed PR — never a local commit or merge.
+Issue 5 merges before any implementation PR opens — that ordering is the Spec-DD evidence and cannot be reconstructed afterwards.
+
+Feature branches PR into `lab2-staging`; `lab2-staging` PRs into `main`. Both integration branches move only through a peer-reviewed PR — never a local commit or merge.
 
 ## Secrets
 
-`DATABASE_URL` lives in git-ignored `server/.env`. `server/.env.example` carries the key with a placeholder value. `compose.yaml` reads that same file via `env_file`, so the Postgres container and Prisma share one set of credentials.
+`DATABASE_URL` lives in git-ignored `server/.env`. `server/.env.example` carries the key with a placeholder value. `compose.yaml` reads that same file via `env_file`, so the Postgres container and Prisma share one set of credentials. `server/.env.test` points API tests at `toktickit_test` and is git-ignored the same way.
