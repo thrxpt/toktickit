@@ -75,7 +75,7 @@ claims about them.
 | FR-06 | The backend generates the Ticket Number, the Ticket Date, the initial Current Status, and the owning Requester; the client sends none of them. |
 | FR-07 | A successful submission displays the generated Ticket Number, the per-file outcome of every Attachment, and a next action. |
 | FR-08 | My Tickets lists the Development Requester's Tickets and only theirs, paginated, newest first. |
-| FR-09 | My Tickets supports search over Ticket Number and Summary, filtering by Category, Requested Priority, and Current Status, and sorting by the fields named in BR-23. |
+| FR-09 | My Tickets supports search over Ticket Number and Summary, filtering by Category, Requested Priority, and Current Status, and sorting by the fields named in BR-28. |
 | FR-10 | Ticket Detail presents one owned Ticket's information as read-only. |
 | FR-11 | Ticket Detail lists that Ticket's Attachments, distinguishing active from removed. |
 | FR-12 | A Requester can add a permitted Attachment to an existing Ticket they own. |
