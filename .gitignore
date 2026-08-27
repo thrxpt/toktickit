@@ -13,11 +13,15 @@ server/src/generated/
 .env.*
 !.env.example
 
-# Local working notes — not graded, never committed
-docs/lab-01/ai-use-local/
+# Attachment bytes — only metadata belongs in git (docs/adr/0004)
+server/uploads/
 
 # Test output
 coverage/
+test-results/
+playwright-report/
+
+# Playwright report output is noise; artifacts/lab-02/screenshots/ IS committed
 
 # Logs
 *.log
