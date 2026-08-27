@@ -79,6 +79,7 @@ handout's own numbering.
 | API-25 | AC-35 | Download an active Attachment | 200; correct `Content-Type` and original filename in `Content-Disposition` | `attachments.api.test.ts` | — |
 | API-26 | AC-01, BR-05 | Active Requester list | Four active returned, the inactive one absent | `requesters.api.test.ts` | — |
 | API-27 | FR-16, BR-45 | Active Categories and Related Systems | Inactive rows absent; Lab 1's `{id,name}` shape preserved | `requesters.api.test.ts` | — |
+| API-28 | BR-44 | Running the seed a second time | All three reference collections identical; nothing duplicated | `requesters.api.test.ts` | — |
 
 ### UI component — `client/tests/lab-02/*.test.tsx`
 
@@ -162,6 +163,8 @@ handout's own numbering.
 | AC-23 | UI-14 | AC-46 | STYLE-06 |
 
 Every AC-01 to AC-46 appears above. No planned test exists without a criterion behind it.
+API-28 is the one test answering to a behaviour rule rather than a criterion — BR-44's
+idempotent seed has no acceptance criterion of its own, only a Definition-of-Done item.
 
 ## 4. Responsive and Visual Checklist
 
@@ -193,12 +196,12 @@ Filled in on the release PR from `lab2-staging` to `main`, from a run against `m
 | Level | Planned | Passing | Skipped |
 |---|---|---|---|
 | Unit | 6 | — | — |
-| API | 27 | — | — |
+| API | 28 | — | — |
 | UI | 21 | — | — |
 | Style | 7 | — | — |
 | Responsive | 5 | — | — |
 | E2E | 5 | — | — |
-| **Total** | **71** | — | — |
+| **Total** | **72** | — | — |
 
 ## 7. Known Limitations and Deferred Tests
 
