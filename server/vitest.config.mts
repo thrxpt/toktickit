@@ -12,7 +12,7 @@ import { resolveTestDatabaseUrl } from "./tests/setup/test-database.mts";
 // It resolves to toktickit_test, never the development database (D-14). Set on
 // process.env as well as test.env so the config's own imports — the global
 // setup among them — see the same value the workers do.
-const serverRoot = fileURLToPath(new URL(".", import.meta.url));
+const serverRoot = fileURLToPath(new URL(".", import.meta.url)).replace(/\/$/, "");
 const databaseUrl = resolveTestDatabaseUrl(serverRoot);
 
 process.env["DATABASE_URL"] = databaseUrl;

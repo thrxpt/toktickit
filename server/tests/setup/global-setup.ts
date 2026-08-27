@@ -12,7 +12,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../../src/generated/prisma/client";
 
-const serverRoot = fileURLToPath(new URL("../..", import.meta.url));
+const serverRoot = fileURLToPath(new URL("../..", import.meta.url)).replace(/\/$/, "");
 
 /** The same server, database `postgres` — where CREATE DATABASE is issued. */
 function maintenanceUrl(testDatabaseUrl: string): string {
@@ -44,7 +44,7 @@ async function ensureDatabaseExists(testDatabaseUrl: string): Promise<void> {
 }
 
 function run(bin: string, args: string[], testDatabaseUrl: string): void {
-  execFileSync(`${serverRoot}node_modules/.bin/${bin}`, args, {
+  execFileSync(`${serverRoot}/node_modules/.bin/${bin}`, args, {
     cwd: serverRoot,
     stdio: "inherit",
     // prisma.config.ts loads server/.env, but process.loadEnvFile leaves an

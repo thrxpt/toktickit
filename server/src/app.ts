@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type Response } from "express";
 
 import { sendError } from "./errors";
 import { prisma } from "./prisma";
@@ -17,53 +17,51 @@ app.get("/api/health", (_req, res) => {
 // (api-spec.md, "Requester context") — /api/requesters is the route that
 // establishes it. All three return active rows only, because reference data
 // belongs to the server and is never hard-coded in the client (BR-45).
-// An empty array is a valid 200 that drives the client's empty state (AC-07),
-// never an error.
+//
+// They differ only in what they read, so the response and the failure they
+// share live here: an empty array is a valid 200 that drives the client's
+// empty state (AC-07), never an error, and an unreachable database is the one
+// failure any of them can have.
+async function sendReferenceData<T>(res: Response, read: () => Promise<T[]>): Promise<void> {
+  try {
+    res.status(200).json(await read());
+  } catch {
+    sendError(res, "DATABASE_UNAVAILABLE");
+  }
+}
 
 app.get("/api/categories", async (_req, res) => {
-  try {
-    // The shape is unchanged from Lab 1 so API-02 keeps passing (D-13); the
-    // isActive filter is the only difference (BR-16).
-    const categories = await prisma.category.findMany({
+  // The shape is unchanged from Lab 1 so API-02 keeps passing (D-13); the
+  // isActive filter is the only difference (BR-16).
+  await sendReferenceData(res, () =>
+    prisma.category.findMany({
       where: { isActive: true },
       orderBy: { id: "asc" },
       select: { id: true, name: true },
-    });
-
-    res.status(200).json(categories);
-  } catch {
-    sendError(res, 500, "DATABASE_UNAVAILABLE");
-  }
+    }),
+  );
 });
 
 app.get("/api/related-systems", async (_req, res) => {
-  try {
-    const relatedSystems = await prisma.relatedSystem.findMany({
+  await sendReferenceData(res, () =>
+    prisma.relatedSystem.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
-    });
-
-    res.status(200).json(relatedSystems);
-  } catch {
-    sendError(res, 500, "DATABASE_UNAVAILABLE");
-  }
+    }),
+  );
 });
 
 app.get("/api/requesters", async (_req, res) => {
-  try {
-    // Inactive Requesters never appear (BR-05): the selector must never offer
-    // an identity the API would reject the moment it was used.
-    const requesters = await prisma.requester.findMany({
+  // Inactive Requesters never appear (BR-05): the selector must never offer
+  // an identity the API would reject the moment it was used.
+  await sendReferenceData(res, () =>
+    prisma.requester.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
       select: { id: true, name: true, email: true },
-    });
-
-    res.status(200).json(requesters);
-  } catch {
-    sendError(res, 500, "DATABASE_UNAVAILABLE");
-  }
+    }),
+  );
 });
 
 // Unmatched paths fall through to Express's default 404, which API-00 asserts.

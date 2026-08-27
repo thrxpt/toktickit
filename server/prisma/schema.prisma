@@ -129,7 +129,7 @@ model Attachment {
   // and why. Null on an active Attachment.
   removedAt     DateTime?
   removedById   Int?
-  removedBy     Requester? @relation("AttachmentRemover", fields: [removedById], references: [id])
+  removedBy     Requester? @relation("AttachmentRemover", fields: [removedById], references: [id], onDelete: Restrict)
   removalReason String?
 
   // The active-Attachment count of BR-35, and the active/removed split on

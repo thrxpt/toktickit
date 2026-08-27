@@ -34,15 +34,18 @@ const inactiveRelatedSystemName = "Legacy Student Portal";
 
 type NamedRow = { id: number; name: string };
 
+// tests.md §1 makes this every API file's opening move. This file creates no
+// Ticket and no Attachment, so it clears nothing today — it is here so that a
+// file which does create them cannot inherit another file's rows.
+beforeEach(async () => {
+  await truncateTransactionalData();
+});
+
 afterAll(async () => {
   await prisma.$disconnect();
 });
 
 describe("API-26 — GET /api/requesters (AC-01, BR-05)", () => {
-  beforeEach(async () => {
-    await truncateTransactionalData();
-  });
-
   it("returns the four active Requesters, ascending by name", async () => {
     const response = await request(app).get("/api/requesters");
 
@@ -61,10 +64,6 @@ describe("API-26 — GET /api/requesters (AC-01, BR-05)", () => {
 });
 
 describe("API-27 — active reference data only (FR-16, BR-45)", () => {
-  beforeEach(async () => {
-    await truncateTransactionalData();
-  });
-
   it("returns active Related Systems, ascending by name", async () => {
     const response = await request(app).get("/api/related-systems");
 
@@ -93,6 +92,9 @@ describe("API-27 — active reference data only (FR-16, BR-45)", () => {
       expect.arrayContaining(activeCategoryNames),
     );
     expect(response.body).toHaveLength(activeCategoryNames.length);
+
+    const ids = response.body.map((category: NamedRow) => category.id);
+    expect(ids).toEqual([...ids].sort((a: number, b: number) => a - b));
     for (const category of response.body) {
       expect(category).toEqual({ id: expect.any(Number), name: expect.any(String) });
     }

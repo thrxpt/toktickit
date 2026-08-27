@@ -65,7 +65,7 @@ proxy — there is no CORS middleware, deliberately (`docs/adr/0002`).
 
 `pnpm test` is unit + API + UI + style. Playwright runs separately as `pnpm test:e2e`, so a browser failure can never redden the Definition-of-Done run. API tests use a separate `toktickit_test` database, which the test run creates, migrates, and seeds itself — never the development database. `server/.env.test` overrides its URL when the default (`server/.env`'s credentials, `toktickit_test` as the database name) is wrong.
 
-Test filenames carry the contract's IDs (`API-01`, `UI-02`), which restart per lab and are disambiguated by directory. A new test lands with its row in `docs/lab-02/tests.md` in the same commit.
+Lab 1's test filenames carry the contract's IDs (`API-01`, `UI-02`); Lab 2's are named for the feature under test (`requesters.api.test.ts`) and carry the ID in the `describe` title, as `docs/lab-02/tests.md` §2 assigns. IDs restart per lab and are disambiguated by directory. A new test lands with its row in `docs/lab-02/tests.md` in the same commit.
 
 ## Git flow
 
