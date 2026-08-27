@@ -1,6 +1,11 @@
 // TokTickIT data model.
 // The connection URL lives in prisma.config.ts, which reads DATABASE_URL from
 // server/.env — see prisma/config docs: https://pris.ly/prisma-config
+//
+// Field lists are fixed by docs/lab-02/specification.md §7. Vocabulary is
+// CONTEXT.md's: Requester (never User), Related System, Attachment, and
+// removal is soft removal (BR-38) — nothing here is ever hard-deleted, so no
+// relation cascades.
 
 generator client {
   provider     = "prisma-client"
@@ -12,8 +17,122 @@ datasource db {
   provider = "postgresql"
 }
 
+// Exactly the three values BR-14 names. There is no server default: the
+// Requester states a priority or the request fails validation.
+enum RequestedPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// One value, deliberately (BR-15). Every transition out of NEW is excluded
+// from Lab 2 (specification.md §3), so the Lab that implements a transition
+// adds the value it transitions into.
+enum TicketStatus {
+  NEW
+}
+
+model Requester {
+  id        Int      @id @default(autoincrement())
+  name      String
+  // Unique for seed idempotency (BR-44) and as the natural key the seed
+  // upserts on; Lab 3's authentication will want it too.
+  email     String   @unique
+  // Retiring a Requester hides them from the selector (BR-05) without
+  // destroying the Tickets they raised.
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tickets             Ticket[]
+  // Two relations reach Requester from Attachment — uploader and remover —
+  // so Prisma needs each one named.
+  uploadedAttachments Attachment[] @relation("AttachmentUploader")
+  removedAttachments  Attachment[] @relation("AttachmentRemover")
+}
+
+model RelatedSystem {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  tickets Ticket[]
+}
+
 model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
+  // Added in Lab 2 with a default so existing rows migrate without a backfill
+  // (§7). Retiring a Category keeps Tickets already filed under it valid
+  // (BR-16); GET /api/categories still returns { id, name }, filtered.
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+
+  tickets Ticket[]
+}
+
+model Ticket {
+  id           Int    @id @default(autoincrement())
+  // Unique is BR-01's guarantee and the backstop for the ticket_number_seq
+  // sequence in BR-12: a bug in the formatting code fails at the database
+  // rather than minting two Tickets with one identity.
+  ticketNumber String @unique
+
+  requesterId     Int
+  requester       Requester     @relation(fields: [requesterId], references: [id])
+  categoryId      Int
+  category        Category      @relation(fields: [categoryId], references: [id])
+  relatedSystemId Int
+  relatedSystem   RelatedSystem @relation(fields: [relatedSystemId], references: [id])
+
+  summary     String
+  description String
+
+  requestedPriority RequestedPriority
+  status            TicketStatus      @default(NEW)
+
+  createdAt DateTime @default(now())
+  // BR-28 makes updatedAt sortable, so Prisma maintains it rather than any
+  // route setting it by hand.
+  updatedAt DateTime @updatedAt
+
+  attachments Attachment[]
+
+  // My Tickets always filters by owner and sorts newest first — the sprint's
+  // only hot path (§7).
+  @@index([requesterId, createdAt(sort: Desc)])
+  // The three filter columns of BR-27.
+  @@index([categoryId])
+  @@index([status])
+  @@index([requestedPriority])
+}
+
+model Attachment {
+  id       Int    @id @default(autoincrement())
+  ticketId Int
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+
+  // What the Requester recognises the file as (BR-37); the bytes live under
+  // storageKey, which is generated and never leaves the server (ADR-0004).
+  originalFilename String
+  mimeType         String
+  // 5 MB is the limit (BR-34), nowhere near a 32-bit integer.
+  sizeBytes        Int
+  storageKey       String @unique
+
+  uploadedById Int
+  uploadedBy   Requester @relation("AttachmentUploader", fields: [uploadedById], references: [id])
+  createdAt    DateTime  @default(now())
+
+  // Soft removal (BR-38, BR-39): the row stays, carrying who removed it, when,
+  // and why. Null on an active Attachment.
+  removedAt     DateTime?
+  removedById   Int?
+  removedBy     Requester? @relation("AttachmentRemover", fields: [removedById], references: [id])
+  removalReason String?
+
+  // The active-Attachment count of BR-35, and the active/removed split on
+  // Ticket Detail.
+  @@index([ticketId, removedAt])
 }
