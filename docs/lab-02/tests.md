@@ -24,12 +24,18 @@ Six levels, each answering a question the level below cannot:
 access control; AC-20, AC-30, and AC-40 are proven by direct HTTP calls carrying another
 Requester's header.
 
-**Database isolation** (D-14): API tests run against `toktickit_test`, configured by
-`server/.env.test`. A vitest `globalSetup` runs `prisma migrate deploy` and seeds reference
-data once; each API file truncates `Attachment` and `Ticket` in `beforeEach`, leaving
-reference rows intact. This is what makes `pnpm test` repeatable — and it fixes the Lab 1
-situation where API-02 passed only because someone had remembered to seed the development
-database.
+**Database isolation** (D-14): API tests run against `toktickit_test`. A vitest
+`globalSetup` creates that database if it is absent, runs `prisma migrate deploy`, and
+seeds reference data once; each API file truncates `Attachment` and `Ticket` in
+`beforeEach`, leaving reference rows intact. This is what makes `pnpm test` repeatable —
+and it fixes the Lab 1 situation where API-02 passed only because someone had remembered
+to seed the development database.
+
+The URL comes from `server/.env.test` when that file exists, and otherwise from
+`server/.env`'s credentials with the database name replaced — so a clean clone needs no
+manual step. Whatever the source, the resolved database name must end in `_test` or the
+run aborts: the harness migrates, seeds, and truncates whatever it is given, so an
+exported `DATABASE_URL` must not be able to point it at development data.
 
 **Test IDs restart per Lab.** Lab 1's tests live under `tests/lab-01/`, Lab 2's under
 `tests/lab-02/`, so `API-01` is unambiguous within its directory — and it matches the
@@ -79,6 +85,7 @@ handout's own numbering.
 | API-25 | AC-35 | Download an active Attachment | 200; correct `Content-Type` and original filename in `Content-Disposition` | `attachments.api.test.ts` | — |
 | API-26 | AC-01, BR-05 | Active Requester list | Four active returned, the inactive one absent | `requesters.api.test.ts` | — |
 | API-27 | FR-16, BR-45 | Active Categories and Related Systems | Inactive rows absent; Lab 1's `{id,name}` shape preserved | `requesters.api.test.ts` | — |
+| API-28 | BR-44 | Running the seed a second time | All three reference collections identical — no row added, renamed, or reordered | `requesters.api.test.ts` | — |
 
 ### UI component — `client/tests/lab-02/*.test.tsx`
 
@@ -162,6 +169,8 @@ handout's own numbering.
 | AC-23 | UI-14 | AC-46 | STYLE-06 |
 
 Every AC-01 to AC-46 appears above. No planned test exists without a criterion behind it.
+API-28 is the one test answering to a behaviour rule rather than a criterion — BR-44's
+idempotent seed has no acceptance criterion of its own, only a Definition-of-Done item.
 
 ## 4. Responsive and Visual Checklist
 
@@ -193,12 +202,12 @@ Filled in on the release PR from `lab2-staging` to `main`, from a run against `m
 | Level | Planned | Passing | Skipped |
 |---|---|---|---|
 | Unit | 6 | — | — |
-| API | 27 | — | — |
+| API | 28 | — | — |
 | UI | 21 | — | — |
 | Style | 7 | — | — |
 | Responsive | 5 | — | — |
 | E2E | 5 | — | — |
-| **Total** | **71** | — | — |
+| **Total** | **72** | — | — |
 
 ## 7. Known Limitations and Deferred Tests
 

@@ -1,10 +1,9 @@
-// Seeds the four Request Categories the contract requires. Upserts on
-// `name` so reruns stay idempotent — always four rows, never duplicates.
+// CLI entry for `pnpm db:seed`. The data and the upserts live in seed-data.ts,
+// which the test harness also calls directly to prove idempotency (API-28).
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client";
-
-const categoryNames = ["Account and Access", "Hardware", "Software", "Network"];
+import { seedReferenceData } from "./seed-data";
 
 async function main(): Promise<void> {
   const databaseUrl = process.env.DATABASE_URL;
@@ -19,14 +18,11 @@ async function main(): Promise<void> {
   const prisma = new PrismaClient({ adapter });
 
   try {
-    for (const name of categoryNames) {
-      await prisma.category.upsert({
-        where: { name },
-        update: {},
-        create: { name },
-      });
-    }
-    console.log(`✓ seeded ${categoryNames.length} categories`);
+    const counts = await seedReferenceData(prisma);
+    console.log(
+      `✓ seeded ${counts.categories} categories, ` +
+        `${counts.relatedSystems} related systems, ${counts.requesters} requesters`,
+    );
   } finally {
     await prisma.$disconnect();
   }

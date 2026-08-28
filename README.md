@@ -36,8 +36,8 @@ cp server/.env.example server/.env   # values work as-is for local development
 docker compose up -d                 # starts PostgreSQL on :5432
 
 pnpm db:check                        # -> ✓ database reachable at localhost:5432
-pnpm db:migrate                      # applies migrations, creates the Category table
-pnpm db:seed                         # seeds the four request categories (idempotent)
+pnpm db:migrate                      # applies migrations, creates the Lab 2 tables
+pnpm db:seed                         # seeds reference data (idempotent)
 pnpm dev                             # client on :5173, API on :3000
 ```
 
@@ -46,6 +46,18 @@ Open <http://localhost:5173>.
 `server/.env` is git-ignored and feeds two readers: `compose.yaml` uses it to
 configure the Postgres container, and Prisma and Express read `DATABASE_URL` and
 `PORT` from it. One file, so the two can never disagree.
+
+### The test database
+
+`pnpm test` never touches the database above. API tests run against
+`toktickit_test`, a second database inside the same Postgres container, which
+the test run creates, migrates, and seeds by itself — so there is no step to
+remember here, and a test run cannot destroy development data
+([why](docs/lab-02/specification.md), Decision D-14).
+
+Credentials come from `server/.env`. Copy `server/.env.test.example` to
+`server/.env.test` only if the test database needs different ones; that file is
+git-ignored exactly like `server/.env`.
 
 ## Commands
 
@@ -60,7 +72,7 @@ Run from the repo root; each fans out to the workspace that owns it.
 | `pnpm db:down`   | Stops it                                                |
 | `pnpm db:check`  | Runs `SELECT 1` through Prisma and reports reachability |
 | `pnpm db:migrate`| Applies pending Prisma migrations (`migrate deploy`)    |
-| `pnpm db:seed`   | Upserts the four request categories (idempotent)        |
+| `pnpm db:seed`   | Upserts Categories, Related Systems, Requesters (idempotent) |
 
 Per-package commands take a filter, e.g. `pnpm --filter server dev`.
 
