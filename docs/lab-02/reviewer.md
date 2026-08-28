@@ -11,7 +11,7 @@ No commit is made directly on either integration branch.
 | Issue | Branch | PR | Reviewer | Comments given | Comments received | Response | Approved |
 |---|---|---|---|---|---|---|---|
 | 5 | `feature/5-lab2-contract` | — | — | — | — | — | — |
-| 6 | `feature/6-data-model-seed` | — | — | — | — | — | — |
+| 6 | `feature/6-data-model-seed` | [#20](https://github.com/thrxpt/toktickit/pull/20) | — | — | — | — | — |
 | 7 | `feature/7-app-shell-theme` | — | — | — | — | — | — |
 | 8 | `feature/8-requester-context` | — | — | — | — | — | — |
 | 9 | `feature/9-create-ticket` | — | — | — | — | — | — |
