@@ -6,6 +6,11 @@ export interface BreadcrumbItem {
   to?: string
 }
 
+const NAV_LINKS = [
+  { to: '/tickets', label: 'My Tickets', end: true },
+  { to: '/tickets/new', label: 'Create Ticket', end: false },
+]
+
 export interface AppShellProps {
   children?: React.ReactNode
   breadcrumbs?: BreadcrumbItem[]
@@ -64,23 +69,18 @@ export function AppShell({
 
               {/* Desktop Nav */}
               <div className="d-none d-md-flex align-items-center gap-2">
-                <NavLink
-                  to="/tickets"
-                  end
-                  className={({ isActive }) =>
-                    `zen-nav-link ${isActive ? 'active' : ''}`
-                  }
-                >
-                  My Tickets
-                </NavLink>
-                <NavLink
-                  to="/tickets/new"
-                  className={({ isActive }) =>
-                    `zen-nav-link ${isActive ? 'active' : ''}`
-                  }
-                >
-                  Create Ticket
-                </NavLink>
+                {NAV_LINKS.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    end={link.end}
+                    className={({ isActive }) =>
+                      `zen-nav-link ${isActive ? 'active' : ''}`
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
               </div>
             </div>
 
@@ -119,7 +119,7 @@ export function AppShell({
                   <ul className="dropdown-menu dropdown-menu-end show position-absolute mt-1 shadow">
                     <li>
                       <span className="dropdown-item-text text-muted small">
-                        Signed in as <strong>{requesterName}</strong>
+                        Acting as <strong>{requesterName}</strong>
                       </span>
                     </li>
                     <li><hr className="dropdown-divider" /></li>
@@ -166,25 +166,19 @@ export function AppShell({
           {navOpen && (
             <div className="d-md-none w-100 border-top border-white-50 px-3 py-2">
               <div className="d-flex flex-column gap-1">
-                <NavLink
-                  to="/tickets"
-                  end
-                  className={({ isActive }) =>
-                    `zen-nav-link py-2 ${isActive ? 'active' : ''}`
-                  }
-                  onClick={() => setNavOpen(false)}
-                >
-                  My Tickets
-                </NavLink>
-                <NavLink
-                  to="/tickets/new"
-                  className={({ isActive }) =>
-                    `zen-nav-link py-2 ${isActive ? 'active' : ''}`
-                  }
-                  onClick={() => setNavOpen(false)}
-                >
-                  Create Ticket
-                </NavLink>
+                {NAV_LINKS.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    end={link.end}
+                    className={({ isActive }) =>
+                      `zen-nav-link py-2 ${isActive ? 'active' : ''}`
+                    }
+                    onClick={() => setNavOpen(false)}
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
               </div>
             </div>
           )}

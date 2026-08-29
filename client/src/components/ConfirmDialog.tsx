@@ -28,6 +28,9 @@ export function ConfirmDialog({
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const previousActiveElement = useRef<HTMLElement | null>(null)
 
+  const confirmBtnClass =
+    confirmVariant === 'danger' ? 'btn-outline-danger' : `btn-${confirmVariant}`
+
   useEffect(() => {
     if (isOpen) {
       previousActiveElement.current = (document.activeElement as HTMLElement) ?? triggerRef?.current ?? null
@@ -132,7 +135,7 @@ export function ConfirmDialog({
               </button>
               <button
                 type="button"
-                className={`btn btn-${confirmVariant}`}
+                className={`btn ${confirmBtnClass}`}
                 onClick={onConfirm}
               >
                 {confirmLabel}

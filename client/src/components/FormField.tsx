@@ -42,9 +42,10 @@ export function FormField({
     const child = children as ReactElement<Record<string, unknown>>
     const existingClassName = typeof child.props.className === 'string' ? child.props.className : 'form-control'
     const newClassName = `${existingClassName} ${error ? 'is-invalid' : ''}`.trim()
-    const ariaDescribedBy =
-      (error ? errorId : helperText ? helperId : undefined) ||
-      (typeof child.props['aria-describedby'] === 'string' ? child.props['aria-describedby'] : undefined)
+    const existingAriaDescribedBy =
+      typeof child.props['aria-describedby'] === 'string' ? child.props['aria-describedby'] : undefined
+    const fieldDescribedBy = error ? errorId : helperText ? helperId : undefined
+    const ariaDescribedBy = [existingAriaDescribedBy, fieldDescribedBy].filter(Boolean).join(' ') || undefined
 
     controlContent = React.cloneElement(child, {
       id: child.props.id || id,
