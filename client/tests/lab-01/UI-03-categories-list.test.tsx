@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import App from '../../src/App'
+import CheckSystem from '../../src/pages/CheckSystem'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -31,7 +31,7 @@ describe('UI-03 — Request Categories from GET /api/categories', () => {
       }),
     )
 
-    render(<App />)
+    render(<CheckSystem />)
     const button = screen.getByRole('button', { name: 'Check System' })
     fireEvent.click(button)
 

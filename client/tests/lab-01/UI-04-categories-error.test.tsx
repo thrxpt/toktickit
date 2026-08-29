@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import App from '../../src/App'
+import CheckSystem from '../../src/pages/CheckSystem'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -22,7 +22,7 @@ describe('UI-04 — GET /api/categories failure renders a useful error message',
       }),
     )
 
-    render(<App />)
+    render(<CheckSystem />)
     fireEvent.click(screen.getByRole('button', { name: 'Check System' }))
 
     await waitFor(() => {

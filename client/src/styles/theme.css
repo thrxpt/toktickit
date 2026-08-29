@@ -1,0 +1,221 @@
+/* Zen Green Theme — Lab 2 UI Specification
+   Authoritative source for all colour tokens.
+   No other file in the codebase may contain a hex colour value. */
+
+:root {
+  --zen-primary: #006B3C;
+  --zen-secondary: #0B7A46;
+  --zen-pale: #EAF6EF;
+  --zen-page-bg: #F5F7F6;
+  --zen-surface: #FFFFFF;
+  --zen-border: #DDE5E0;
+  --zen-text: #1C2B24;
+  --zen-text-muted: #5A6B62;
+  --zen-readonly-bg: #F2F4F1;
+  --zen-danger: #B02A2A;
+  --zen-warning: #B8860B;
+  --zen-success: #006B3C;
+
+  /* Badge colors */
+  --zen-badge-low-bg: var(--zen-pale);
+  --zen-badge-low-text: var(--zen-primary);
+  --zen-badge-medium-bg: #FEF3C7;
+  --zen-badge-medium-text: #92400E;
+  --zen-badge-high-bg: #FEE2E2;
+  --zen-badge-high-text: var(--zen-danger);
+  --zen-badge-new-bg: var(--zen-pale);
+  --zen-badge-new-text: var(--zen-primary);
+
+  /* Bootstrap bindings */
+  --bs-primary: var(--zen-primary);
+  --bs-primary-rgb: 0, 107, 60;
+  --bs-secondary: var(--zen-secondary);
+  --bs-secondary-rgb: 11, 122, 70;
+  --bs-success: var(--zen-success);
+  --bs-danger: var(--zen-danger);
+  --bs-warning: var(--zen-warning);
+  --bs-body-bg: var(--zen-page-bg);
+  --bs-body-color: var(--zen-text);
+  --bs-border-color: var(--zen-border);
+  --bs-focus-ring-color: rgba(11, 122, 70, 0.25);
+  --bs-link-color: var(--zen-secondary);
+  --bs-link-hover-color: var(--zen-primary);
+}
+
+body {
+  background-color: var(--zen-page-bg);
+  color: var(--zen-text);
+  min-height: 100vh;
+}
+
+/* Header & Shell */
+.zen-header {
+  background-color: var(--zen-primary);
+}
+
+.zen-brand {
+  color: var(--zen-surface);
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.zen-brand:hover,
+.zen-brand:focus {
+  color: var(--zen-surface);
+}
+
+.zen-nav-link {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.zen-nav-link:hover,
+.zen-nav-link:focus {
+  color: var(--zen-surface);
+}
+
+.zen-nav-link.active,
+.zen-nav-link[aria-current='page'] {
+  color: var(--zen-surface);
+  border-bottom-color: var(--zen-secondary);
+  font-weight: 600;
+}
+
+.zen-notice {
+  background-color: var(--zen-pale);
+  color: var(--zen-text-muted);
+  border-bottom: 1px solid var(--zen-border);
+  font-size: 0.8125rem;
+}
+
+/* Cards & Surfaces */
+.card,
+.zen-surface {
+  background-color: var(--zen-surface);
+  border-color: var(--zen-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+@media (max-width: 767.98px) {
+  .card-body {
+    padding: 1rem;
+  }
+}
+
+/* Buttons */
+.btn-primary {
+  --bs-btn-bg: var(--zen-primary);
+  --bs-btn-border-color: var(--zen-primary);
+  --bs-btn-hover-bg: var(--zen-secondary);
+  --bs-btn-hover-border-color: var(--zen-secondary);
+  --bs-btn-active-bg: var(--zen-secondary);
+  --bs-btn-active-border-color: var(--zen-secondary);
+  --bs-btn-focus-shadow-rgb: 11, 122, 70;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--zen-primary);
+  --bs-btn-border-color: var(--zen-primary);
+  --bs-btn-hover-bg: var(--zen-primary);
+  --bs-btn-hover-border-color: var(--zen-primary);
+  --bs-btn-active-bg: var(--zen-secondary);
+  --bs-btn-active-border-color: var(--zen-secondary);
+}
+
+/* Forms */
+.form-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--zen-text);
+  margin-bottom: 0.375rem;
+}
+
+.form-control,
+.form-select {
+  border-color: var(--zen-border);
+  color: var(--zen-text);
+  min-height: 2.5rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--zen-secondary);
+  box-shadow: 0 0 0 0.25rem rgba(11, 122, 70, 0.25);
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: var(--zen-danger);
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+  border-color: var(--zen-danger);
+  box-shadow: 0 0 0 0.25rem rgba(176, 42, 42, 0.25);
+}
+
+.invalid-feedback {
+  color: var(--zen-danger);
+  font-size: 0.8125rem;
+  margin-top: 0.25rem;
+}
+
+.zen-readonly,
+.form-control:read-only,
+.form-control[readonly] {
+  background-color: var(--zen-readonly-bg);
+  border-color: var(--zen-border);
+  color: var(--zen-text);
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 8rem;
+  max-height: 24rem;
+}
+
+/* Badges */
+.zen-badge-low {
+  background-color: var(--zen-badge-low-bg);
+  color: var(--zen-badge-low-text);
+  border: 1px solid var(--zen-border);
+}
+
+.zen-badge-medium {
+  background-color: var(--zen-badge-medium-bg);
+  color: var(--zen-badge-medium-text);
+  border: 1px solid rgba(146, 64, 14, 0.2);
+}
+
+.zen-badge-high {
+  background-color: var(--zen-badge-high-bg);
+  color: var(--zen-badge-high-text);
+  border: 1px solid rgba(176, 42, 42, 0.2);
+}
+
+.zen-badge-new {
+  background-color: var(--zen-badge-new-bg);
+  color: var(--zen-badge-new-text);
+  border: 1px solid var(--zen-border);
+}
+
+/* Touch targets */
+@media (max-width: 767.98px) {
+  .btn,
+  .nav-link,
+  .form-control,
+  .form-select {
+    min-height: 44px;
+  }
+}
