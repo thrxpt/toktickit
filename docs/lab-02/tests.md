@@ -64,8 +64,8 @@ handout's own numbering.
 | API-04 | AC-14 | Missing Category or Related System | 400 naming the missing field | `create-ticket.api.test.ts` | — |
 | API-05 | AC-15, BR-16 | Inactive Category referenced | 400; no Ticket created | `create-ticket.api.test.ts` | — |
 | API-06 | AC-18, BR-04 | `requesterId` present in the body | 400 `REQUESTER_ID_IN_BODY`; header identity never overridden | `create-ticket.api.test.ts` | — |
-| API-07 | BR-04 | Missing `X-Requester-Id` | 400 `REQUESTER_CONTEXT_MISSING` | `create-ticket.api.test.ts` | — |
-| API-08 | AC-05, BR-05 | Header naming an inactive Requester | 400 `REQUESTER_INACTIVE` | `create-ticket.api.test.ts` | — |
+| API-07 | BR-04 | Missing `X-Requester-Id` | 400 `REQUESTER_CONTEXT_MISSING` | `requester-context.api.test.ts` | — |
+| API-08 | AC-05, BR-05 | Header naming an inactive Requester | 400 `REQUESTER_INACTIVE` | `requester-context.api.test.ts` | — |
 | API-09 | AC-19 | 14 owned Tickets, default paging | 200; 10 rows; `meta` reports 14 items across 2 pages | `my-tickets.api.test.ts` | — |
 | API-10 | AC-20, BR-07 | Requester B lists tickets | Requester A's Tickets absent under every parameter combination | `my-tickets.api.test.ts` | — |
 | API-11 | AC-21, BR-26 | Search by Ticket Number and by Summary substring | Case-insensitive; only matches returned | `my-tickets.api.test.ts` | — |
