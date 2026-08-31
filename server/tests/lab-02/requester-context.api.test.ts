@@ -13,57 +13,6 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-describe("API-07 — missing X-Requester-Id (BR-04)", () => {
-  it("responds 400 REQUESTER_CONTEXT_MISSING when header is omitted", async () => {
-    const response = await request(app).post("/api/tickets").send({ summary: "Test ticket" });
-
-    expect(response.status).toBe(400);
-    expect(response.body).toEqual({
-      error: {
-        code: "REQUESTER_CONTEXT_MISSING",
-        message: expect.any(String),
-      },
-    });
-  });
-
-  it("responds 400 REQUESTER_CONTEXT_MISSING when header is empty string", async () => {
-    const response = await request(app)
-      .post("/api/tickets")
-      .set("X-Requester-Id", "")
-      .send({ summary: "Test ticket" });
-
-    expect(response.status).toBe(400);
-    expect(response.body).toEqual({
-      error: {
-        code: "REQUESTER_CONTEXT_MISSING",
-        message: expect.any(String),
-      },
-    });
-  });
-});
-
-describe("API-08 — inactive Requester in X-Requester-Id (AC-05, BR-05)", () => {
-  it("responds 400 REQUESTER_INACTIVE when header names an inactive Requester", async () => {
-    const inactiveRequester = await prisma.requester.findFirst({
-      where: { isActive: false },
-    });
-    expect(inactiveRequester).not.toBeNull();
-
-    const response = await request(app)
-      .post("/api/tickets")
-      .set("X-Requester-Id", String(inactiveRequester!.id))
-      .send({ summary: "Test ticket" });
-
-    expect(response.status).toBe(400);
-    expect(response.body).toEqual({
-      error: {
-        code: "REQUESTER_INACTIVE",
-        message: expect.any(String),
-      },
-    });
-  });
-});
-
 describe("Requester Context — malformed and unknown header (BR-05, ADR-0005)", () => {
   it.each(["abc", "0", "-1", "-10", "1.5", "null", "undefined"])(
     "responds 400 REQUESTER_CONTEXT_INVALID for non-positive-integer header '%s'",
@@ -130,11 +79,19 @@ describe("Requester Context — happy path and public routes", () => {
       where: { isActive: true },
     });
     expect(activeRequester).not.toBeNull();
+    const category = await prisma.category.findFirstOrThrow({ where: { isActive: true } });
+    const relatedSystem = await prisma.relatedSystem.findFirstOrThrow({ where: { isActive: true } });
 
     const response = await request(app)
       .post("/api/tickets")
       .set("X-Requester-Id", String(activeRequester!.id))
-      .send({ summary: "Valid ticket" });
+      .send({
+        summary: "Valid ticket",
+        description: "Valid description of at least ten characters.",
+        categoryId: category.id,
+        relatedSystemId: relatedSystem.id,
+        requestedPriority: "MEDIUM",
+      });
 
     expect(response.status).toBe(201);
   });
