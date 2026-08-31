@@ -7,8 +7,8 @@
 // internal identifier (BR-43) — which is why callers pass a code from the
 // table below rather than anything derived from the error they caught.
 //
-// The envelope's optional `fields` member arrives with the first route that
-// validates input (Decision D-16); nothing here takes input yet.
+// The envelope's optional `fields` member arrives with routes that
+// validate input (Decision D-16).
 import type { Response } from "express";
 
 export type ErrorCode =
@@ -16,7 +16,9 @@ export type ErrorCode =
   | "REQUESTER_CONTEXT_MISSING"
   | "REQUESTER_CONTEXT_INVALID"
   | "REQUESTER_INACTIVE"
-  | "REQUESTER_ID_IN_BODY";
+  | "REQUESTER_ID_IN_BODY"
+  | "INVALID_QUERY_PARAMETER"
+  | "VALIDATION_FAILED";
 
 const failures: Record<ErrorCode, { status: number; message: string }> = {
   DATABASE_UNAVAILABLE: { status: 500, message: "Unable to reach the database" },
@@ -36,10 +38,35 @@ const failures: Record<ErrorCode, { status: number; message: string }> = {
     status: 400,
     message: "requesterId must not be supplied in the request body",
   },
+  INVALID_QUERY_PARAMETER: {
+    status: 400,
+    message: "One or more query parameters are invalid",
+  },
+  VALIDATION_FAILED: {
+    status: 400,
+    message: "One or more fields are invalid",
+  },
 };
 
-export function sendError(res: Response, code: ErrorCode): void {
+export function sendError(
+  res: Response,
+  code: ErrorCode,
+  fields?: Record<string, string>,
+): void {
   const { status, message } = failures[code];
 
-  res.status(status).json({ error: { code, message } });
+  const errorObj: {
+    code: ErrorCode;
+    message: string;
+    fields?: Record<string, string>;
+  } = {
+    code,
+    message,
+  };
+
+  if (fields && Object.keys(fields).length > 0) {
+    errorObj.fields = fields;
+  }
+
+  res.status(status).json({ error: errorObj });
 }

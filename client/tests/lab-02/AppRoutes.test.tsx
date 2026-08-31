@@ -22,7 +22,7 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
     vi.restoreAllMocks()
   })
 
-  it('redirects / to /tickets and renders My Tickets placeholder', async () => {
+  it('redirects / to /tickets and renders My Tickets screen', async () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <App />
@@ -34,7 +34,9 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
         screen.getByRole('heading', { name: 'My Tickets' }),
       ).toBeInTheDocument()
     })
-    expect(screen.getByText('Coming in Issue 10')).toBeInTheDocument()
+    expect(
+      screen.getByText(/View and track all of your support requests/i),
+    ).toBeInTheDocument()
   })
 
   it('renders /select-requester screen', async () => {
