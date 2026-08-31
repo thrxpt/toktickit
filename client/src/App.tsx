@@ -1,7 +1,11 @@
+import React from 'react'
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 
 import AppShell from './components/AppShell'
+import RequesterGuard from './components/RequesterGuard'
+import { RequesterProvider } from './context/RequesterContext'
 import CheckSystem from './pages/CheckSystem'
+import RequesterSelection from './pages/RequesterSelection'
 
 function PlaceholderPage({
   title,
@@ -14,7 +18,9 @@ function PlaceholderPage({
     <div className="card text-center py-5">
       <div className="card-body">
         <h1 className="h3 mb-2">{title}</h1>
-        <p className="text-body-secondary mb-0">Coming in Issue {issueNumber}</p>
+        <p className="text-body-secondary mb-0">
+          Coming in Issue {issueNumber}
+        </p>
       </div>
     </div>
   )
@@ -25,7 +31,9 @@ function NotFoundPage() {
     <div className="card text-center py-5">
       <div className="card-body">
         <h1 className="h3 mb-2">Page Not Found</h1>
-        <p className="text-body-secondary mb-4">The requested page does not exist.</p>
+        <p className="text-body-secondary mb-4">
+          The requested page does not exist.
+        </p>
         <Link to="/tickets" className="btn btn-primary">
           Go to My Tickets
         </Link>
@@ -34,51 +42,62 @@ function NotFoundPage() {
   )
 }
 
-export function App() {
+export function AppRoutes({
+  customTicketView,
+}: {
+  customTicketView?: React.ReactNode
+}) {
   return (
     <Routes>
       {/* Root redirects to /tickets */}
       <Route path="/" element={<Navigate to="/tickets" replace />} />
 
-      {/* Lab 2 screens (placeholders in Issue 7) */}
+      {/* Lab 2 Development Requester Selection (Issue 8) */}
       <Route
         path="/select-requester"
         element={
           <AppShell>
-            <PlaceholderPage
-              title="Select Development Requester"
-              issueNumber={8}
-            />
+            <RequesterSelection />
           </AppShell>
         }
       />
+
+      {/* Guarded Ticket Routes (FR-04, AC-02) */}
       <Route
         path="/tickets"
         element={
-          <AppShell>
-            <PlaceholderPage title="My Tickets" issueNumber={10} />
-          </AppShell>
+          <RequesterGuard>
+            <AppShell>
+              {customTicketView || (
+                <PlaceholderPage title="My Tickets" issueNumber={10} />
+              )}
+            </AppShell>
+          </RequesterGuard>
         }
       />
       <Route
         path="/tickets/new"
         element={
-          <AppShell>
-            <PlaceholderPage title="Create Ticket" issueNumber={9} />
-          </AppShell>
+          <RequesterGuard>
+            <AppShell>
+              <PlaceholderPage title="Create Ticket" issueNumber={9} />
+            </AppShell>
+          </RequesterGuard>
         }
       />
       <Route
         path="/tickets/:id"
         element={
-          <AppShell
-            breadcrumbs={[
-              { label: 'My Tickets', to: '/tickets' },
-              { label: 'Ticket Details' },
-            ]}
-          >
-            <PlaceholderPage title="Ticket Details" issueNumber={11} />
-          </AppShell>
+          <RequesterGuard>
+            <AppShell
+              breadcrumbs={[
+                { label: 'My Tickets', to: '/tickets' },
+                { label: 'Ticket Details' },
+              ]}
+            >
+              <PlaceholderPage title="Ticket Details" issueNumber={11} />
+            </AppShell>
+          </RequesterGuard>
         }
       />
 
@@ -102,6 +121,18 @@ export function App() {
         }
       />
     </Routes>
+  )
+}
+
+export function App({
+  customTicketView,
+}: {
+  customTicketView?: React.ReactNode
+}) {
+  return (
+    <RequesterProvider>
+      <AppRoutes customTicketView={customTicketView} />
+    </RequesterProvider>
   )
 }
 

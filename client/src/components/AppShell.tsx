@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 
+import { useRequester } from '../context/RequesterContext'
+
 export interface BreadcrumbItem {
   label: string
   to?: string
@@ -21,11 +23,22 @@ export interface AppShellProps {
 export function AppShell({
   children,
   breadcrumbs,
-  requesterName = 'Development Requester',
+  requesterName: propRequesterName,
   onChangeRequester,
 }: AppShellProps) {
   const [navOpen, setNavOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+
+  let contextRequesterName: string | undefined
+  try {
+    const requesterCtx = useRequester()
+    contextRequesterName = requesterCtx.selectedRequester?.name
+  } catch {
+    // If rendered outside RequesterProvider in an isolated unit test
+  }
+
+  const requesterName =
+    propRequesterName || contextRequesterName || 'Development Requester'
 
   return (
     <div className="min-vh-100 d-flex flex-column bg-body">
@@ -109,10 +122,15 @@ export function AppShell({
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                   </svg>
-                  <span className="d-inline-block text-truncate" style={{ maxWidth: '160px' }}>
+                  <span
+                    className="d-inline-block text-truncate"
+                    style={{ maxWidth: '160px' }}
+                  >
                     {requesterName}
                   </span>
-                  <span className="small" aria-hidden="true">▾</span>
+                  <span className="small" aria-hidden="true">
+                    ▾
+                  </span>
                 </button>
 
                 {profileOpen && (
@@ -122,7 +140,9 @@ export function AppShell({
                         Acting as <strong>{requesterName}</strong>
                       </span>
                     </li>
-                    <li><hr className="dropdown-divider" /></li>
+                    <li>
+                      <hr className="dropdown-divider" />
+                    </li>
                     <li>
                       {onChangeRequester ? (
                         <button
@@ -187,7 +207,11 @@ export function AppShell({
 
       {/* Breadcrumbs (if provided) */}
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <nav aria-label="breadcrumb" className="container pt-3" style={{ maxWidth: '1200px' }}>
+        <nav
+          aria-label="breadcrumb"
+          className="container pt-3"
+          style={{ maxWidth: '1200px' }}
+        >
           <ol className="breadcrumb mb-0">
             {breadcrumbs.map((crumb, index) => {
               const isLast = index === breadcrumbs.length - 1
@@ -210,7 +234,10 @@ export function AppShell({
       )}
 
       {/* Main Content */}
-      <main className="container my-4 flex-grow-1" style={{ maxWidth: '1200px' }}>
+      <main
+        className="container my-4 flex-grow-1"
+        style={{ maxWidth: '1200px' }}
+      >
         {children}
       </main>
     </div>
