@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import App from '../../src/App'
 
-describe('App Routing — Route table and placeholders', () => {
+describe('UI-22 — App Routing — Route table and shell placeholders', () => {
   it('redirects / to /tickets', () => {
     render(
       <MemoryRouter initialEntries={['/']}>

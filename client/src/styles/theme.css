@@ -48,6 +48,12 @@ body {
   min-height: 100vh;
 }
 
+/* Focus Indicators (AC-45, ui-spec.md §3) */
+:focus-visible {
+  outline: 2px solid var(--zen-secondary);
+  outline-offset: 2px;
+}
+
 /* Header & Shell */
 .zen-header {
   background-color: var(--zen-primary);
@@ -67,6 +73,13 @@ body {
   color: var(--zen-surface);
 }
 
+.zen-brand:focus-visible {
+  color: var(--zen-surface);
+  outline: 2px solid var(--zen-secondary);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
 .zen-nav-link {
   color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
@@ -79,6 +92,13 @@ body {
 .zen-nav-link:hover,
 .zen-nav-link:focus {
   color: var(--zen-surface);
+}
+
+.zen-nav-link:focus-visible {
+  color: var(--zen-surface);
+  outline: 2px solid var(--zen-secondary);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
 }
 
 .zen-nav-link.active,

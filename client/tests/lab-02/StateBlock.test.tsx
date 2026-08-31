@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import StateBlock from '../../src/components/StateBlock'
 
-describe('StateBlock — Four variants for data-bearing views (FR-15, BR-31, BR-43)', () => {
+describe('UI-23 — StateBlock — Four variants for data-bearing views (FR-15, BR-31, BR-43)', () => {
   it('renders loading state with spinner and text', () => {
     render(<StateBlock variant="loading" message="Loading tickets…" />)
 

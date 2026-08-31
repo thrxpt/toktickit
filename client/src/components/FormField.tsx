@@ -29,15 +29,33 @@ export function FormField({
   let controlContent: React.ReactNode = children
 
   if (readOnly) {
-    controlContent = (
-      <div
-        id={id}
-        className="form-control zen-readonly"
-        aria-readonly="true"
-      >
-        {readOnlyValue ?? children}
-      </div>
-    )
+    if (isValidElement(children)) {
+      const child = children as ReactElement<Record<string, unknown>>
+      const existingClassName =
+        typeof child.props.className === 'string' ? child.props.className : 'form-control'
+      controlContent = React.cloneElement(child, {
+        id: child.props.id || id,
+        readOnly: true,
+        tabIndex: -1,
+        className: `${existingClassName} zen-readonly`.trim(),
+      })
+    } else {
+      const displayVal =
+        typeof readOnlyValue === 'string' || typeof readOnlyValue === 'number'
+          ? String(readOnlyValue)
+          : ''
+      controlContent = (
+        <input
+          id={id}
+          type="text"
+          readOnly
+          tabIndex={-1}
+          className="form-control zen-readonly"
+          value={displayVal}
+          onChange={() => {}}
+        />
+      )
+    }
   } else if (isValidElement(children)) {
     const child = children as ReactElement<Record<string, unknown>>
     const existingClassName = typeof child.props.className === 'string' ? child.props.className : 'form-control'

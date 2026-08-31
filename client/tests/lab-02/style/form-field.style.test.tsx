@@ -66,9 +66,11 @@ describe('STYLE-03 — Read-only vs editable field presentation', () => {
       />,
     )
 
-    const readonlyElement = screen.getByText('TKT-2026-000001')
+    const readonlyElement = screen.getByLabelText('Ticket No.')
     expect(readonlyElement).toHaveClass('zen-readonly')
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    expect(readonlyElement).toHaveAttribute('readonly')
+    expect(readonlyElement).toHaveAttribute('tabIndex', '-1')
+    expect(readonlyElement).toHaveValue('TKT-2026-000001')
   })
 
   it('renders editable fields as standard focusable inputs', () => {
@@ -81,5 +83,6 @@ describe('STYLE-03 — Read-only vs editable field presentation', () => {
     const input = screen.getByRole('textbox')
     expect(input).toBeInTheDocument()
     expect(input).not.toHaveClass('zen-readonly')
+    expect(input).not.toHaveAttribute('tabIndex', '-1')
   })
 })

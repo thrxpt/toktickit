@@ -24,7 +24,7 @@ function DialogTestWrapper() {
   )
 }
 
-describe('ConfirmDialog — accessible dialog with focus management and Escape handling', () => {
+describe('UI-24 — ConfirmDialog — accessible dialog with focus management and Escape handling', () => {
   it('renders modal dialog when open with title, message, and actions', () => {
     const onConfirm = vi.fn()
     const onCancel = vi.fn()

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import Pagination from '../../src/components/Pagination'
 
-describe('Pagination — 1-based accessible page navigation', () => {
+describe('UI-25 — Pagination — 1-based accessible page navigation', () => {
   it('renders pagination buttons with 1-based index and aria-labels', () => {
     const handlePageChange = vi.fn()
     render(

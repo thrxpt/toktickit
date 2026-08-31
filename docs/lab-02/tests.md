@@ -112,6 +112,10 @@ handout's own numbering.
 | UI-19 | AC-36, BR-39 | Removed Attachment group | Reason, remover, and time shown; no download control rendered | `AttachmentSection.test.tsx` | — |
 | UI-20 | AC-38, BR-42 | Removal without a reason | Confirm disabled; Attachment stays active | `AttachmentSection.test.tsx` | — |
 | UI-21 | AC-32, AC-34 | Oversized file and limit reached | Per-file rejection message; other selected files unaffected | `AttachmentSection.test.tsx` | — |
+| UI-22 | ui-spec §4, D-16 | Route table and shell placeholders | Routing renders all route table paths and shell placeholders | `AppRoutes.test.tsx` | — |
+| UI-23 | FR-15, BR-31 | StateBlock four variants | Loading, empty, no-results, and error variants each render appropriate copy and action | `StateBlock.test.tsx` | — |
+| UI-24 | ui-spec §3 | ConfirmDialog accessibility and focus trap | Closes on Escape, traps focus on Tab, restores focus to trigger on close | `ConfirmDialog.test.tsx` | — |
+| UI-25 | ui-spec §5.3 | Pagination 1-based navigation | 1-based page controls with aria-label and active page indication | `Pagination.test.tsx` | — |
 
 ### UI style — `client/tests/lab-02/style/*.test.tsx`
 
@@ -169,8 +173,9 @@ handout's own numbering.
 | AC-23 | UI-14 | AC-46 | STYLE-06 |
 
 Every AC-01 to AC-46 appears above. No planned test exists without a criterion behind it.
-API-28 is the one test answering to a behaviour rule rather than a criterion — BR-44's
-idempotent seed has no acceptance criterion of its own, only a Definition-of-Done item.
+API-28 and UI-22 through UI-25 answer to behaviour and UI rules rather than criteria — BR-44's
+idempotent seed, D-16's route table, and ui-spec reusable component behaviours have no
+acceptance criterion of their own, only contract and Definition-of-Done items.
 
 ## 4. Responsive and Visual Checklist
 
@@ -203,11 +208,11 @@ Filled in on the release PR from `lab2-staging` to `main`, from a run against `m
 |---|---|---|---|
 | Unit | 6 | — | — |
 | API | 28 | — | — |
-| UI | 21 | — | — |
+| UI | 25 | — | — |
 | Style | 7 | — | — |
 | Responsive | 5 | — | — |
 | E2E | 5 | — | — |
-| **Total** | **72** | — | — |
+| **Total** | **76** | — | — |
 
 ## 7. Known Limitations and Deferred Tests
 
