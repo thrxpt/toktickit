@@ -4,9 +4,8 @@ import FormField from './FormField'
 
 export interface ReferenceOption {
   id: number | string
-  name?: string
-  email?: string
   label?: string
+  name?: string
 }
 
 export interface ReferenceSelectProps {
@@ -76,13 +75,7 @@ export function ReferenceSelect({
           <option value="">{placeholder}</option>
           {options.map((option) => {
             const optValue = String(option.id)
-            const optLabel =
-              option.label ||
-              (option.name
-                ? option.email
-                  ? `${option.name} (${option.email})`
-                  : option.name
-                : String(option.id))
+            const optLabel = option.label || option.name || String(option.id)
             return (
               <option key={optValue} value={optValue}>
                 {optLabel}

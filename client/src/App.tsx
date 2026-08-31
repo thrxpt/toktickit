@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 
 import AppShell from './components/AppShell'
@@ -42,11 +41,7 @@ function NotFoundPage() {
   )
 }
 
-export function AppRoutes({
-  customTicketView,
-}: {
-  customTicketView?: React.ReactNode
-}) {
+export function AppRoutes() {
   return (
     <Routes>
       {/* Root redirects to /tickets */}
@@ -68,9 +63,7 @@ export function AppRoutes({
         element={
           <RequesterGuard>
             <AppShell>
-              {customTicketView || (
-                <PlaceholderPage title="My Tickets" issueNumber={10} />
-              )}
+              <PlaceholderPage title="My Tickets" issueNumber={10} />
             </AppShell>
           </RequesterGuard>
         }
@@ -124,14 +117,10 @@ export function AppRoutes({
   )
 }
 
-export function App({
-  customTicketView,
-}: {
-  customTicketView?: React.ReactNode
-}) {
+export function App() {
   return (
     <RequesterProvider>
-      <AppRoutes customTicketView={customTicketView} />
+      <AppRoutes />
     </RequesterProvider>
   )
 }

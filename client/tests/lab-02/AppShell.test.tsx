@@ -1,9 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from '../../src/App'
-import { useRequester } from '../../src/context/RequesterContext'
+import AppShell from '../../src/components/AppShell'
+import RequesterGuard from '../../src/components/RequesterGuard'
+import { RequesterProvider, useRequester } from '../../src/context/RequesterContext'
+import RequesterSelection from '../../src/pages/RequesterSelection'
 
 const mockActiveRequesters = [
   { id: 1, name: 'Jennifer Anderson', email: 'jennifer.anderson@example.ac.th' },
@@ -104,7 +107,28 @@ describe('UI-06 — Change Requester discards previous state (AC-04, BR-09)', ()
 
     render(
       <MemoryRouter initialEntries={['/tickets']}>
-        <App customTicketView={<TestTicketView />} />
+        <RequesterProvider>
+          <Routes>
+            <Route
+              path="/select-requester"
+              element={
+                <AppShell>
+                  <RequesterSelection />
+                </AppShell>
+              }
+            />
+            <Route
+              path="/tickets"
+              element={
+                <RequesterGuard>
+                  <AppShell>
+                    <TestTicketView />
+                  </AppShell>
+                </RequesterGuard>
+              }
+            />
+          </Routes>
+        </RequesterProvider>
       </MemoryRouter>,
     )
 

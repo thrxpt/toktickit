@@ -31,8 +31,16 @@ export function RequesterSelection() {
   }
 
   const handleCancel = () => {
-    navigate('/tickets')
+    if (selectedRequester) {
+      navigate('/tickets')
+    }
   }
+
+  const selectOptions = requesters.map((r) => ({
+    id: r.id,
+    name: r.name,
+    label: `${r.name} (${r.email})`,
+  }))
 
   return (
     <div className="py-4">
@@ -41,7 +49,7 @@ export function RequesterSelection() {
         style={{ maxWidth: '560px' }}
       >
         <div className="card-body p-4 p-md-5">
-          {/* Person-with-gear mark on a --zen-pale circle */}
+          {/* Person-with-gear mark on a --zen-pale circle (ui-spec.md §5.1) */}
           <div
             className="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
             style={{
@@ -62,8 +70,12 @@ export function RequesterSelection() {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
+              {/* Person torso & head */}
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              {/* Gear motif */}
+              <circle cx="19" cy="11" r="2" />
+              <path d="M19 8v1m0 4v1m-3-3h1m4 0h1" />
             </svg>
           </div>
 
@@ -100,7 +112,7 @@ export function RequesterSelection() {
                 id="requester-select"
                 label="Development Requester"
                 required
-                options={requesters}
+                options={selectOptions}
                 placeholder="Select a requester…"
                 value={selectedId}
                 onChange={(val) => setSelectedId(val)}
@@ -156,6 +168,7 @@ export function RequesterSelection() {
                   type="button"
                   className="btn btn-outline-secondary"
                   onClick={handleCancel}
+                  disabled={!selectedRequester}
                 >
                   Cancel
                 </button>
