@@ -12,10 +12,39 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
   beforeEach(() => {
     localStorage.clear()
     localStorage.setItem('toktickit_requester_id', '1')
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => mockActiveRequesters,
-    } as Response)
+    globalThis.fetch = vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url === '/api/requesters') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockActiveRequesters,
+        } as Response)
+      }
+      if (url.startsWith('/api/tickets/')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            id: 42,
+            ticketNumber: 'TKT-2026-000042',
+            summary: 'Test summary',
+            description: 'Test description',
+            requestedPriority: 'MEDIUM',
+            status: 'NEW',
+            category: { id: 1, name: 'Account and Access' },
+            relatedSystem: { id: 1, name: 'Email' },
+            requester: { id: 1, name: 'Jennifer Anderson' },
+            createdAt: '2026-08-26T09:14:00.000Z',
+            updatedAt: '2026-08-26T09:14:00.000Z',
+            attachments: { active: [], removed: [] },
+          }),
+        } as Response)
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => [],
+      } as Response)
+    })
   })
 
   afterEach(() => {
@@ -71,7 +100,7 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
     expect(screen.getByRole('button', { name: 'Create Ticket' })).toBeInTheDocument()
   })
 
-  it('renders /tickets/:id placeholder with breadcrumbs when context is established', async () => {
+  it('renders /tickets/:id screen with breadcrumbs when context is established', async () => {
     render(
       <MemoryRouter initialEntries={['/tickets/42']}>
         <App />
@@ -83,10 +112,10 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
         screen.getByRole('heading', { name: 'Ticket Details' }),
       ).toBeInTheDocument()
     })
-    expect(screen.getByText('Coming in Issue 11')).toBeInTheDocument()
     expect(
       screen.getByRole('navigation', { name: 'breadcrumb' }),
     ).toBeInTheDocument()
+    expect(screen.getByText('TKT-2026-000042')).toBeInTheDocument()
   })
 
   it('renders /system with the Check System page inside the shell', async () => {

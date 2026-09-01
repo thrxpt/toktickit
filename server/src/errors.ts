@@ -19,9 +19,10 @@ export type ErrorCode =
   | "REQUESTER_ID_IN_BODY"
   | "INVALID_QUERY_PARAMETER"
   | "VALIDATION_FAILED"
-  | "TICKET_NUMBER_CONFLICT";
+  | "TICKET_NUMBER_CONFLICT"
+  | "TICKET_NOT_FOUND";
 
-const failures: Record<ErrorCode, { status: number; message: string }> = {
+const failures = {
   DATABASE_UNAVAILABLE: {
     status: 500,
     message: "Unable to reach the database",
@@ -54,7 +55,11 @@ const failures: Record<ErrorCode, { status: number; message: string }> = {
     status: 409,
     message: "A ticket number conflict occurred. Please contact support.",
   },
-};
+  TICKET_NOT_FOUND: {
+    status: 404,
+    message: "Ticket not found",
+  },
+} satisfies Record<ErrorCode, { status: number; message: string }>;
 
 export function sendError(
   res: Response,
