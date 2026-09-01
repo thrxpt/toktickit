@@ -8,6 +8,7 @@ import {
   requireRequesterContext,
 } from "../middleware/requester-context";
 import { prisma } from "../prisma";
+import { handleCreateTicket } from "../tickets/create-ticket";
 
 const listTicketsQuerySchema = z
   .object({
@@ -192,7 +193,5 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/tickets placeholder for Issue 9
-ticketsRouter.post("/", rejectRequesterIdInBody, (_req, res) => {
-  res.status(201).json({ id: 1 });
-});
+// POST /api/tickets (FR-05, FR-06, BR-01, BR-02, BR-11, BR-12)
+ticketsRouter.post("/", rejectRequesterIdInBody, handleCreateTicket);

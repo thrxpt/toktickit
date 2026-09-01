@@ -18,10 +18,14 @@ export type ErrorCode =
   | "REQUESTER_INACTIVE"
   | "REQUESTER_ID_IN_BODY"
   | "INVALID_QUERY_PARAMETER"
-  | "VALIDATION_FAILED";
+  | "VALIDATION_FAILED"
+  | "TICKET_NUMBER_CONFLICT";
 
 const failures: Record<ErrorCode, { status: number; message: string }> = {
-  DATABASE_UNAVAILABLE: { status: 500, message: "Unable to reach the database" },
+  DATABASE_UNAVAILABLE: {
+    status: 500,
+    message: "Unable to reach the database",
+  },
   REQUESTER_CONTEXT_MISSING: {
     status: 400,
     message: "Development Requester context header is missing",
@@ -44,7 +48,11 @@ const failures: Record<ErrorCode, { status: number; message: string }> = {
   },
   VALIDATION_FAILED: {
     status: 400,
-    message: "One or more fields are invalid",
+    message: "One or more fields are invalid.",
+  },
+  TICKET_NUMBER_CONFLICT: {
+    status: 409,
+    message: "A ticket number conflict occurred. Please contact support.",
   },
 };
 
@@ -55,18 +63,9 @@ export function sendError(
 ): void {
   const { status, message } = failures[code];
 
-  const errorObj: {
-    code: ErrorCode;
-    message: string;
-    fields?: Record<string, string>;
-  } = {
-    code,
-    message,
-  };
-
   if (fields && Object.keys(fields).length > 0) {
-    errorObj.fields = fields;
+    res.status(status).json({ error: { code, message, fields } });
+  } else {
+    res.status(status).json({ error: { code, message } });
   }
-
-  res.status(status).json({ error: errorObj });
 }

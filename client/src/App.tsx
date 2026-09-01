@@ -4,6 +4,7 @@ import AppShell from './components/AppShell'
 import RequesterGuard from './components/RequesterGuard'
 import { RequesterProvider } from './context/RequesterContext'
 import CheckSystem from './pages/CheckSystem'
+import CreateTicket from './pages/CreateTicket'
 import MyTickets from './pages/MyTickets'
 import RequesterSelection from './pages/RequesterSelection'
 
@@ -74,7 +75,7 @@ export function AppRoutes() {
         element={
           <RequesterGuard>
             <AppShell>
-              <PlaceholderPage title="Create Ticket" issueNumber={9} />
+              <CreateTicket />
             </AppShell>
           </RequesterGuard>
         }

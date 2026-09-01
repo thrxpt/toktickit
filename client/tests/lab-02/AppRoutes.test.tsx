@@ -56,7 +56,7 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders /tickets/new placeholder when context is established', async () => {
+  it('renders /tickets/new screen when context is established', async () => {
     render(
       <MemoryRouter initialEntries={['/tickets/new']}>
         <App />
@@ -68,7 +68,7 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
         screen.getByRole('heading', { name: 'Create Ticket' }),
       ).toBeInTheDocument()
     })
-    expect(screen.getByText('Coming in Issue 9')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Create Ticket' })).toBeInTheDocument()
   })
 
   it('renders /tickets/:id placeholder with breadcrumbs when context is established', async () => {
