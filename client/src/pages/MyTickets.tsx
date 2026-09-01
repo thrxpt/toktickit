@@ -56,6 +56,7 @@ export function MyTickets() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
 
   // Local search text for smooth typing
   const [searchInput, setSearchInput] = useState(search)
@@ -67,25 +68,33 @@ export function MyTickets() {
 
   // Load active categories for filter dropdown
   useEffect(() => {
-    let active = true
-    apiFetch('/api/categories')
+    const controller = new AbortController()
+    apiFetch('/api/categories', { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : []))
       .then((data: CategoryOption[]) => {
-        if (active) {
+        if (!controller.signal.aborted) {
           setCategories(data)
         }
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        if (controller.signal.aborted || (err as Error)?.name === 'AbortError') {
+          return
+        }
         // Categories fetch error is handled gracefully
       })
     return () => {
-      active = false
+      controller.abort()
     }
   }, [])
 
-  const fetchTickets = () => {
-    if (!selectedRequester) return
+  // Fetch tickets with AbortController to prevent race conditions
+  useEffect(() => {
+    if (!selectedRequester) {
+      setLoading(false)
+      return
+    }
 
+    const controller = new AbortController()
     setLoading(true)
     setError(false)
 
@@ -102,7 +111,7 @@ export function MyTickets() {
     const queryString = params.toString()
     const url = `/api/tickets${queryString ? `?${queryString}` : ''}`
 
-    apiFetch(url)
+    apiFetch(url, { signal: controller.signal })
       .then(async (res) => {
         if (!res.ok) {
           throw new Error('Failed to fetch tickets')
@@ -110,6 +119,7 @@ export function MyTickets() {
         return res.json()
       })
       .then((json: { data: TicketListItem[]; meta: TicketListMeta }) => {
+        if (controller.signal.aborted) return
         setTickets(json.data || [])
         setMeta(
           json.meta || {
@@ -120,16 +130,21 @@ export function MyTickets() {
           },
         )
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        if (controller.signal.aborted || (err as Error)?.name === 'AbortError') {
+          return
+        }
         setError(true)
       })
       .finally(() => {
-        setLoading(false)
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
       })
-  }
 
-  useEffect(() => {
-    fetchTickets()
+    return () => {
+      controller.abort()
+    }
   }, [
     selectedRequester?.id,
     search,
@@ -140,6 +155,7 @@ export function MyTickets() {
     order,
     page,
     pageSize,
+    retryCount,
   ])
 
   // Parameter update helper
@@ -199,6 +215,10 @@ export function MyTickets() {
 
   const handlePageChange = (newPage: number) => {
     updateParam({ page: newPage > 1 ? String(newPage) : null })
+  }
+
+  const handleRetry = () => {
+    setRetryCount((c) => c + 1)
   }
 
   const hasActiveFilters = Boolean(
@@ -353,7 +373,7 @@ export function MyTickets() {
           variant="error"
           title="Something went wrong"
           message="Unable to load tickets. Please try again."
-          onRetry={fetchTickets}
+          onRetry={handleRetry}
         />
       ) : meta.totalItems === 0 && !hasActiveFilters ? (
         <StateBlock

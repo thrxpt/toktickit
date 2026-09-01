@@ -287,5 +287,33 @@ describe('My Tickets Screen', () => {
       const ticketCards = screen.getAllByTestId('ticket-card')
       expect(ticketCards).toHaveLength(2)
     })
+
+    it('does not remain in loading state if no requester is selected', async () => {
+      localStorage.clear() // No requester selected
+
+      globalThis.fetch = vi.fn().mockImplementation((input: unknown) => {
+        const url =
+          typeof input === 'string' ? input : (input as Request)?.url || String(input)
+        if (url.includes('/api/requesters')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => mockRequesters,
+          } as Response)
+        }
+        if (url.includes('/api/categories')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => mockCategories,
+          } as Response)
+        }
+        return Promise.reject(new Error(`Unknown URL: ${url}`))
+      })
+
+      renderMyTickets()
+
+      await waitFor(() => {
+        expect(screen.queryByText(/Loading tickets…/i)).not.toBeInTheDocument()
+      })
+    })
   })
 })
