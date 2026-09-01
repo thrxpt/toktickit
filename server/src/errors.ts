@@ -21,7 +21,10 @@ export type ErrorCode =
   | "TICKET_NUMBER_CONFLICT";
 
 const failures: Record<ErrorCode, { status: number; message: string }> = {
-  DATABASE_UNAVAILABLE: { status: 500, message: "Unable to reach the database" },
+  DATABASE_UNAVAILABLE: {
+    status: 500,
+    message: "Unable to reach the database",
+  },
   REQUESTER_CONTEXT_MISSING: {
     status: 400,
     message: "Development Requester context header is missing",
@@ -44,7 +47,7 @@ const failures: Record<ErrorCode, { status: number; message: string }> = {
   },
   TICKET_NUMBER_CONFLICT: {
     status: 409,
-    message: "Ticket number conflict. Please try again.",
+    message: "A ticket number conflict occurred. Please contact support.",
   },
 };
 

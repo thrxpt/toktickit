@@ -38,6 +38,7 @@ export function CreateTicket() {
     setLoadingReferences(true)
     setReferenceError(null)
 
+    // Reference endpoints are public and do not require requester context (api-spec.md)
     Promise.all([
       fetch('/api/categories').then((res) => {
         if (!res.ok) throw new Error('Failed to load categories')
