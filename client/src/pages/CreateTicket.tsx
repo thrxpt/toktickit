@@ -1,125 +1,140 @@
-import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
-import { apiFetch } from '../api/client'
-import FormField from '../components/FormField'
-import ReferenceSelect, { type ReferenceOption } from '../components/ReferenceSelect'
-import StateBlock from '../components/StateBlock'
-import SubmitButton from '../components/SubmitButton'
-import { useRequester } from '../context/RequesterContext'
+import { apiFetch } from "../api/client";
+import AttachmentUploader from "../components/AttachmentUploader";
+import FormField from "../components/FormField";
+import ReferenceSelect, {
+  type ReferenceOption,
+} from "../components/ReferenceSelect";
+import StateBlock from "../components/StateBlock";
+import SubmitButton from "../components/SubmitButton";
+import { useRequester } from "../context/RequesterContext";
 
 interface CreatedTicket {
-  id: number
-  ticketNumber: string
-  summary: string
-  description?: string
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  description?: string;
+}
+
+export interface AttachmentOutcome {
+  filename: string;
+  status: "uploaded" | "failed";
+  error?: string;
 }
 
 export function CreateTicket() {
-  const { selectedRequester } = useRequester()
+  const { selectedRequester } = useRequester();
 
-  const [categories, setCategories] = useState<ReferenceOption[]>([])
-  const [relatedSystems, setRelatedSystems] = useState<ReferenceOption[]>([])
-  const [loadingReferences, setLoadingReferences] = useState(true)
-  const [referenceError, setReferenceError] = useState<string | null>(null)
+  const [categories, setCategories] = useState<ReferenceOption[]>([]);
+  const [relatedSystems, setRelatedSystems] = useState<ReferenceOption[]>([]);
+  const [loadingReferences, setLoadingReferences] = useState(true);
+  const [referenceError, setReferenceError] = useState<string | null>(null);
 
-  const [categoryId, setCategoryId] = useState<string>('')
-  const [relatedSystemId, setRelatedSystemId] = useState<string>('')
-  const [requestedPriority, setRequestedPriority] = useState<string>('MEDIUM')
-  const [summary, setSummary] = useState<string>('')
-  const [description, setDescription] = useState<string>('')
+  const [categoryId, setCategoryId] = useState<string>("");
+  const [relatedSystemId, setRelatedSystemId] = useState<string>("");
+  const [requestedPriority, setRequestedPriority] = useState<string>("MEDIUM");
+  const [summary, setSummary] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
 
-  const [errors, setErrors] = useState<Record<string, string | undefined>>({})
-  const [submitting, setSubmitting] = useState(false)
-  const [apiError, setApiError] = useState<string | null>(null)
-  const [createdTicket, setCreatedTicket] = useState<CreatedTicket | null>(null)
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [createdTicket, setCreatedTicket] = useState<CreatedTicket | null>(
+    null,
+  );
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [fileOutcomes, setFileOutcomes] = useState<AttachmentOutcome[]>([]);
 
   const loadReferenceData = () => {
-    setLoadingReferences(true)
-    setReferenceError(null)
+    setLoadingReferences(true);
+    setReferenceError(null);
 
     // Reference endpoints are public and do not require requester context (api-spec.md)
     Promise.all([
-      fetch('/api/categories').then((res) => {
-        if (!res.ok) throw new Error('Failed to load categories')
-        return res.json()
+      fetch("/api/categories").then((res) => {
+        if (!res.ok) throw new Error("Failed to load categories");
+        return res.json();
       }),
-      fetch('/api/related-systems').then((res) => {
-        if (!res.ok) throw new Error('Failed to load related systems')
-        return res.json()
+      fetch("/api/related-systems").then((res) => {
+        if (!res.ok) throw new Error("Failed to load related systems");
+        return res.json();
       }),
     ])
       .then(([fetchedCategories, fetchedRelatedSystems]) => {
-        setCategories(fetchedCategories)
-        setRelatedSystems(fetchedRelatedSystems)
+        setCategories(fetchedCategories);
+        setRelatedSystems(fetchedRelatedSystems);
       })
       .catch(() => {
-        setReferenceError('Unable to load category or related system options.')
+        setReferenceError("Unable to load category or related system options.");
       })
       .finally(() => {
-        setLoadingReferences(false)
-      })
-  }
+        setLoadingReferences(false);
+      });
+  };
 
   useEffect(() => {
-    loadReferenceData()
-  }, [])
+    loadReferenceData();
+  }, []);
 
   const resetForm = () => {
-    setCategoryId('')
-    setRelatedSystemId('')
-    setRequestedPriority('MEDIUM')
-    setSummary('')
-    setDescription('')
-    setErrors({})
-    setApiError(null)
-    setCreatedTicket(null)
-  }
+    setCategoryId("");
+    setRelatedSystemId("");
+    setRequestedPriority("MEDIUM");
+    setSummary("");
+    setDescription("");
+    setSelectedFiles([]);
+    setFileOutcomes([]);
+    setErrors({});
+    setApiError(null);
+    setCreatedTicket(null);
+  };
 
   const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
+    if (e) e.preventDefault();
 
     // Enforce busy state in handler (BR-24, AC-16)
-    if (submitting) return
+    if (submitting) return;
 
-    const fieldErrors: Record<string, string> = {}
+    const fieldErrors: Record<string, string> = {};
 
-    const trimmedSummary = summary.trim()
+    const trimmedSummary = summary.trim();
     if (!trimmedSummary || trimmedSummary.length < 5) {
-      fieldErrors.summary = 'Summary must be at least 5 characters.'
+      fieldErrors.summary = "Summary must be at least 5 characters.";
     } else if (trimmedSummary.length > 150) {
-      fieldErrors.summary = 'Summary must not exceed 150 characters.'
+      fieldErrors.summary = "Summary must not exceed 150 characters.";
     }
 
-    const trimmedDescription = description.trim()
+    const trimmedDescription = description.trim();
     if (!trimmedDescription || trimmedDescription.length < 10) {
-      fieldErrors.description = 'Description must be at least 10 characters.'
+      fieldErrors.description = "Description must be at least 10 characters.";
     } else if (trimmedDescription.length > 4000) {
-      fieldErrors.description = 'Description must not exceed 4000 characters.'
+      fieldErrors.description = "Description must not exceed 4000 characters.";
     }
 
     if (!categoryId) {
-      fieldErrors.categoryId = 'Category is required.'
+      fieldErrors.categoryId = "Category is required.";
     }
 
     if (!relatedSystemId) {
-      fieldErrors.relatedSystemId = 'Related system is required.'
+      fieldErrors.relatedSystemId = "Related system is required.";
     }
 
     if (Object.keys(fieldErrors).length > 0) {
-      setErrors(fieldErrors)
-      return
+      setErrors(fieldErrors);
+      return;
     }
 
-    setErrors({})
-    setApiError(null)
-    setSubmitting(true)
+    setErrors({});
+    setApiError(null);
+    setSubmitting(true);
 
     try {
-      const response = await apiFetch('/api/tickets', {
-        method: 'POST',
+      const response = await apiFetch("/api/tickets", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           summary: trimmedSummary,
@@ -128,32 +143,75 @@ export function CreateTicket() {
           relatedSystemId: Number(relatedSystemId),
           requestedPriority,
         }),
-      })
+      });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
+        const errorData = await response.json().catch(() => null);
         if (errorData?.error?.fields) {
           // Field-level validation errors render beneath fields, not as a top banner
-          setErrors(errorData.error.fields)
+          setErrors(errorData.error.fields);
         } else {
           setApiError(
-            errorData?.error?.message || 'Unable to create ticket. Please try again.',
-          )
+            errorData?.error?.message ||
+              "Unable to create ticket. Please try again.",
+          );
         }
-        return
+        return;
       }
 
-      const ticket: CreatedTicket = await response.json()
-      setCreatedTicket(ticket)
+      const ticket: CreatedTicket = await response.json();
+
+      // Two-phase upload: upload attachments one by one after ticket creation (ADR-0006, BR-41)
+      const outcomes: AttachmentOutcome[] = [];
+      if (selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          const formData = new FormData();
+          formData.append("file", file);
+
+          try {
+            const attachRes = await apiFetch(
+              `/api/tickets/${ticket.id}/attachments`,
+              {
+                method: "POST",
+                body: formData,
+              },
+            );
+
+            if (attachRes.ok) {
+              outcomes.push({ filename: file.name, status: "uploaded" });
+            } else {
+              const errData = await attachRes.json().catch(() => ({}));
+              const errorMsg =
+                errData?.error?.fields?.file ||
+                errData?.error?.message ||
+                "Upload failed";
+              outcomes.push({
+                filename: file.name,
+                status: "failed",
+                error: errorMsg,
+              });
+            }
+          } catch {
+            outcomes.push({
+              filename: file.name,
+              status: "failed",
+              error: "Network error",
+            });
+          }
+        }
+      }
+
+      setFileOutcomes(outcomes);
+      setCreatedTicket(ticket);
     } catch {
-      setApiError('Unable to reach the server. Please try again.')
+      setApiError("Unable to reach the server. Please try again.");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   return (
-    <div className="container py-4" style={{ maxWidth: '1200px' }}>
+    <div className="container py-4" style={{ maxWidth: "1200px" }}>
       <div className="mb-4">
         <h1 className="h2 mb-1">Create Ticket</h1>
         <p className="text-body-secondary mb-0">
@@ -199,8 +257,45 @@ export function CreateTicket() {
               >
                 {createdTicket.ticketNumber}
               </div>
+
+              {/* Per-file Attachment Outcomes (FR-07, BR-41, AC-41) */}
+              {fileOutcomes.length > 0 && (
+                <div className="card text-start bg-light mb-4 p-3 mx-auto w-100">
+                  <h6 className="fw-semibold mb-2">
+                    Attachments ({fileOutcomes.length}):
+                  </h6>
+                  <ul className="list-group list-group-flush bg-transparent">
+                    {fileOutcomes.map((outcome) => (
+                      <li
+                        key={outcome.filename}
+                        className="list-group-item bg-transparent d-flex align-items-center justify-content-between px-0 py-2"
+                      >
+                        <span
+                          className="fw-medium text-truncate me-2"
+                          title={outcome.filename}
+                        >
+                          {outcome.filename}
+                        </span>
+                        {outcome.status === "uploaded" ? (
+                          <span className="badge bg-success-subtle text-success">
+                            Uploaded
+                          </span>
+                        ) : (
+                          <span className="badge bg-danger-subtle text-danger">
+                            Failed: {outcome.error}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <div className="d-flex justify-content-center gap-3">
-                <Link to={`/tickets/${createdTicket.id}`} className="btn btn-primary">
+                <Link
+                  to={`/tickets/${createdTicket.id}`}
+                  className="btn btn-primary"
+                >
                   View Ticket
                 </Link>
                 <button
@@ -237,7 +332,7 @@ export function CreateTicket() {
                     id="requester"
                     label="Requester"
                     readOnly
-                    readOnlyValue={selectedRequester?.name || ''}
+                    readOnlyValue={selectedRequester?.name || ""}
                   />
                 </div>
               </div>
@@ -252,9 +347,12 @@ export function CreateTicket() {
                     options={categories}
                     value={categoryId}
                     onChange={(val) => {
-                      setCategoryId(val)
+                      setCategoryId(val);
                       if (errors.categoryId) {
-                        setErrors((prev) => ({ ...prev, categoryId: undefined }))
+                        setErrors((prev) => ({
+                          ...prev,
+                          categoryId: undefined,
+                        }));
                       }
                     }}
                     placeholder="Select category…"
@@ -270,9 +368,12 @@ export function CreateTicket() {
                     options={relatedSystems}
                     value={relatedSystemId}
                     onChange={(val) => {
-                      setRelatedSystemId(val)
+                      setRelatedSystemId(val);
                       if (errors.relatedSystemId) {
-                        setErrors((prev) => ({ ...prev, relatedSystemId: undefined }))
+                        setErrors((prev) => ({
+                          ...prev,
+                          relatedSystemId: undefined,
+                        }));
                       }
                     }}
                     placeholder="Select related system…"
@@ -296,9 +397,12 @@ export function CreateTicket() {
                       className="form-select"
                       value={requestedPriority}
                       onChange={(e) => {
-                        setRequestedPriority(e.target.value)
+                        setRequestedPriority(e.target.value);
                         if (errors.requestedPriority) {
-                          setErrors((prev) => ({ ...prev, requestedPriority: undefined }))
+                          setErrors((prev) => ({
+                            ...prev,
+                            requestedPriority: undefined,
+                          }));
                         }
                       }}
                     >
@@ -325,9 +429,9 @@ export function CreateTicket() {
                     className="form-control"
                     value={summary}
                     onChange={(e) => {
-                      setSummary(e.target.value)
+                      setSummary(e.target.value);
                       if (errors.summary) {
-                        setErrors((prev) => ({ ...prev, summary: undefined }))
+                        setErrors((prev) => ({ ...prev, summary: undefined }));
                       }
                     }}
                     placeholder="Brief summary of the problem"
@@ -349,9 +453,12 @@ export function CreateTicket() {
                     rows={6}
                     value={description}
                     onChange={(e) => {
-                      setDescription(e.target.value)
+                      setDescription(e.target.value);
                       if (errors.description) {
-                        setErrors((prev) => ({ ...prev, description: undefined }))
+                        setErrors((prev) => ({
+                          ...prev,
+                          description: undefined,
+                        }));
                       }
                     }}
                     placeholder="Detailed description of the problem, steps to reproduce, etc."
@@ -359,7 +466,23 @@ export function CreateTicket() {
                 </FormField>
               </div>
 
-              {/* 5. Error StateBlock above actions on API failure (BR-25, AC-17) */}
+              {/* 5. Attachments — AttachmentUploader (ui-spec.md §5.2, FR-05) */}
+              <div className="mb-4">
+                <label className="form-label fw-semibold">Attachments</label>
+                <AttachmentUploader
+                  activeCount={0}
+                  selectedFiles={selectedFiles}
+                  onFilesSelected={setSelectedFiles}
+                  onRemoveSelectedFile={(index) =>
+                    setSelectedFiles((prev) =>
+                      prev.filter((_, i) => i !== index),
+                    )
+                  }
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* 6. Error StateBlock above actions on API failure (BR-25, AC-17) */}
               {apiError && (
                 <div className="mb-3">
                   <StateBlock
@@ -376,10 +499,7 @@ export function CreateTicket() {
                 <Link to="/tickets" className="btn btn-outline-secondary">
                   Cancel
                 </Link>
-                <SubmitButton
-                  loading={submitting}
-                  busyLabel="Submitting…"
-                >
+                <SubmitButton loading={submitting} busyLabel="Submitting…">
                   Create Ticket
                 </SubmitButton>
               </div>
@@ -388,7 +508,7 @@ export function CreateTicket() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default CreateTicket
+export default CreateTicket;

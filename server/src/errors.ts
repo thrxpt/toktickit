@@ -20,7 +20,11 @@ export type ErrorCode =
   | "INVALID_QUERY_PARAMETER"
   | "VALIDATION_FAILED"
   | "TICKET_NUMBER_CONFLICT"
-  | "TICKET_NOT_FOUND";
+  | "TICKET_NOT_FOUND"
+  | "ATTACHMENT_LIMIT_REACHED"
+  | "FILE_TOO_LARGE"
+  | "UNSUPPORTED_FILE_TYPE"
+  | "ATTACHMENT_NOT_FOUND";
 
 const failures = {
   DATABASE_UNAVAILABLE: {
@@ -58,6 +62,23 @@ const failures = {
   TICKET_NOT_FOUND: {
     status: 404,
     message: "Ticket not found",
+  },
+  ATTACHMENT_LIMIT_REACHED: {
+    status: 409,
+    message: "A ticket may hold at most 5 active attachments.",
+  },
+  FILE_TOO_LARGE: {
+    status: 413,
+    message: "Each file must be 5 MB or smaller.",
+  },
+  UNSUPPORTED_FILE_TYPE: {
+    status: 415,
+    message:
+      "Unsupported file type. Permitted types are JPG, PNG, WEBP, and PDF.",
+  },
+  ATTACHMENT_NOT_FOUND: {
+    status: 404,
+    message: "Attachment not found",
   },
 } satisfies Record<ErrorCode, { status: number; message: string }>;
 

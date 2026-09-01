@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { createTicketSchema } from "../../src/tickets/ticket-schema";
+import { removeAttachmentSchema } from "../../src/attachments/attachment-schema";
 
 describe("UNIT-05 — Ticket schema trimming and bounds (BR-19, BR-20, BR-21)", () => {
   const validPayload = {
     summary: "Laptop battery drains quickly",
-    description: "My laptop battery is draining much faster than usual even when idle.",
+    description:
+      "My laptop battery is draining much faster than usual even when idle.",
     categoryId: 2,
     relatedSystemId: 7,
     requestedPriority: "MEDIUM",
@@ -15,13 +17,16 @@ describe("UNIT-05 — Ticket schema trimming and bounds (BR-19, BR-20, BR-21)", 
     const result = createTicketSchema.safeParse({
       ...validPayload,
       summary: "   Valid summary with padding   ",
-      description: "   Valid description with padding around it for testing.   ",
+      description:
+        "   Valid description with padding around it for testing.   ",
     });
 
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.summary).toBe("Valid summary with padding");
-      expect(result.data.description).toBe("Valid description with padding around it for testing.");
+      expect(result.data.description).toBe(
+        "Valid description with padding around it for testing.",
+      );
       expect(result.data.categoryId).toBe(2);
       expect(result.data.relatedSystemId).toBe(7);
       expect(result.data.requestedPriority).toBe("MEDIUM");
@@ -142,31 +147,120 @@ describe("UNIT-05 — Ticket schema trimming and bounds (BR-19, BR-20, BR-21)", 
 
   describe("classification and priority fields (BR-14, BR-16, BR-17)", () => {
     it("fails when categoryId is missing or not an integer", () => {
-      expect(createTicketSchema.safeParse({ ...validPayload, categoryId: undefined }).success).toBe(false);
-      expect(createTicketSchema.safeParse({ ...validPayload, categoryId: "2" }).success).toBe(false);
-      expect(createTicketSchema.safeParse({ ...validPayload, categoryId: 2.5 }).success).toBe(false);
+      expect(
+        createTicketSchema.safeParse({ ...validPayload, categoryId: undefined })
+          .success,
+      ).toBe(false);
+      expect(
+        createTicketSchema.safeParse({ ...validPayload, categoryId: "2" })
+          .success,
+      ).toBe(false);
+      expect(
+        createTicketSchema.safeParse({ ...validPayload, categoryId: 2.5 })
+          .success,
+      ).toBe(false);
     });
 
     it("fails when relatedSystemId is missing or not an integer", () => {
-      expect(createTicketSchema.safeParse({ ...validPayload, relatedSystemId: undefined }).success).toBe(false);
-      expect(createTicketSchema.safeParse({ ...validPayload, relatedSystemId: "7" }).success).toBe(false);
-      expect(createTicketSchema.safeParse({ ...validPayload, relatedSystemId: 7.2 }).success).toBe(false);
+      expect(
+        createTicketSchema.safeParse({
+          ...validPayload,
+          relatedSystemId: undefined,
+        }).success,
+      ).toBe(false);
+      expect(
+        createTicketSchema.safeParse({ ...validPayload, relatedSystemId: "7" })
+          .success,
+      ).toBe(false);
+      expect(
+        createTicketSchema.safeParse({ ...validPayload, relatedSystemId: 7.2 })
+          .success,
+      ).toBe(false);
     });
 
     it("fails when requestedPriority is omitted (BR-14: no server default)", () => {
-      expect(createTicketSchema.safeParse({ ...validPayload, requestedPriority: undefined }).success).toBe(false);
+      expect(
+        createTicketSchema.safeParse({
+          ...validPayload,
+          requestedPriority: undefined,
+        }).success,
+      ).toBe(false);
     });
 
-    it.each(["LOW", "MEDIUM", "HIGH"] as const)("accepts requestedPriority '%s'", (priority) => {
-      const result = createTicketSchema.safeParse({
-        ...validPayload,
-        requestedPriority: priority,
-      });
-      expect(result.success).toBe(true);
-    });
+    it.each(["LOW", "MEDIUM", "HIGH"] as const)(
+      "accepts requestedPriority '%s'",
+      (priority) => {
+        const result = createTicketSchema.safeParse({
+          ...validPayload,
+          requestedPriority: priority,
+        });
+        expect(result.success).toBe(true);
+      },
+    );
 
     it("fails when requestedPriority is an invalid enum value", () => {
-      expect(createTicketSchema.safeParse({ ...validPayload, requestedPriority: "URGENT" }).success).toBe(false);
+      expect(
+        createTicketSchema.safeParse({
+          ...validPayload,
+          requestedPriority: "URGENT",
+        }).success,
+      ).toBe(false);
     });
+  });
+});
+
+describe("UNIT-06 — Removal-reason schema (BR-19, BR-22, BR-42)", () => {
+  it("accepts a valid reason and returns trimmed string", () => {
+    const result = removeAttachmentSchema.safeParse({
+      reason: "  Uploaded the wrong file by accident  ",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.reason).toBe("Uploaded the wrong file by accident");
+    }
+  });
+
+  it("fails when reason is missing", () => {
+    const result = removeAttachmentSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+
+  it("fails when reason is empty or whitespace-only (BR-19, BR-22)", () => {
+    expect(removeAttachmentSchema.safeParse({ reason: "" }).success).toBe(
+      false,
+    );
+    expect(removeAttachmentSchema.safeParse({ reason: "   " }).success).toBe(
+      false,
+    );
+    expect(removeAttachmentSchema.safeParse({ reason: "\t\n" }).success).toBe(
+      false,
+    );
+  });
+
+  it("accepts reason of exactly 1 character", () => {
+    const result = removeAttachmentSchema.safeParse({ reason: "a" });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.reason).toBe("a");
+    }
+  });
+
+  it("accepts reason of exactly 200 characters", () => {
+    const reason200 = "r".repeat(200);
+    const result = removeAttachmentSchema.safeParse({
+      reason: `  ${reason200}  `,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.reason).toBe(reason200);
+    }
+  });
+
+  it("fails when trimmed reason is 201 characters (BR-22)", () => {
+    const reason201 = "r".repeat(201);
+    const result = removeAttachmentSchema.safeParse({
+      reason: reason201,
+    });
+    expect(result.success).toBe(false);
   });
 });

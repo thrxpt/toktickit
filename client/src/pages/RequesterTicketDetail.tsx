@@ -1,76 +1,80 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 
-import apiFetch from '../api/client'
-import Badge from '../components/Badge'
-import ReadOnlyField from '../components/ReadOnlyField'
-import StateBlock from '../components/StateBlock'
-import { useRequester } from '../context/RequesterContext'
-import type { TicketDetail } from '../types/ticket'
-import { formatDate } from '../utils/date'
+import apiFetch from "../api/client";
+import AttachmentSection from "../components/AttachmentSection";
+import Badge from "../components/Badge";
+import ReadOnlyField from "../components/ReadOnlyField";
+import StateBlock from "../components/StateBlock";
+import { useRequester } from "../context/RequesterContext";
+import type { TicketDetail } from "../types/ticket";
+import { formatDate } from "../utils/date";
 
 export function RequesterTicketDetail() {
-  const { id } = useParams<{ id: string }>()
-  const { selectedRequester } = useRequester()
+  const { id } = useParams<{ id: string }>();
+  const { selectedRequester } = useRequester();
 
-  const [ticket, setTicket] = useState<TicketDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [notFound, setNotFound] = useState(false)
-  const [error, setError] = useState(false)
+  const [ticket, setTicket] = useState<TicketDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState(false);
 
   const fetchTicket = useCallback(() => {
     if (!id || !selectedRequester) {
-      setLoading(false)
-      return
+      setLoading(false);
+      return;
     }
 
-    const controller = new AbortController()
-    setLoading(true)
-    setError(false)
-    setNotFound(false)
+    const controller = new AbortController();
+    setLoading(true);
+    setError(false);
+    setNotFound(false);
 
     apiFetch(`/api/tickets/${id}`, { signal: controller.signal })
       .then(async (res) => {
         if (res.status === 404) {
-          setNotFound(true)
-          setTicket(null)
-          return
+          setNotFound(true);
+          setTicket(null);
+          return;
         }
         if (!res.ok) {
-          throw new Error('Failed to fetch ticket')
+          throw new Error("Failed to fetch ticket");
         }
-        const data: TicketDetail = await res.json()
-        setTicket(data)
+        const data: TicketDetail = await res.json();
+        setTicket(data);
       })
       .catch((err: unknown) => {
-        if (controller.signal.aborted || (err as Error)?.name === 'AbortError') {
-          return
+        if (
+          controller.signal.aborted ||
+          (err as Error)?.name === "AbortError"
+        ) {
+          return;
         }
-        setError(true)
-        setTicket(null)
+        setError(true);
+        setTicket(null);
       })
       .finally(() => {
-        setLoading(false)
-      })
+        setLoading(false);
+      });
 
     return () => {
-      controller.abort()
-    }
-  }, [id, selectedRequester])
+      controller.abort();
+    };
+  }, [id, selectedRequester]);
 
   useEffect(() => {
-    const abort = fetchTicket()
+    const abort = fetchTicket();
     return () => {
-      if (abort) abort()
-    }
-  }, [fetchTicket])
+      if (abort) abort();
+    };
+  }, [fetchTicket]);
 
   if (loading) {
     return (
       <div className="container zen-container py-4">
         <StateBlock variant="loading" message="Loading ticket details…" />
       </div>
-    )
+    );
   }
 
   if (notFound) {
@@ -95,7 +99,8 @@ export function RequesterTicketDetail() {
             </div>
             <h2 className="h3 mb-2">Ticket Not Found</h2>
             <p className="text-body-secondary mb-4">
-              This ticket does not exist or you do not have permission to view it.
+              This ticket does not exist or you do not have permission to view
+              it.
             </p>
             <Link to="/tickets" className="btn btn-primary">
               Back to My Tickets
@@ -103,7 +108,7 @@ export function RequesterTicketDetail() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error || !ticket) {
@@ -115,7 +120,7 @@ export function RequesterTicketDetail() {
           onRetry={fetchTicket}
         />
       </div>
-    )
+    );
   }
 
   return (
@@ -226,8 +231,40 @@ export function RequesterTicketDetail() {
           </div>
         </div>
       </div>
+
+      {/* Attachment Panel (FR-11, FR-12, FR-13, FR-14, BR-35, BR-38, BR-39, ui-spec.md §5.4) */}
+      <AttachmentSection
+        ticketId={ticket.id}
+        attachments={ticket.attachments || { active: [], removed: [] }}
+        onAttachmentAdded={(added) => {
+          setTicket((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              attachments: {
+                ...prev.attachments,
+                active: [...prev.attachments.active, added],
+              },
+            };
+          });
+        }}
+        onAttachmentRemoved={(removed) => {
+          setTicket((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              attachments: {
+                active: prev.attachments.active.filter(
+                  (att) => att.id !== removed.id,
+                ),
+                removed: [...prev.attachments.removed, removed],
+              },
+            };
+          });
+        }}
+      />
     </div>
-  )
+  );
 }
 
-export default RequesterTicketDetail
+export default RequesterTicketDetail;
