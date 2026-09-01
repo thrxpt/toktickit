@@ -24,5 +24,7 @@ export default defineConfig({
     globalSetup: ["./tests/setup/global-setup.ts"],
     env: { DATABASE_URL: databaseUrl },
     fileParallelism: false,
+    maxWorkers: 1,
+    minWorkers: 1,
   },
 });

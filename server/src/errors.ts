@@ -7,8 +7,8 @@
 // internal identifier (BR-43) — which is why callers pass a code from the
 // table below rather than anything derived from the error they caught.
 //
-// The envelope's optional `fields` member arrives with the first route that
-// validates input (Decision D-16); nothing here takes input yet.
+// The envelope's optional `fields` member arrives with routes that
+// validate input (Decision D-16).
 import type { Response } from "express";
 
 export type ErrorCode =
@@ -17,6 +17,7 @@ export type ErrorCode =
   | "REQUESTER_CONTEXT_INVALID"
   | "REQUESTER_INACTIVE"
   | "REQUESTER_ID_IN_BODY"
+  | "INVALID_QUERY_PARAMETER"
   | "VALIDATION_FAILED"
   | "TICKET_NUMBER_CONFLICT";
 
@@ -40,6 +41,10 @@ const failures: Record<ErrorCode, { status: number; message: string }> = {
   REQUESTER_ID_IN_BODY: {
     status: 400,
     message: "requesterId must not be supplied in the request body",
+  },
+  INVALID_QUERY_PARAMETER: {
+    status: 400,
+    message: "One or more query parameters are invalid",
   },
   VALIDATION_FAILED: {
     status: 400,

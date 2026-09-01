@@ -1,12 +1,8 @@
 import express, { type Response } from "express";
 
 import { sendError } from "./errors";
-import {
-  rejectRequesterIdInBody,
-  requireRequesterContext,
-} from "./middleware/requester-context";
 import { prisma } from "./prisma";
-import { handleCreateTicket } from "./tickets/create-ticket";
+import { ticketsRouter } from "./routes/tickets";
 
 // The app is built here and started in index.ts, so Supertest can mount it
 // without binding a port.
@@ -70,15 +66,6 @@ app.get("/api/requesters", async (_req, res) => {
 });
 
 // Ticket routes require requester context (BR-04, ADR-0003).
-const ticketsRouter = express.Router();
-ticketsRouter.use(requireRequesterContext);
-
-ticketsRouter.post("/", rejectRequesterIdInBody, handleCreateTicket);
-
-ticketsRouter.get("/", (_req, res) => {
-  res.status(200).json([]);
-});
-
 app.use("/api/tickets", ticketsRouter);
 
 // Unmatched paths fall through to Express's default 404, which API-00 asserts.

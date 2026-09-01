@@ -5,6 +5,7 @@ import RequesterGuard from './components/RequesterGuard'
 import { RequesterProvider } from './context/RequesterContext'
 import CheckSystem from './pages/CheckSystem'
 import CreateTicket from './pages/CreateTicket'
+import MyTickets from './pages/MyTickets'
 import RequesterSelection from './pages/RequesterSelection'
 
 function PlaceholderPage({
@@ -64,7 +65,7 @@ export function AppRoutes() {
         element={
           <RequesterGuard>
             <AppShell>
-              <PlaceholderPage title="My Tickets" issueNumber={10} />
+              <MyTickets />
             </AppShell>
           </RequesterGuard>
         }
