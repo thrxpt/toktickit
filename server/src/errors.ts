@@ -16,10 +16,15 @@ export type ErrorCode =
   | "REQUESTER_CONTEXT_MISSING"
   | "REQUESTER_CONTEXT_INVALID"
   | "REQUESTER_INACTIVE"
-  | "REQUESTER_ID_IN_BODY";
+  | "REQUESTER_ID_IN_BODY"
+  | "VALIDATION_FAILED"
+  | "TICKET_NUMBER_CONFLICT";
 
 const failures: Record<ErrorCode, { status: number; message: string }> = {
-  DATABASE_UNAVAILABLE: { status: 500, message: "Unable to reach the database" },
+  DATABASE_UNAVAILABLE: {
+    status: 500,
+    message: "Unable to reach the database",
+  },
   REQUESTER_CONTEXT_MISSING: {
     status: 400,
     message: "Development Requester context header is missing",
@@ -36,10 +41,26 @@ const failures: Record<ErrorCode, { status: number; message: string }> = {
     status: 400,
     message: "requesterId must not be supplied in the request body",
   },
+  VALIDATION_FAILED: {
+    status: 400,
+    message: "One or more fields are invalid.",
+  },
+  TICKET_NUMBER_CONFLICT: {
+    status: 409,
+    message: "A ticket number conflict occurred. Please contact support.",
+  },
 };
 
-export function sendError(res: Response, code: ErrorCode): void {
+export function sendError(
+  res: Response,
+  code: ErrorCode,
+  fields?: Record<string, string>,
+): void {
   const { status, message } = failures[code];
 
-  res.status(status).json({ error: { code, message } });
+  if (fields && Object.keys(fields).length > 0) {
+    res.status(status).json({ error: { code, message, fields } });
+  } else {
+    res.status(status).json({ error: { code, message } });
+  }
 }

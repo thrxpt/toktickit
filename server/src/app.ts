@@ -6,6 +6,7 @@ import {
   requireRequesterContext,
 } from "./middleware/requester-context";
 import { prisma } from "./prisma";
+import { handleCreateTicket } from "./tickets/create-ticket";
 
 // The app is built here and started in index.ts, so Supertest can mount it
 // without binding a port.
@@ -69,14 +70,10 @@ app.get("/api/requesters", async (_req, res) => {
 });
 
 // Ticket routes require requester context (BR-04, ADR-0003).
-// Placeholder routes mounted in Issue 8 so that API-07 and API-08 can verify
-// requester context isolation before Issue 9 and 10 implement the full endpoints.
 const ticketsRouter = express.Router();
 ticketsRouter.use(requireRequesterContext);
 
-ticketsRouter.post("/", rejectRequesterIdInBody, (_req, res) => {
-  res.status(201).json({ id: 1 });
-});
+ticketsRouter.post("/", rejectRequesterIdInBody, handleCreateTicket);
 
 ticketsRouter.get("/", (_req, res) => {
   res.status(200).json([]);

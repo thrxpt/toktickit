@@ -23,5 +23,6 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     globalSetup: ["./tests/setup/global-setup.ts"],
     env: { DATABASE_URL: databaseUrl },
+    fileParallelism: false,
   },
 });
