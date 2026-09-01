@@ -7,25 +7,7 @@ import CheckSystem from './pages/CheckSystem'
 import CreateTicket from './pages/CreateTicket'
 import MyTickets from './pages/MyTickets'
 import RequesterSelection from './pages/RequesterSelection'
-
-function PlaceholderPage({
-  title,
-  issueNumber,
-}: {
-  title: string
-  issueNumber: number
-}) {
-  return (
-    <div className="card text-center py-5">
-      <div className="card-body">
-        <h1 className="h3 mb-2">{title}</h1>
-        <p className="text-body-secondary mb-0">
-          Coming in Issue {issueNumber}
-        </p>
-      </div>
-    </div>
-  )
-}
+import RequesterTicketDetail from './pages/RequesterTicketDetail'
 
 function NotFoundPage() {
   return (
@@ -90,7 +72,7 @@ export function AppRoutes() {
                 { label: 'Ticket Details' },
               ]}
             >
-              <PlaceholderPage title="Ticket Details" issueNumber={11} />
+              <RequesterTicketDetail />
             </AppShell>
           </RequesterGuard>
         }

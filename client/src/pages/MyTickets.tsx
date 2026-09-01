@@ -8,23 +8,11 @@ import StateBlock from '../components/StateBlock'
 import Toolbar from '../components/Toolbar'
 import { useRequester } from '../context/RequesterContext'
 import type { TicketListItem, TicketListMeta } from '../types/ticket'
+import { formatDate } from '../utils/date'
 
 interface CategoryOption {
   id: number
   name: string
-}
-
-function formatDate(isoString: string): string {
-  try {
-    const date = new Date(isoString)
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  } catch {
-    return isoString
-  }
 }
 
 export function MyTickets() {

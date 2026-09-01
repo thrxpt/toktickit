@@ -116,6 +116,10 @@ body {
 }
 
 /* Cards & Surfaces */
+.zen-container {
+  max-width: 1200px;
+}
+
 .card,
 .zen-surface {
   background-color: var(--zen-surface);
@@ -197,6 +201,21 @@ body {
   background-color: var(--zen-readonly-bg);
   border-color: var(--zen-border);
   color: var(--zen-text);
+}
+
+.zen-readonly-field {
+  background-color: var(--zen-readonly-bg);
+  border: 1px solid var(--zen-border);
+  color: var(--zen-text);
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.zen-readonly-multiline {
+  min-height: 8rem;
+  display: block;
+  white-space: pre-wrap;
 }
 
 textarea.form-control {

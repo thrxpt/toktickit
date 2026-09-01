@@ -8,6 +8,7 @@ import {
   requireRequesterContext,
 } from "../middleware/requester-context";
 import { prisma } from "../prisma";
+import { serializeAttachments } from "../tickets/attachment-serializer";
 import { handleCreateTicket } from "../tickets/create-ticket";
 
 const listTicketsQuerySchema = z
@@ -195,3 +196,73 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
 
 // POST /api/tickets (FR-05, FR-06, BR-01, BR-02, BR-11, BR-12)
 ticketsRouter.post("/", rejectRequesterIdInBody, handleCreateTicket);
+
+// GET /api/tickets/:id (FR-10, BR-07, BR-08, BR-37, AC-29, AC-30)
+ticketsRouter.get("/:id", async (req: Request, res: Response) => {
+  const requesterId = req.requesterId;
+  if (!requesterId) {
+    sendError(res, "REQUESTER_CONTEXT_MISSING");
+    return;
+  }
+
+  const idResult = z.string().regex(/^[1-9]\d*$/).safeParse(req.params.id);
+  if (!idResult.success) {
+    // Non-numeric or invalid id produces identical 404 without leaking validity (BR-08)
+    sendError(res, "TICKET_NOT_FOUND");
+    return;
+  }
+
+  const id = parseInt(idResult.data, 10);
+
+  try {
+    // One query with ownership in the where clause (BR-07, BR-08, ADR-0005)
+    const ticket = await prisma.ticket.findFirst({
+      where: {
+        id,
+        requesterId,
+      },
+      include: {
+        category: { select: { id: true, name: true } },
+        relatedSystem: { select: { id: true, name: true } },
+        requester: { select: { id: true, name: true } },
+      },
+    });
+
+    if (!ticket) {
+      // Missing and unowned tickets are indistinguishable to caller (BR-08),
+      // distinguished only in server logs (api-spec.md).
+      const existsUnowned = await prisma.ticket.findUnique({
+        where: { id },
+        select: { requesterId: true },
+      });
+
+      if (existsUnowned) {
+        console.warn(
+          `[TICKET] Ownership refusal: ticket ${id} belongs to requester ${existsUnowned.requesterId}, accessed by ${req.requesterId}`,
+        );
+      } else {
+        console.info(`[TICKET] Ticket ${id} not found`);
+      }
+
+      sendError(res, "TICKET_NOT_FOUND");
+      return;
+    }
+
+    res.status(200).json({
+      id: ticket.id,
+      ticketNumber: ticket.ticketNumber,
+      summary: ticket.summary,
+      description: ticket.description,
+      requestedPriority: ticket.requestedPriority,
+      status: ticket.status,
+      category: { id: ticket.category.id, name: ticket.category.name },
+      relatedSystem: { id: ticket.relatedSystem.id, name: ticket.relatedSystem.name },
+      requester: { id: ticket.requester.id, name: ticket.requester.name },
+      createdAt: ticket.createdAt.toISOString(),
+      updatedAt: ticket.updatedAt.toISOString(),
+      attachments: serializeAttachments(),
+    });
+  } catch {
+    sendError(res, "DATABASE_UNAVAILABLE");
+  }
+});
