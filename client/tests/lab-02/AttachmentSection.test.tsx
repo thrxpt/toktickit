@@ -218,4 +218,44 @@ describe("UI-21 — Oversized file, invalid type, and attachment limit reached (
       expect(screen.getByText(/unsupported file type/i)).toBeInTheDocument();
     });
   });
+
+  it("opens image preview modal and closes on Escape key", async () => {
+    // Mock image blob response for preview
+    const mockBlob = new Blob(["fake-image-bytes"], { type: "image/png" });
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: async () => mockBlob,
+    });
+
+    render(
+      <AttachmentSection
+        ticketId={42}
+        attachments={{
+          active: [mockActiveAttachment],
+          removed: [],
+        }}
+      />,
+    );
+
+    const previewBtn = screen.getByRole("button", { name: /preview/i });
+    fireEvent.click(previewBtn);
+
+    // Modal opens
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: "active-screenshot.png" }),
+      ).toBeInTheDocument();
+    });
+
+    // Press Escape to close
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    // Modal closes
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("heading", { name: "active-screenshot.png" }),
+      ).not.toBeInTheDocument();
+    });
+  });
 });

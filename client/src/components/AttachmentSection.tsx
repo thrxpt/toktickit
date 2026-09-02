@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import apiFetch from "../api/client";
 import ConfirmDialog from "./ConfirmDialog";
@@ -45,6 +45,75 @@ export function AttachmentSection({
 
   const active = attachments.active;
   const removed = attachments.removed;
+
+  const previewDialogRef = useRef<HTMLDivElement | null>(null);
+  const previewPreviousActiveElement = useRef<HTMLElement | null>(null);
+
+  // Focus trap, Escape key handling, and return focus for Image Preview Modal (ui-spec.md §3)
+  useEffect(() => {
+    if (previewAttachment) {
+      previewPreviousActiveElement.current =
+        (document.activeElement as HTMLElement) ?? null;
+
+      const timer = setTimeout(() => {
+        if (previewDialogRef.current) {
+          const focusable = previewDialogRef.current.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          );
+          if (focusable.length > 0) {
+            focusable[0].focus();
+          } else {
+            previewDialogRef.current.focus();
+          }
+        }
+      }, 10);
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          handleClosePreview();
+          return;
+        }
+
+        if (e.key === "Tab" && previewDialogRef.current) {
+          const focusable = Array.from(
+            previewDialogRef.current.querySelectorAll<HTMLElement>(
+              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+            ),
+          ).filter((el) => !el.hasAttribute("disabled"));
+
+          if (focusable.length === 0) {
+            e.preventDefault();
+            return;
+          }
+
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+
+          if (e.shiftKey) {
+            if (document.activeElement === first) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else {
+            if (document.activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }
+      };
+
+      document.addEventListener("keydown", handleKeyDown);
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener("keydown", handleKeyDown);
+      };
+    } else if (previewPreviousActiveElement.current) {
+      previewPreviousActiveElement.current.focus();
+      previewPreviousActiveElement.current = null;
+    }
+  }, [previewAttachment]);
 
   // Clean up preview object URL on close or unmount
   useEffect(() => {
@@ -422,6 +491,7 @@ export function AttachmentSection({
             role="dialog"
             aria-modal="true"
             aria-labelledby="preview-modal-title"
+            ref={previewDialogRef}
           >
             <div className="modal-dialog modal-dialog-centered modal-lg">
               <div className="modal-content zen-surface">

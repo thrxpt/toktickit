@@ -39,9 +39,16 @@ export async function writeAttachmentFile(
 /**
  * Checks if an attachment file exists on disk.
  */
-export function attachmentFileExists(storageKey: string): boolean {
- const filePath = getStorageFilePath(storageKey);
- return fs.existsSync(filePath);
+export async function attachmentFileExists(
+ storageKey: string,
+): Promise<boolean> {
+ try {
+  const filePath = getStorageFilePath(storageKey);
+  await fs.promises.access(filePath, fs.constants.F_OK);
+  return true;
+ } catch {
+  return false;
+ }
 }
 
 /**
@@ -73,9 +80,9 @@ export function formatContentDisposition(
 
  const dispositionType = isImage ? "inline" : "attachment";
 
- // Strip control chars, quotes, backslashes for standard filename="..."
+ // Strip control chars, quotes, semicolons, backslashes for standard filename="..."
  const asciiFallback = originalFilename
-  .replace(/[\x00-\x1F\x7F"\\/]/g, "_")
+  .replace(/[\x00-\x1F\x7F";\\/]/g, "_")
   .replace(/[^\x20-\x7E]/g, "_");
 
  const encodedFilename = encodeURIComponent(originalFilename).replace(

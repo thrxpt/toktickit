@@ -58,17 +58,14 @@ export interface AttachmentRecord {
   removalReason?: string | null;
 }
 
-function formatIsoString(
-  date: Date | string | null | undefined,
-  fallback = new Date().toISOString(),
-): string {
+function formatIsoString(date: Date | string | null | undefined): string {
   if (date instanceof Date) {
     return date.toISOString();
   }
   if (date) {
     return new Date(date).toISOString();
   }
-  return fallback;
+  throw new Error("Date value is required for ISO serialization");
 }
 
 export function serializeActiveAttachment(
@@ -91,6 +88,17 @@ export function serializeActiveAttachment(
 export function serializeRemovedAttachment(
   attachment: AttachmentRecord,
 ): RemovedAttachmentDto {
+  if (!attachment.removedBy) {
+    throw new Error(
+      `Attachment ${attachment.id} is marked removed but removedBy is not populated`,
+    );
+  }
+  if (!attachment.removedAt) {
+    throw new Error(
+      `Attachment ${attachment.id} is marked removed but removedAt is not populated`,
+    );
+  }
+
   return {
     id: attachment.id,
     originalFilename: attachment.originalFilename,
@@ -103,8 +111,8 @@ export function serializeRemovedAttachment(
     createdAt: formatIsoString(attachment.createdAt),
     removedAt: formatIsoString(attachment.removedAt),
     removedBy: {
-      id: attachment.removedBy?.id ?? attachment.uploadedBy.id,
-      name: attachment.removedBy?.name ?? attachment.uploadedBy.name,
+      id: attachment.removedBy.id,
+      name: attachment.removedBy.name,
     },
     removalReason: attachment.removalReason ?? "",
   };

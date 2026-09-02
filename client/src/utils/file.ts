@@ -32,11 +32,12 @@ export function isPermittedFileType(file: File): boolean {
 export function isImageAttachment(mimeType: string, filename: string): boolean {
   const mime = mimeType.toLowerCase();
   const name = filename.toLowerCase();
-  return (
-    mime.startsWith("image/") ||
+  const isImageMime =
+    mime === "image/jpeg" || mime === "image/png" || mime === "image/webp";
+  const isImageExt =
     name.endsWith(".png") ||
     name.endsWith(".jpg") ||
     name.endsWith(".jpeg") ||
-    name.endsWith(".webp")
-  );
+    name.endsWith(".webp");
+  return isImageMime || (!mime && isImageExt);
 }

@@ -276,7 +276,8 @@ attachmentsRouter.get("/:id/content", async (req: Request, res: Response) => {
       return;
     }
 
-    if (!attachmentFileExists(attachment.storageKey)) {
+    const fileExists = await attachmentFileExists(attachment.storageKey);
+    if (!fileExists) {
       sendError(res, "ATTACHMENT_NOT_FOUND");
       return;
     }
@@ -290,6 +291,7 @@ attachmentsRouter.get("/:id/content", async (req: Request, res: Response) => {
     res.setHeader("Content-Type", attachment.mimeType);
     res.setHeader("Content-Length", attachment.sizeBytes);
     res.setHeader("Content-Disposition", disposition);
+    res.setHeader("X-Content-Type-Options", "nosniff");
 
     const stream = fs.createReadStream(filePath);
     stream.on("error", () => {

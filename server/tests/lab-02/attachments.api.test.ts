@@ -445,6 +445,7 @@ describe("API-25 — Download an active Attachment (AC-35)", () => {
 
     expect(imageDownload.status).toBe(200);
     expect(imageDownload.headers["content-type"]).toBe("image/png");
+    expect(imageDownload.headers["x-content-type-options"]).toBe("nosniff");
     expect(imageDownload.headers["content-length"]).toBe(
       String(PNG_HEADER.length),
     );
@@ -454,11 +455,11 @@ describe("API-25 — Download an active Attachment (AC-35)", () => {
     );
     expect(imageDownload.body).toEqual(PNG_HEADER);
 
-    // Upload PDF
+    // Upload PDF with semicolon in filename to verify header sanitization
     const pdfUpload = await request(app)
       .post(`/api/tickets/${ticketA.id}/attachments`)
       .set("X-Requester-Id", String(requesterA.id))
-      .attach("file", PDF_HEADER, "report.pdf");
+      .attach("file", PDF_HEADER, "report;version=2.pdf");
 
     const pdfId = pdfUpload.body.id;
 
@@ -469,12 +470,14 @@ describe("API-25 — Download an active Attachment (AC-35)", () => {
 
     expect(pdfDownload.status).toBe(200);
     expect(pdfDownload.headers["content-type"]).toBe("application/pdf");
+    expect(pdfDownload.headers["x-content-type-options"]).toBe("nosniff");
     expect(pdfDownload.headers["content-length"]).toBe(
       String(PDF_HEADER.length),
     );
     expect(pdfDownload.headers["content-disposition"]).toContain("attachment;");
+    // Semicolon should be replaced with underscore in ASCII fallback
     expect(pdfDownload.headers["content-disposition"]).toContain(
-      'filename="report.pdf"',
+      'filename="report_version=2.pdf"',
     );
     expect(pdfDownload.body).toEqual(PDF_HEADER);
   });
