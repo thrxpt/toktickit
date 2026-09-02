@@ -57,9 +57,10 @@ export function AttachmentSection({
 
       const timer = setTimeout(() => {
         if (previewDialogRef.current) {
-          const focusable = previewDialogRef.current.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-          );
+          const focusable =
+            previewDialogRef.current.querySelectorAll<HTMLElement>(
+              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+            );
           if (focusable.length > 0) {
             focusable[0].focus();
           } else {
