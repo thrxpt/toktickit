@@ -2,6 +2,7 @@ import express, { type Response } from "express";
 
 import { sendError } from "./errors";
 import { prisma } from "./prisma";
+import { attachmentsRouter } from "./routes/attachments";
 import { ticketsRouter } from "./routes/tickets";
 
 // The app is built here and started in index.ts, so Supertest can mount it
@@ -23,7 +24,10 @@ app.get("/api/health", (_req, res) => {
 // share live here: an empty array is a valid 200 that drives the client's
 // empty state (AC-07), never an error, and an unreachable database is the one
 // failure any of them can have.
-async function sendReferenceData<T>(res: Response, read: () => Promise<T[]>): Promise<void> {
+async function sendReferenceData<T>(
+  res: Response,
+  read: () => Promise<T[]>,
+): Promise<void> {
   try {
     res.status(200).json(await read());
   } catch {
@@ -67,6 +71,7 @@ app.get("/api/requesters", async (_req, res) => {
 
 // Ticket routes require requester context (BR-04, ADR-0003).
 app.use("/api/tickets", ticketsRouter);
+app.use("/api/attachments", attachmentsRouter);
 
 // Unmatched paths fall through to Express's default 404, which API-00 asserts.
 

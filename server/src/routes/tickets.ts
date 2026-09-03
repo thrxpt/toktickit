@@ -10,6 +10,10 @@ import {
 import { prisma } from "../prisma";
 import { serializeAttachments } from "../tickets/attachment-serializer";
 import { handleCreateTicket } from "../tickets/create-ticket";
+import {
+  getTicketAttachments,
+  postTicketAttachmentHandlers,
+} from "./attachments";
 
 const listTicketsQuerySchema = z
   .object({
@@ -23,7 +27,9 @@ const listTicketsQuerySchema = z
       .optional(),
     categoryId: z
       .string()
-      .regex(/^[1-9]\d*$/, { message: "Category ID must be a positive integer" })
+      .regex(/^[1-9]\d*$/, {
+        message: "Category ID must be a positive integer",
+      })
       .transform((val) => parseInt(val, 10))
       .optional(),
     requestedPriority: z
@@ -90,7 +96,11 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
   const parseResult = listTicketsQuerySchema.safeParse(req.query);
 
   if (!parseResult.success) {
-    sendError(res, "INVALID_QUERY_PARAMETER", formatZodErrors(parseResult.error));
+    sendError(
+      res,
+      "INVALID_QUERY_PARAMETER",
+      formatZodErrors(parseResult.error),
+    );
     return;
   }
 
@@ -197,6 +207,12 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
 // POST /api/tickets (FR-05, FR-06, BR-01, BR-02, BR-11, BR-12)
 ticketsRouter.post("/", rejectRequesterIdInBody, handleCreateTicket);
 
+// GET /api/tickets/:ticketId/attachments (FR-11, BR-07, BR-35, BR-39)
+ticketsRouter.get("/:ticketId/attachments", getTicketAttachments);
+
+// POST /api/tickets/:ticketId/attachments (FR-12, BR-32, BR-33, BR-34, BR-35, BR-37, BR-40, BR-41)
+ticketsRouter.post("/:ticketId/attachments", ...postTicketAttachmentHandlers);
+
 // GET /api/tickets/:id (FR-10, BR-07, BR-08, BR-37, AC-29, AC-30)
 ticketsRouter.get("/:id", async (req: Request, res: Response) => {
   const requesterId = req.requesterId;
@@ -205,7 +221,10 @@ ticketsRouter.get("/:id", async (req: Request, res: Response) => {
     return;
   }
 
-  const idResult = z.string().regex(/^[1-9]\d*$/).safeParse(req.params.id);
+  const idResult = z
+    .string()
+    .regex(/^[1-9]\d*$/)
+    .safeParse(req.params.id);
   if (!idResult.success) {
     // Non-numeric or invalid id produces identical 404 without leaking validity (BR-08)
     sendError(res, "TICKET_NOT_FOUND");
@@ -225,6 +244,13 @@ ticketsRouter.get("/:id", async (req: Request, res: Response) => {
         category: { select: { id: true, name: true } },
         relatedSystem: { select: { id: true, name: true } },
         requester: { select: { id: true, name: true } },
+        attachments: {
+          orderBy: { createdAt: "asc" },
+          include: {
+            uploadedBy: { select: { id: true, name: true } },
+            removedBy: { select: { id: true, name: true } },
+          },
+        },
       },
     });
 
@@ -256,11 +282,14 @@ ticketsRouter.get("/:id", async (req: Request, res: Response) => {
       requestedPriority: ticket.requestedPriority,
       status: ticket.status,
       category: { id: ticket.category.id, name: ticket.category.name },
-      relatedSystem: { id: ticket.relatedSystem.id, name: ticket.relatedSystem.name },
+      relatedSystem: {
+        id: ticket.relatedSystem.id,
+        name: ticket.relatedSystem.name,
+      },
       requester: { id: ticket.requester.id, name: ticket.requester.name },
       createdAt: ticket.createdAt.toISOString(),
       updatedAt: ticket.updatedAt.toISOString(),
-      attachments: serializeAttachments(),
+      attachments: serializeAttachments(ticket.attachments),
     });
   } catch {
     sendError(res, "DATABASE_UNAVAILABLE");
