@@ -253,8 +253,12 @@ textarea.form-control {
 @media (max-width: 767.98px) {
   .btn,
   .nav-link,
+  .navbar-toggler,
   .form-control,
   .form-select {
     min-height: 44px;
+  }
+  .navbar-toggler {
+    min-width: 44px;
   }
 }

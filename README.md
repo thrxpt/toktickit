@@ -1,20 +1,20 @@
 # TokTickIT
 
-An IT service desk app, built one vertical slice per lab. Lab 1 proves the stack
+An IT service desk app, built one vertical slice per lab. Lab 1 proved the stack
 end to end: a React page calls an Express REST API, which reads PostgreSQL
-through Prisma.
+through Prisma. Lab 2 builds the Requester-facing ticketing MVP on top of it.
 
-- **Contract:** [`docs/lab-01/contract.md`](docs/lab-01/contract.md)
+- **Contract:** [`docs/lab-02/specification.md`](docs/lab-02/specification.md), [`docs/lab-02/api-spec.md`](docs/lab-02/api-spec.md), [`docs/lab-02/ui-spec.md`](docs/lab-02/ui-spec.md), [`docs/lab-02/tests.md`](docs/lab-02/tests.md)
 - **Glossary:** [`CONTEXT.md`](CONTEXT.md)
 - **Decisions:** [`docs/adr/`](docs/adr/)
 
-| Layer    | Choice                                |
-| -------- | ------------------------------------- |
-| Frontend | React + TypeScript + Vite + Bootstrap |
-| Backend  | Node.js + Express + TypeScript        |
-| Data     | PostgreSQL + Prisma                   |
-| API      | REST                                  |
-| Tests    | Vitest (UI) + Supertest (API)         |
+| Layer    | Choice                                               |
+| -------- | ---------------------------------------------------- |
+| Frontend | React + TypeScript + Vite + Bootstrap + React Router |
+| Backend  | Node.js + Express + TypeScript + Multer + Zod        |
+| Data     | PostgreSQL + Prisma                                  |
+| API      | REST                                                 |
+| Tests    | Vitest (UI) + Supertest (API) + Playwright (E2E)      |
 
 ## Requirements
 
@@ -30,7 +30,7 @@ git clone https://github.com/thrxpt/toktickit.git
 cd toktickit
 
 corepack enable                      # provides pnpm
-pnpm install                         # installs both packages, generates Prisma Client
+pnpm install                         # installs workspace packages, generates Prisma Client
 
 cp server/.env.example server/.env   # values work as-is for local development
 docker compose up -d                 # starts PostgreSQL on :5432
@@ -49,15 +49,21 @@ configure the Postgres container, and Prisma and Express read `DATABASE_URL` and
 
 ### The test database
 
-`pnpm test` never touches the database above. API tests run against
+`pnpm test` never touches the development database above. API tests run against
 `toktickit_test`, a second database inside the same Postgres container, which
-the test run creates, migrates, and seeds by itself — so there is no step to
+the test run creates, migrates, and seeds by itself — so there is no manual step to
 remember here, and a test run cannot destroy development data
 ([why](docs/lab-02/specification.md), Decision D-14).
 
 Credentials come from `server/.env`. Copy `server/.env.test.example` to
-`server/.env.test` only if the test database needs different ones; that file is
+`server/.env.test` only if the test database needs different credentials; that file is
 git-ignored exactly like `server/.env`.
+
+### Uploads directory
+
+Attachment file bytes are stored on disk in git-ignored `server/uploads/` under UUID
+storage keys ([why](docs/adr/0004-attachment-storage.md)). The directory is created
+automatically on startup if absent.
 
 ## Commands
 
@@ -66,7 +72,8 @@ Run from the repo root; each fans out to the workspace that owns it.
 | Command          | Does                                                    |
 | ---------------- | ------------------------------------------------------- |
 | `pnpm dev`       | Vite dev server and the Express API, together           |
-| `pnpm test`      | Vitest (client) and Supertest-on-Vitest (server)        |
+| `pnpm test`      | Unit, API, UI component, and UI style tests (all packages) |
+| `pnpm test:e2e`  | Playwright: responsive, E2E, and visual evidence capture |
 | `pnpm build`     | Type-checks and builds both packages                    |
 | `pnpm db:up`     | Starts PostgreSQL (`docker compose up -d`)              |
 | `pnpm db:down`   | Stops it                                                |
@@ -74,31 +81,31 @@ Run from the repo root; each fans out to the workspace that owns it.
 | `pnpm db:migrate`| Applies pending Prisma migrations (`migrate deploy`)    |
 | `pnpm db:seed`   | Upserts Categories, Related Systems, Requesters (idempotent) |
 
-Per-package commands take a filter, e.g. `pnpm --filter server dev`.
+Per-package commands take a filter, e.g. `pnpm --filter server dev` or `pnpm --filter client test`.
 
 ## Layout
 
 ```text
-client/                 React + Vite
-  src/                  App shell (Bootstrap)
-  tests/lab-01/         UI-*.test.tsx    (Vitest)
-server/
-  prisma/               schema.prisma, migrations/, seed.ts
-  src/                  app.ts (Express app) + index.ts (listener)
+client/                 React + Vite + Bootstrap
+  src/                  App shell, pages, components, context, theme
+  tests/lab-01/         UI-*.test.tsx
+  tests/lab-02/         *.test.tsx + style/*.test.tsx (Vitest)
+server/                 Node.js + Express + Prisma
+  prisma/               schema.prisma, migrations/, seed.ts, seed-data.ts
+  src/                  app.ts, routes/, tickets/, attachments/
   scripts/db-check.ts   database reachability probe
-  tests/lab-01/         API-*.test.ts    (Supertest)
-docs/lab-01/            contract.md, tests.md, reviewer.md, ai_use.md
+  tests/lab-01/         API-*.test.ts
+  tests/lab-02/         *.api.test.ts, *.unit.test.ts
+  tests/setup/          creates, migrates, and seeds toktickit_test
+  uploads/              attachment bytes, git-ignored (ADR-0004)
+e2e/lab-02/             Playwright specs (Chromium)
+artifacts/lab-02/       committed screenshots generated by Playwright
+docs/lab-02/            specification.md, api-spec.md, ui-spec.md, tests.md, reviewer.md, ai-use.md
 docs/adr/               architecture decision records
+CONTEXT.md              glossary — ubiquitous language
 compose.yaml            PostgreSQL 17
 ```
 
 The client fetches relative `/api/...` URLs, which the Vite dev server proxies
 to Express — so there is no CORS middleware and no API base URL to configure
 ([why](docs/adr/0002-vite-proxy-not-cors.md)).
-
-## Lab 1 status
-
-Issue 1 ships the foundation: both apps start, Bootstrap styles the page,
-PostgreSQL is reachable through Prisma, and both test runners execute from
-package scripts. The `[Check System]` button renders disabled until Issue 2
-wires it to `GET /api/health`; the request categories follow in Issues 3 and 4.
