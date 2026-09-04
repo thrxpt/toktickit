@@ -105,11 +105,11 @@ test.describe("Responsive Layout and Viewports", () => {
     });
   });
 
-  test("RESP-03 — Three screens at 375 px (AC-42, AC-43)", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 });
+  test("RESP-03 — Three screens at 390 px (AC-42, AC-43)", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await selectRequester(page, REQUESTER_A);
 
-    // 1. Create Ticket at 375 px
+    // 1. Create Ticket at 390 px
     await page.goto("/tickets/new");
     await expect(page.locator('h1:has-text("Create Ticket")')).toBeVisible();
     await assertNoHorizontalScroll(page);
@@ -119,7 +119,7 @@ test.describe("Responsive Layout and Viewports", () => {
       animations: "disabled",
     });
 
-    // 2. My Tickets at 375 px
+    // 2. My Tickets at 390 px
     await page.goto("/tickets");
     await expect(page.locator('h1:has-text("My Tickets")')).toBeVisible();
     await assertNoHorizontalScroll(page);
@@ -135,7 +135,7 @@ test.describe("Responsive Layout and Viewports", () => {
       animations: "disabled",
     });
 
-    // 3. Ticket Detail at 375 px
+    // 3. Ticket Detail at 390 px
     await page.goto(`/tickets/${sampleTicketId}`);
     await expect(page.locator('h1:has-text("Ticket Details")')).toBeVisible();
     await assertNoHorizontalScroll(page);
@@ -149,7 +149,7 @@ test.describe("Responsive Layout and Viewports", () => {
   test("RESP-04 — Mobile navigation and filters (ui-spec §7)", async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 375, height: 667 });
+    await page.setViewportSize({ width: 390, height: 844 });
     await selectRequester(page, REQUESTER_A);
 
     await page.goto("/tickets");

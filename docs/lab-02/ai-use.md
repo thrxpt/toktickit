@@ -1,6 +1,6 @@
 # Lab 2 AI Use
 
-**LLM used:** Claude Opus 5 and Claude 3.7 Sonnet, via Claude Code CLI and Pi agent harness
+**LLM used:** Claude Opus 5 and Claude 5 Sonnet, via Claude Code CLI and Gemini 3.7 flash and 3.8 flash via Pi agent harness
 
 The specification agent's job in this sprint was to interrogate the handout rather than
 paraphrase it: to find the decisions it deliberately left open, put each one to the student
@@ -21,7 +21,7 @@ with a recommendation and a rejected alternative, and only then write
 | 7 | `this request changes are legal or not [PR #21 review]` -> `lets fix` | Evaluated peer review findings against contract: formalized helper component tests into `tests.md` rows `UI-22`..`UI-25` (updating planned count from 72 to 76), added explicit `:focus-visible` ring on header navigation for AC-45, and refined read-only `FormField` semantics. |
 | 8 | `this request change comment is correct or not? [PR #23 review]` | Evaluated peer review on Create Ticket: disproved reviewer's claim that `RESTART IDENTITY` in truncate resets unowned sequence `ticket_number_seq`, while validating and fixing the contradictory retry wording on `TICKET_NUMBER_CONFLICT` (BR-43). |
 | 9 | `/implement #18` followed by `/code-review` (Issue 12: attachments) | Implemented buffer magic-byte validation (JPEG, PNG, WEBP, PDF), UUID storage keys, and soft removal. Code review sub-agent caught that browser native `<a>` and `<img>` tags dropped `X-Requester-Id`, prompting refactor to `apiFetch` with object URLs and inline download retry. |
-| 10 | `/implement #19` (Issue 13: E2E, visual evidence, release) | Configured Playwright with Chromium, implemented 10 E2E and responsive tests across 1440, 800, and 375 px viewports, captured all 25 committed screenshots matching `ui-spec.md` §9, verified seed idempotency (`BR-44`), and filled `tests.md` §6 with all 76 passing tests. |
+| 10 | `/implement #19` (Issue 13: E2E, visual evidence, release) | Configured Playwright with Chromium, implemented 10 E2E and responsive tests across 1440, 800, and 390 px viewports, captured all 25 committed screenshots matching `ui-spec.md` §9, verified seed idempotency (`BR-44`), and filled `tests.md` §6 with all 76 passing tests. |
 
 ## My Reflection
 
