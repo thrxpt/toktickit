@@ -12,7 +12,7 @@ its real file path.
 Six levels, each answering a question the level below cannot:
 
 | Level | Prefix | Answers | Tooling |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Unit | `UNIT-` | Is the isolated logic correct — number format, magic bytes, validation schema? | Vitest |
 | API | `API-` | Does the HTTP contract hold, including ownership and every error case? | Vitest + Supertest |
 | UI component | `UI-` | Does the screen behave — states, validation, calls made and not made? | Vitest + Testing Library |
@@ -46,7 +46,7 @@ handout's own numbering.
 ### Unit — `server/tests/lab-02/*.unit.test.ts`
 
 | Test ID | Requirement / AC | What It Tests | Expected Result | Automated Test File | Final |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | UNIT-01 | BR-11, AC-10 | Ticket Number formatting from a counter value | `42` → `TKT-2026-000042`; matches `TKT-\d{4}-\d{6}` | `ticket-number.unit.test.ts` | Pass |
 | UNIT-02 | BR-11 | Counter above six digits | Does not truncate; format documented and stable | `ticket-number.unit.test.ts` | Pass |
 | UNIT-03 | BR-33 | Magic-byte detection for each permitted type | JPEG/PNG/WEBP/PDF each identified from bytes alone | `file-type.unit.test.ts` | Pass |
@@ -57,7 +57,7 @@ handout's own numbering.
 ### API — `server/tests/lab-02/*.api.test.ts`
 
 | Test ID | Requirement / AC | What It Tests | Expected Result | Automated Test File | Final |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | API-01 | AC-08, AC-09 | Create a valid Ticket | 201; one row saved; `status` `NEW`; `requesterId` from the header | `create-ticket.api.test.ts` | Pass |
 | API-02 | AC-10 | Two successive creations | Both Ticket Numbers well-formed and distinct | `create-ticket.api.test.ts` | Pass |
 | API-03 | AC-13, BR-20 | Summary over 150 chars | 400 `VALIDATION_FAILED`, `fields.summary` present | `create-ticket.api.test.ts` | Pass |
@@ -90,7 +90,7 @@ handout's own numbering.
 ### UI component — `client/tests/lab-02/*.test.tsx`
 
 | Test ID | Requirement / AC | What It Tests | Expected Result | Automated Test File | Final |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | UI-01 | AC-01 | Selector lists active Requesters | Four options; inactive name absent | `RequesterSelection.test.tsx` | Pass |
 | UI-02 | AC-06 | Requester API failure | Error state with retry; no dropdown of stale values | `RequesterSelection.test.tsx` | Pass |
 | UI-03 | AC-07 | No active Requesters | Empty state naming the seed command | `RequesterSelection.test.tsx` | Pass |
@@ -120,7 +120,7 @@ handout's own numbering.
 ### UI style — `client/tests/lab-02/style/*.test.tsx`
 
 | Test ID | Requirement / AC | What It Tests | Expected Result | Automated Test File | Final |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | STYLE-01 | ui-spec §3 | Required-field marking | Asterisk present **and** validation message present — asterisk never substitutes | `form-field.style.test.tsx` | Pass |
 | STYLE-02 | ui-spec §3 | Validation message placement | Message is a sibling of its own field, `aria-describedby` linked, not a top banner | `form-field.style.test.tsx` | Pass |
 | STYLE-03 | ui-spec §3 | Read-only vs editable | Read-only fields carry the read-only class and are not focusable inputs | `form-field.style.test.tsx` | Pass |
@@ -132,7 +132,7 @@ handout's own numbering.
 ### Responsive and E2E — `e2e/lab-02/*.spec.ts`
 
 | Test ID | Requirement / AC | What It Tests | Expected Result | Automated Test File | Final |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | RESP-01 | AC-42 | Three screens at 1440 px | No horizontal page scroll; no clipped or overlapping elements; screenshots written | `responsive.spec.ts` | Pass |
 | RESP-02 | AC-42 | Three screens at 800 px | Two-column layout holds; Summary and Description keep width | `responsive.spec.ts` | Pass |
 | RESP-03 | AC-42, AC-43 | Three screens at 375 px | My Tickets renders cards, not a scrolling table; no horizontal page scroll | `responsive.spec.ts` | Pass |
@@ -147,7 +147,7 @@ handout's own numbering.
 ## 3. Acceptance-Criterion Traceability
 
 | AC | Covering tests | AC | Covering tests |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | AC-01 | API-26, UI-01 | AC-24 | API-12 |
 | AC-02 | UI-04 | AC-25 | API-13 |
 | AC-03 | UI-05 | AC-26 | API-15 |
@@ -205,7 +205,7 @@ be able to turn the Definition-of-Done test run red.
 Filled in on the release PR from `lab2-staging` to `main`, from a run against `main`.
 
 | Level | Planned | Passing | Skipped |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Unit | 6 | 6 | 0 |
 | API | 28 | 28 | 0 |
 | UI | 25 | 25 | 0 |

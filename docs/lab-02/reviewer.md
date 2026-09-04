@@ -9,7 +9,7 @@ No commit is made directly on either integration branch.
 ## Pull Requests
 
 | Issue | Branch | PR | Reviewer | Comments given | Comments received | Response | Approved |
-|---|---|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- | --- | --- |
 | 5 | `feature/5-lab2-contract` | [#10](https://github.com/thrxpt/toktickit/pull/10) | `@fahsai-02` | 0 | 2 | Fixed planned count (71) and FR-09 BR citation (BR-28) | Yes |
 | 6 | `feature/6-data-model-seed` | [#20](https://github.com/thrxpt/toktickit/pull/20) | `@fahsai-02` | 0 | 1 | Linked issue in Development tab | Yes |
 | 7 | `feature/7-app-shell-theme` | [#21](https://github.com/thrxpt/toktickit/pull/21) | `@fahsai-02` | 0 | 2 | Added UI-22..25 to tests.md; added visible focus ring; read-only input | Yes |
@@ -26,8 +26,8 @@ No commit is made directly on either integration branch.
 ### PR #10 (Issue 5: Lab 2 Engineering Contract)
 
 - **Comments received:**
-  1. *Test count mismatch*: PR description noted "66 planned tests" while `tests.md` §6 totaled 71 (excluding responsive rows).
-  2. *FR-09 BR citation*: `specification.md` cited BR-23 instead of BR-28 for sortable fields.
+  1. _Test count mismatch_: PR description noted "66 planned tests" while `tests.md` §6 totaled 71 (excluding responsive rows).
+  2. _FR-09 BR citation_: `specification.md` cited BR-23 instead of BR-28 for sortable fields.
 - **Resolution:** Updated PR description to break out 5 responsive tests (total 71 tests). Updated `specification.md` line 78 to cite `BR-28` (commit `d045755`).
 
 ### PR #20 (Issue 6: Data Model, Migration, and Seed)
@@ -38,9 +38,9 @@ No commit is made directly on either integration branch.
 ### PR #21 (Issue 7: App Shell, Routing, and Theme)
 
 - **Comments received:**
-  1. *Traceability gap*: Four test files (`AppRoutes.test.tsx`, `StateBlock.test.tsx`, `ConfirmDialog.test.tsx`, `Pagination.test.tsx`) were missing from `tests.md` §2.
-  2. *Visible focus ring (AC-45)*: `.zen-nav-link` and `.zen-brand` lacked `--zen-secondary` focus outline.
-  3. *Read-only FormField*: Recommended standard `<input readOnly>` over `<div>` with `aria-readonly`.
+  1. _Traceability gap_: Four test files (`AppRoutes.test.tsx`, `StateBlock.test.tsx`, `ConfirmDialog.test.tsx`, `Pagination.test.tsx`) were missing from `tests.md` §2.
+  2. _Visible focus ring (AC-45)_: `.zen-nav-link` and `.zen-brand` lacked `--zen-secondary` focus outline.
+  3. _Read-only FormField_: Recommended standard `<input readOnly>` over `<div>` with `aria-readonly`.
 - **Resolution:** Added rows `UI-22` through `UI-25` to `tests.md` (updating UI planned count from 21 to 25, grand total from 72 to 76). Added explicit `:focus-visible` ring in `theme.css`. Updated `FormField.tsx` to `<input readOnly tabIndex={-1}>`.
 
 ### PR #22 (Issue 8: Requester Context)
@@ -51,16 +51,16 @@ No commit is made directly on either integration branch.
 ### PR #23 (Issue 9: Create Ticket)
 
 - **Comments received:**
-  1. *RESTART IDENTITY in truncate*: Pointed out that standalone sequence `ticket_number_seq` does not reset with `TRUNCATE ... RESTART IDENTITY` because it is not owned by a table column.
-  2. *Error message contradicts design*: `TICKET_NUMBER_CONFLICT` message suggested "Please try again", which invited retrying when conflicts should not happen.
-  3. *Inconsistent fetch usage*: `CreateTicket.tsx` used raw `fetch` for categories/related-systems while using `apiFetch` for tickets.
+  1. _RESTART IDENTITY in truncate_: Pointed out that standalone sequence `ticket_number_seq` does not reset with `TRUNCATE ... RESTART IDENTITY` because it is not owned by a table column.
+  2. _Error message contradicts design_: `TICKET_NUMBER_CONFLICT` message suggested "Please try again", which invited retrying when conflicts should not happen.
+  3. _Inconsistent fetch usage_: `CreateTicket.tsx` used raw `fetch` for categories/related-systems while using `apiFetch` for tickets.
 - **Resolution:** Documented standalone sequence behavior. Updated conflict error message to safe non-retryable text (`"A ticket number conflict occurred. Please contact support."`). Documented that categories and related systems are public reference data endpoints not requiring requester context.
 
 ### PR #24 (Issue 10: My Tickets)
 
 - **Comments received:**
-  1. *Race condition*: `fetchTickets` lacked `AbortController`, risking out-of-order responses overwriting updated filter states.
-  2. *Loading spinner*: Null `selectedRequester` returned before calling `setLoading(false)`.
+  1. _Race condition_: `fetchTickets` lacked `AbortController`, risking out-of-order responses overwriting updated filter states.
+  2. _Loading spinner_: Null `selectedRequester` returned before calling `setLoading(false)`.
 - **Resolution:** Wrapped API requests in `AbortController` aborting in-flight requests on dependency change and ignoring `AbortError`. Added `setLoading(false)` on null requester and wired retry counter with regression tests (`7993ebb`).
 
 ### PR #25 (Issue 11: Ticket Detail)

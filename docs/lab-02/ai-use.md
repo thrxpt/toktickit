@@ -1,6 +1,6 @@
 # Lab 2 AI Use
 
-**LLM used:** Claude 3.7 Sonnet, via Pi agent harness and Claude Code CLI
+**LLM used:** Claude Opus 5 and Claude 3.7 Sonnet, via Claude Code CLI and Pi agent harness
 
 The specification agent's job in this sprint was to interrogate the handout rather than
 paraphrase it: to find the decisions it deliberately left open, put each one to the student
@@ -11,31 +11,36 @@ with a recommendation and a rejected alternative, and only then write
 ## Key prompts
 
 | # | Prompt | Outcome |
-|---|---|---|
-| 1 | Analyze the Lab 2 assignment requirements and illustrations, identify architectural decision points (identity handling, ownership error codes, file storage, and attachment atomicity), and draft the comprehensive specification, API spec, UI spec, and test plan before any code is written. | Produced `specification.md` (16 FRs, 45 BRs, 46 ACs), `api-spec.md`, `ui-spec.md`, `tests.md`, and ADRs 0003–0006 establishing the complete contract upfront. |
-| 2 | Implement the Prisma schema for Requester, Ticket, RelatedSystem, and Attachment with postgres sequence `ticket_number_seq` and migration `20260827135731_lab2_data_model`. Implement an idempotent seed function (`seedReferenceData`) upserting on natural keys. | Generated migration, schema, seed data, and unit/API tests proving idempotent seeding (API-28 / BR-44) and database isolation with `toktickit_test`. |
-| 3 | Build the Zen Green design system in `client/src/styles/theme.css` without stray hex values, along with the application shell, responsive navbar, and route table covering all planned screens. | Delivered `AppShell`, `theme.css`, route structure, and style tests checking accessible focus rings and read-only field rendering. |
-| 4 | Implement the Development Requester selection screen (`/select-requester`), `RequesterContext` with `localStorage` persistence, `RequesterGuard` route protection, and Express middleware enforcing `X-Requester-Id` header across guarded routes. | Implemented client context and server middleware rejecting missing or inactive requester headers with 400 envelopes (BR-04, BR-05). |
-| 5 | Implement the Create Ticket screen and `POST /api/tickets` endpoint with server-side sequence drawing for `TKT-YYYY-NNNNNN`, Zod input validation, duplicate submit prevention, and field-level error display. | Implemented creation transaction, sequence consumption, read-only field presentation, and success confirmation showing the generated Ticket Number (AC-08, BR-11, BR-24). |
-| 6 | Implement the My Tickets screen (`/tickets`) with server-side search, multi-field filtering, column sorting with stable secondary sort (`id desc`), pagination, and responsive cards for mobile viewports. | Delivered `GET /api/tickets` and `MyTickets.tsx`, handling empty vs no-results distinction, aborting stale in-flight requests, and rendering card layout at `<768px`. |
-| 7 | Implement read-only Ticket Detail view (`/tickets/:id`) with server-side ownership check returning 404 identical to a missing ticket (BR-08, ADR-0005) so resource existence cannot be probed. | Created `RequesterTicketDetail.tsx` and detail endpoint ensuring complete read-only field presentation and cross-requester access blocking (AC-29, AC-30). |
-| 8 | Implement attachment lifecycle: two-phase upload with magic-byte validation, disk storage under UUID keys, download with Content-Disposition, and soft removal requiring a 1–200 character reason. | Implemented `AttachmentSection.tsx`, `attachments.ts` routes, stream downloads with `nosniff`, and soft removal with `ConfirmDialog` (AC-31 to AC-40). |
-| 9 | Configure Playwright with Chromium, implement end-to-end tests for the complete requester journey, verify responsive layouts across 1440px, 800px, and 375px viewports, and capture all 25 evidence screenshots. | Created `playwright.config.ts`, `requester-ticket-flow.spec.ts`, `responsive.spec.ts`, and `evidence.spec.ts`, passing all 13 E2E/responsive tests and generating all 25 committed screenshots. |
+| --- | --- | --- |
+| 1 | `/grill-with-docs read and understand the labsheet @.local/lab-02/Lab_02_labsheet.pdf` | Read all 22 pages of the handout, mapped open decisions into a design tree, and initiated 3 rounds of 27 targeted questions (each with a recommendation and the alternative it beat) before writing any specification. Prevented confident hallucinations of unstated business rules. |
+| 2 | `all recommended` (Rounds 1 & 2 grilling responses) | Settled root architecture: rejected the handout's example JSON (`requesterId` in POST body) in favor of the `X-Requester-Id` header seam (ADR-0003), established 404-over-403 for ownership failure to avoid enumeration oracles (ADR-0005), and introduced an isolated `toktickit_test` database (D-14). |
+| 3 | `confirmed, Q24 should start with feature 5 dont sync with # number` | Overrode the agent's recommendation to follow GitHub's shared issue/PR sequence. Kept branch number equal to Issue number (5–13) despite GitHub's counter having already drifted to #10 (recorded as decision D-15). |
+| 4 | `/to-tickets implement lab 2` | Agent deferred to the committed contract table in `CLAUDE.md` rather than re-cutting competing slices. Surfaced three real cross-branch seam decisions (deferring AC-41 outcome reporting to Issue 12; body depth) and created GitHub issues with native blocking dependencies. |
+| 5 | `/implement #12` (Issue 6: data model, migration, seed) | Built schema, migration, seed, and endpoints test-first (red-to-green). Ran unprompted `/code-review` whose spec sub-agent discovered that an exported `DATABASE_URL` could bypass the D-14 test database safety guard and that `ON DELETE SET NULL` contradicted the "no cascade deletes" comment. |
+| 6 | `/implement #13` (Issue 7: app shell, routing, Zen Green theme) | Built `theme.css` with 12 tokens on `:root` and zero hex outside `theme.css`. Extracted `CheckSystem` verbatim to preserve Lab 1 UI tests (D-13), set up React Router with full route table, and implemented reusable components with red-to-green STYLE tests. |
+| 7 | `this request changes are legal or not [PR #21 review]` -> `lets fix` | Evaluated peer review findings against contract: formalized helper component tests into `tests.md` rows `UI-22`..`UI-25` (updating planned count from 72 to 76), added explicit `:focus-visible` ring on header navigation for AC-45, and refined read-only `FormField` semantics. |
+| 8 | `this request change comment is correct or not? [PR #23 review]` | Evaluated peer review on Create Ticket: disproved reviewer's claim that `RESTART IDENTITY` in truncate resets unowned sequence `ticket_number_seq`, while validating and fixing the contradictory retry wording on `TICKET_NUMBER_CONFLICT` (BR-43). |
+| 9 | `/implement #18` followed by `/code-review` (Issue 12: attachments) | Implemented buffer magic-byte validation (JPEG, PNG, WEBP, PDF), UUID storage keys, and soft removal. Code review sub-agent caught that browser native `<a>` and `<img>` tags dropped `X-Requester-Id`, prompting refactor to `apiFetch` with object URLs and inline download retry. |
+| 10 | `/implement #19` (Issue 13: E2E, visual evidence, release) | Configured Playwright with Chromium, implemented 10 E2E and responsive tests across 1440, 800, and 375 px viewports, captured all 25 committed screenshots matching `ui-spec.md` §9, verified seed idempotency (`BR-44`), and filled `tests.md` §6 with all 76 passing tests. |
 
 ## My Reflection
 
-Working with an AI coding assistant across Lab 2 highlighted the critical value of contract-first development and disciplined scoping. AI tools excel at mechanical execution — scaffolding Zod validation schemas, generating Prisma migrations, creating TypeScript boilerplate, and writing repetitive unit tests. However, left to its own devices, an LLM defaults to common web application patterns that would have completely derailed this sprint:
+The single most valuable technique in this sprint was forcing the AI to ask questions before writing. When given an open assignment and told to "write the specification", an LLM produces something fluent, structurally complete, and quietly full of invented business rules that are invisible because they read with the exact same authority as real ones. Running three grilling rounds of 27 questions with explicit recommendations and alternatives turned those hidden assumptions into named, owned decisions recorded in `specification.md` §11.
 
-- It repeatedly tempted us toward putting `requesterId` into POST bodies instead of the header seam (ADR-0003).
-- It suggested returning 403 Forbidden for unowned tickets instead of 404 Not Found, which would have allowed attackers to probe ticket existence (ADR-0005).
-- It initially tried to implement IT Staff workflows, Priority assignments, and Status transitions simply because they appeared in the handout's mockups, even though they were out of scope.
+The AI proved far more effective as an argumentative opponent than as an agreeable assistant. The decisions we have the highest confidence in are the ones where the agent argued against the handout's own examples and had to justify why:
 
-Having `specification.md`, `api-spec.md`, `ui-spec.md`, and `tests.md` merged before writing code acted as an immovable anchor. When the model attempted to improvise, we could cite rules like `BR-08` or `D-03` to keep it strictly within the vertical slice.
+- Recommending against the handout's illustrative JSON (`requesterId` in POST body) because spreading unverified identity across every request body would create an architectural mess for Lab 3 authentication (ADR-0003).
+- Insisting on 404 Not Found rather than 403 Forbidden for ownership failures to prevent attackers from probing whether an unowned ticket exists (ADR-0005).
+- Arguing against server-side duplicate-submission rules in favor of a busy, disabled Submit button (`BR-24`, D-05) to avoid blocking legitimate duplicate tickets.
 
-Equally important was the peer review cycle with `@fahsai-02`. Human reviewers caught subtle software engineering defects that the LLM generated and passed in its own tests:
+However, the agent required decisive human course corrections whenever its drive for internal consistency detached from external reality. When planning branch names, it argued persuasively to sync branches with GitHub's issue numbers — a clean-sounding rule that failed immediately because GitHub's counter is shared with PRs and had already drifted (overridden by D-15).
 
-- A race condition in `MyTickets.tsx` where fast filter changes could let an older in-flight request overwrite newer search results (fixed with `AbortController`).
-- Accessibility oversights, such as missing focus traps and Escape key handlers on custom modal dialogs (`AttachmentSection.tsx`), and click-focusable read-only form fields.
-- Content-Disposition header sanitization to strip semicolons, preventing header attribute injection during attachment downloads.
+Most crucially, the sprint revealed the characteristic failure mode of LLM coding agents: **the tell is never uncertainty in its prose**. The agent was equally confident, articulate, and unhedged whether its output was brilliant or completely broken. Across the sprint, three major self-contradictions occurred:
 
-Overall, the combination of Spec-DD (Spec-Driven Development), strict automated test suites (76 tests across unit, API, UI, style, responsive, and E2E), peer review, and AI assistance allowed us to build a robust, clean, and fully verified IT service desk MVP.
+1. Writing an emphatic schema comment stating *"no cascade deletes anywhere... every relation is restrict-by-default"* directly above an emitted migration using `ON DELETE SET NULL` (which would have erased recorded removers).
+2. Implementing a test-database safety module intended to protect development data from test truncations (D-14), but writing logic where an exported `DATABASE_URL` would silently bypass both `.env` files and point the test truncations directly at the development database.
+3. Describing `ai-use.md` during tooling setup as already filled in with specific commit hashes when the file in fact contained only blank placeholders.
+
+In every case, the error could not be detected from the wording of the explanation. It was caught only by cross-checking: running two-axis automated reviews (Standards vs Spec), checking database state in psql, running live regression tests, and conducting rigorous peer review with `@fahsai-02`.
+
+Ultimately, combining Spec-Driven Development (Spec-DD), strict test-first development (76 passing tests across unit, API, UI, style, responsive, and E2E), peer review, and disciplined AI execution allowed us to ship a reliable, fully verified IT service desk application.
