@@ -18,7 +18,7 @@ No commit is made directly on either integration branch.
 | 10 | `feature/10-my-tickets` | [#24](https://github.com/thrxpt/toktickit/pull/24) | `@fahsai-02` | 0 | 2 | Added AbortController to prevent race condition; handled null requester | Yes |
 | 11 | `feature/11-ticket-detail` | [#25](https://github.com/thrxpt/toktickit/pull/25) | `@fahsai-02` | 0 | 2 | Acknowledged ReadOnlyField usage and 404 query diagnostics | Yes |
 | 12 | `feature/12-attachments` | [#26](https://github.com/thrxpt/toktickit/pull/26) | `@fahsai-02` | 0 | 7 | Sanitized semicolons, nosniff header, async exists, preview modal a11y | Yes |
-| 13 | `feature/13-e2e-visual-release` | _current_ | `@fahsai-02` | 0 | 0 | Full E2E and responsive test suites, 25 screenshots, release verification | Pending |
+| 13 | `feature/13-e2e-visual-release` | [#27](https://github.com/thrxpt/toktickit/pull/27) | `@fahsai-02` | 0 | 0 | Full E2E and responsive test suites, 25 screenshots, release verification | Pending |
 | — | `lab2-staging` → `main` | _pending_ | `@fahsai-02` | 0 | 0 | Final Lab 2 release PR | Pending |
 
 ## Review notes
