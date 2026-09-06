@@ -16,7 +16,7 @@
 | [#25](https://github.com/thrxpt/toktickit/pull/25) | feature/11-ticket-detail | Approved |
 | [#26](https://github.com/thrxpt/toktickit/pull/26) | feature/12-attachments | Approved |
 | [#27](https://github.com/thrxpt/toktickit/pull/27) | feature/13-e2e-visual-release | Approved |
-| — | lab2-staging → main | Pending PR #27 merge |
+| [#28](https://github.com/thrxpt/toktickit/pull/28) | lab2-staging → main | Approved |
 
 ---
 
@@ -224,6 +224,20 @@
 
 **How I responded:**
 > Thank you for the review! All 10 E2E and responsive tests are passing, 25 committed screenshots verified, seed idempotency confirmed, and release documentation completed. Ready to merge into `lab2-staging`.
+
+---
+
+### lab2-staging → main #28
+
+**Pull Request URL:** <https://github.com/thrxpt/toktickit/pull/28>
+
+**Reviewer verdict:** Approved by @fahsai-02
+
+**Reviewer approved comment:**
+> LGTM!
+
+**How I responded:**
+> Merged into `main`.
 
 ---
 
