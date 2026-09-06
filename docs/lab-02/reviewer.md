@@ -15,7 +15,8 @@
 | [#24](https://github.com/thrxpt/toktickit/pull/24) | feature/10-my-tickets | Approved |
 | [#25](https://github.com/thrxpt/toktickit/pull/25) | feature/11-ticket-detail | Approved |
 | [#26](https://github.com/thrxpt/toktickit/pull/26) | feature/12-attachments | Approved |
-| [#27](https://github.com/thrxpt/toktickit/pull/27) | feature/13-e2e-visual-release | Under review |
+| [#27](https://github.com/thrxpt/toktickit/pull/27) | feature/13-e2e-visual-release | Approved |
+| — | lab2-staging → main | Pending PR #27 merge |
 
 ---
 
@@ -216,8 +217,13 @@
 
 **Pull Request URL:** <https://github.com/thrxpt/toktickit/pull/27>
 
-**Status / Description:**
-> Full browser-level Playwright E2E and responsive test suites (Chromium), all 25 committed screenshots matching `ui-spec.md` §9, idempotency verification (`BR-44`), and complete release documentation. Under review by peer reviewer prior to staging integration.
+**Reviewer verdict:** Approved by @fahsai-02
+
+**Reviewer approved comment:**
+> LGTM
+
+**How I responded:**
+> Thank you for the review! All 10 E2E and responsive tests are passing, 25 committed screenshots verified, seed idempotency confirmed, and release documentation completed. Ready to merge into `lab2-staging`.
 
 ---
 
