@@ -327,6 +327,10 @@ test.describe("Visual Evidence and State Capture", () => {
     // 5. Requester A list
     await switchRequester(page, REQUESTER_A);
     await page.goto("/tickets");
+    await expect(
+      page.locator('button[aria-label="Requester profile"]'),
+    ).toContainText(REQUESTER_A);
+    await expect(page.locator("text=Loading tickets…")).not.toBeVisible();
     await expect(page.locator("table")).toBeVisible();
     await page.screenshot({
       path: "artifacts/lab-02/screenshots/my-tickets/requester-a.png",
@@ -334,13 +338,21 @@ test.describe("Visual Evidence and State Capture", () => {
       animations: "disabled",
     });
 
-    // 6. Requester B list
+    // 6. Requester B list (create ticket as Requester B and display B's tickets)
     await switchRequester(page, REQUESTER_B);
+    await createTicket(page, {
+      summary: "Requester B Network Port Configuration",
+      description:
+        "Need switch port configuration for secondary laboratory workstation.",
+      category: "Network",
+      relatedSystem: "Campus Wi-Fi",
+    });
     await page.goto("/tickets");
-    // Ensure B's view is loaded
     await expect(
       page.locator('button[aria-label="Requester profile"]'),
     ).toContainText(REQUESTER_B);
+    await expect(page.locator("text=Loading tickets…")).not.toBeVisible();
+    await expect(page.locator("table")).toBeVisible();
     await page.screenshot({
       path: "artifacts/lab-02/screenshots/my-tickets/requester-b.png",
       fullPage: true,
