@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 export interface ConfirmDialogProps {
   isOpen: boolean;
@@ -29,20 +30,44 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const onCancelRef = useRef(onCancel);
+  const wasOpenRef = useRef(false);
+
+  useEffect(() => {
+    onCancelRef.current = onCancel;
+  }, [onCancel]);
 
   const confirmBtnClass =
     confirmVariant === "danger"
       ? "btn-outline-danger"
       : `btn-${confirmVariant}`;
 
+  // Focus management: set focus inside modal ONLY upon transitioning to open,
+  // and restore focus to trigger when closing.
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) {
+      if (wasOpenRef.current) {
+        wasOpenRef.current = false;
+        document.body.classList.remove("modal-open");
+        if (previousActiveElement.current) {
+          previousActiveElement.current.focus();
+          previousActiveElement.current = null;
+        }
+      }
+      return;
+    }
+
+    if (!wasOpenRef.current) {
+      wasOpenRef.current = true;
+      document.body.classList.add("modal-open");
       previousActiveElement.current =
         (document.activeElement as HTMLElement) ?? triggerRef?.current ?? null;
 
-      // Set focus inside modal on open
       const timer = setTimeout(() => {
-        if (dialogRef.current) {
+        if (
+          dialogRef.current &&
+          !dialogRef.current.contains(document.activeElement)
+        ) {
           const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
           );
@@ -54,56 +79,61 @@ export function ConfirmDialog({
         }
       }, 10);
 
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [isOpen, triggerRef]);
+
+  // Keyboard navigation: Escape key closes, Tab key is trapped inside modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onCancelRef.current();
+        return;
+      }
+
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusable = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter((el) => !el.hasAttribute("disabled"));
+
+        if (focusable.length === 0) {
           e.preventDefault();
-          onCancel();
           return;
         }
 
-        if (e.key === "Tab" && dialogRef.current) {
-          const focusable = Array.from(
-            dialogRef.current.querySelectorAll<HTMLElement>(
-              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-            ),
-          ).filter((el) => !el.hasAttribute("disabled"));
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
 
-          if (focusable.length === 0) {
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
             e.preventDefault();
-            return;
+            last.focus();
           }
-
-          const first = focusable[0];
-          const last = focusable[focusable.length - 1];
-
-          if (e.shiftKey) {
-            if (document.activeElement === first) {
-              e.preventDefault();
-              last.focus();
-            }
-          } else {
-            if (document.activeElement === last) {
-              e.preventDefault();
-              first.focus();
-            }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
           }
         }
-      };
+      }
+    };
 
-      document.addEventListener("keydown", handleKeyDown);
-      return () => {
-        clearTimeout(timer);
-        document.removeEventListener("keydown", handleKeyDown);
-      };
-    } else if (previousActiveElement.current) {
-      previousActiveElement.current.focus();
-      previousActiveElement.current = null;
-    }
-  }, [isOpen, onCancel, triggerRef]);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  return (
+  const modalNode = (
     <>
       <div
         className="modal show d-block"
@@ -153,6 +183,10 @@ export function ConfirmDialog({
       <div className="modal-backdrop show" onClick={onCancel} />
     </>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modalNode, document.body)
+    : modalNode;
 }
 
 export default ConfirmDialog;

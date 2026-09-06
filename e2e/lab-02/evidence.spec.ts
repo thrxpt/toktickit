@@ -395,7 +395,6 @@ test.describe("Visual Evidence and State Capture", () => {
     await expect(dialog).toBeVisible();
     await page.screenshot({
       path: "artifacts/lab-02/screenshots/ticket-detail/removal-confirm.png",
-      fullPage: true,
       animations: "disabled",
     });
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import apiFetch from "../api/client";
 import ConfirmDialog from "./ConfirmDialog";
@@ -131,11 +131,11 @@ export function AttachmentSection({
     setRemovalError(null);
   };
 
-  const handleCloseRemoval = () => {
+  const handleCloseRemoval = useCallback(() => {
     setRemovalTarget(null);
     setRemovalReason("");
     setRemovalError(null);
-  };
+  }, []);
 
   const handleConfirmRemoval = async () => {
     if (!removalTarget || !removalReason.trim()) return;
