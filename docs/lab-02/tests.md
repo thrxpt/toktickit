@@ -135,7 +135,7 @@ handout's own numbering.
 | --- | --- | --- | --- | --- | --- |
 | RESP-01 | AC-42 | Three screens at 1440 px | No horizontal page scroll; no clipped or overlapping elements; screenshots written | `responsive.spec.ts` | Pass |
 | RESP-02 | AC-42 | Three screens at 800 px | Two-column layout holds; Summary and Description keep width | `responsive.spec.ts` | Pass |
-| RESP-03 | AC-42, AC-43 | Three screens at 375 px | My Tickets renders cards, not a scrolling table; no horizontal page scroll | `responsive.spec.ts` | Pass |
+| RESP-03 | AC-42, AC-43 | Three screens at 390 px | My Tickets renders cards, not a scrolling table; no horizontal page scroll | `responsive.spec.ts` | Pass |
 | RESP-04 | ui-spec §7 | Mobile navigation and filters | Toggler opens nav; filters disclosure usable; targets ≥44 px | `responsive.spec.ts` | Pass |
 | RESP-05 | ui-spec §9 | Evidence capture | All screenshot paths in `ui-spec.md` §9 written and non-empty | `evidence.spec.ts` | Pass |
 | E2E-01 | AC-08, AC-19 | Select Requester → create Ticket → find it in My Tickets | Confirmation shows the official number; the Ticket appears in the list | `requester-ticket-flow.spec.ts` | Pass |

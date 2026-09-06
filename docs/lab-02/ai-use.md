@@ -1,6 +1,6 @@
 # Lab 2 AI Use
 
-**LLM used:** Claude Opus 5 and Claude 5 Sonnet, via Claude Code CLI and Gemini 3.7 flash and 3.8 flash via Pi agent harness
+**LLM used:** Claude Opus 5 / Claude Sonnet 5 via Claude Code CLI, and Gemini 3.8 Flash / 3.7 Flash via Pi agent harness
 
 The specification agent's job in this sprint was to interrogate the handout rather than
 paraphrase it: to find the decisions it deliberately left open, put each one to the student

@@ -13,7 +13,7 @@ Defined once in `client/src/styles/theme.css` on `:root`, overriding Bootstrap's
 custom properties (D-12). Nothing else in the codebase writes a hex value.
 
 | Token | Value | Use |
-|---|---|---|
+| --- | --- | --- |
 | `--zen-primary` | `#006B3C` | App header, primary actions, strong emphasis |
 | `--zen-secondary` | `#0B7A46` | Active tabs, focus accents, links, hover states |
 | `--zen-pale` | `#EAF6EF` | Selected rows, success surfaces, subtle section emphasis |
@@ -78,7 +78,7 @@ Requested Priority and Current Status. Colour is supporting information only —
 text is always present (AC-44).
 
 | Value | Presentation |
-|---|---|
+| --- | --- |
 | `LOW` | Pale green background, dark green text, label "Low" |
 | `MEDIUM` | Amber background, dark amber text, label "Medium" |
 | `HIGH` | Pale red background, dark red text, label "High" |
@@ -89,7 +89,7 @@ text is always present (AC-44).
 One component, four variants, used by every data-bearing view (FR-15):
 
 | Variant | Content |
-|---|---|
+| --- | --- |
 | `loading` | Centred spinner plus text; never a bare blank area |
 | `empty` | Explains that nothing exists yet, offers the creating action |
 | `no-results` | Explains that filters matched nothing, offers **Clear Filters** |
@@ -218,7 +218,7 @@ The Lab 1 page, unchanged in behaviour, rendered inside the shell (D-13).
 ## 6. Attachment states
 
 | State | Presentation |
-|---|---|
+| --- | --- |
 | Idle | Drop zone plus **Choose files**, listing permitted types and the 5 MB limit up front |
 | Selected, not uploaded | Filename, size, and a remove-from-selection control |
 | Uploading | Per-file progress; other controls stay usable |
@@ -233,7 +233,7 @@ discards the Ticket (BR-41).
 ## 7. Responsive rules
 
 | Viewport | Behaviour |
-|---|---|
+| --- | --- |
 | **≥992 px** | Full table. Create Ticket read-only header row in 4 columns, classification in 2. Content centred, `max-width: 1200px`. Filters in one row. |
 | **768–991 px** | Table retained, **Last Updated dropped**. Create Ticket 2 columns; Summary and Description full width. Filters wrap to 2 columns. |
 | **<768 px** | Everything stacks. My Tickets renders **one card per Ticket** — Ticket No. and Status badge on the top row, Summary, then Category, Priority, and date — not a horizontally scrolling table (AC-43). Filters collapse behind a **Filters** disclosure. Nav uses the toggler. |
@@ -245,7 +245,7 @@ the page with it.
 ## 8. Visual inspection checklist
 
 Checked against this document and the approved illustrations — not from memory — at 1440,
-800, and 375 px, for Create Ticket, My Tickets, and Ticket Detail:
+800, and 390 px, for Create Ticket, My Tickets, and Ticket Detail:
 
 - [ ] Header, primary buttons, and links use the specified tokens; no stray hex values
 - [ ] Read-only fields visibly distinct from editable fields
@@ -256,7 +256,7 @@ Checked against this document and the approved illustrations — not from memory
 - [ ] Filters, pagination, and attachment controls usable at every viewport
 - [ ] No clipping, no overlap, no unintended horizontal scrolling
 - [ ] Focus visible on every interactive element; tab order matches visual order
-- [ ] Mobile card layout legible at 375 px
+- [ ] Mobile card layout legible at 390 px
 
 ## 9. Screenshot paths
 
