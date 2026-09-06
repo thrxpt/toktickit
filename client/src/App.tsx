@@ -1,102 +1,111 @@
-import { useState } from 'react'
+import { Link, Navigate, Route, Routes } from 'react-router-dom'
 
-type Category = { id: number; name: string }
+import AppShell from './components/AppShell'
+import RequesterGuard from './components/RequesterGuard'
+import { RequesterProvider } from './context/RequesterContext'
+import CheckSystem from './pages/CheckSystem'
+import CreateTicket from './pages/CreateTicket'
+import MyTickets from './pages/MyTickets'
+import RequesterSelection from './pages/RequesterSelection'
+import RequesterTicketDetail from './pages/RequesterTicketDetail'
 
-type CheckState =
-  | { phase: 'idle' }
-  | { phase: 'loading' }
-  | { phase: 'online'; categories: Category[] }
-  | { phase: 'offline'; message: string }
-
-/**
- * Lab 1, Issue 4 — [Check System] now calls both GET /api/health and
- * GET /api/categories. System Status is the verdict on the whole flow (see
- * CONTEXT.md): either call failing takes the page Offline, each with a
- * message naming what failed.
- */
-function App() {
-  const [state, setState] = useState<CheckState>({ phase: 'idle' })
-
-  async function checkSystem() {
-    setState({ phase: 'loading' })
-
-    const [health, categories] = await Promise.allSettled([
-      fetch('/api/health').then(async (response) => {
-        if (!response.ok) throw new Error('non-200 response')
-        const body = await response.json()
-        if (body.status !== 'ok') throw new Error('unexpected response body')
-      }),
-      fetch('/api/categories').then(async (response) => {
-        if (!response.ok) throw new Error('non-200 response')
-        return (await response.json()) as Category[]
-      }),
-    ])
-
-    if (health.status === 'rejected') {
-      setState({ phase: 'offline', message: 'Unable to connect to TokTickIT API' })
-      return
-    }
-
-    if (categories.status === 'rejected') {
-      setState({ phase: 'offline', message: 'Unable to load Request Categories' })
-      return
-    }
-
-    setState({ phase: 'online', categories: categories.value })
-  }
-
+function NotFoundPage() {
   return (
-    <>
-      <nav className="navbar navbar-dark bg-dark">
-        <div className="container">
-          <span className="navbar-brand mb-0 h1">TokTickIT</span>
-          <span className="navbar-text">IT Service Desk</span>
-        </div>
-      </nav>
+    <div className="card text-center py-5">
+      <div className="card-body">
+        <h1 className="h3 mb-2">Page Not Found</h1>
+        <p className="text-body-secondary mb-4">
+          The requested page does not exist.
+        </p>
+        <Link to="/tickets" className="btn btn-primary">
+          Go to My Tickets
+        </Link>
+      </div>
+    </div>
+  )
+}
 
-      <main className="container py-5">
-        <div className="row justify-content-center">
-          <div className="col-lg-8">
-            <div className="card shadow-sm">
-              <div className="card-body p-4">
-                <h1 className="card-title h3 mb-3">TokTickIT</h1>
-                <p className="text-body-secondary mb-4">
-                  Check that the TokTickIT API and its request categories are available.
-                </p>
+export function AppRoutes() {
+  return (
+    <Routes>
+      {/* Root redirects to /tickets */}
+      <Route path="/" element={<Navigate to="/tickets" replace />} />
 
-                <button
-                  type="button"
-                  className="btn btn-primary btn-lg"
-                  onClick={checkSystem}
-                  disabled={state.phase === 'loading'}
-                >
-                  {state.phase === 'loading' ? 'Checking…' : 'Check System'}
-                </button>
+      {/* Lab 2 Development Requester Selection (Issue 8) */}
+      <Route
+        path="/select-requester"
+        element={
+          <AppShell>
+            <RequesterSelection />
+          </AppShell>
+        }
+      />
 
-                {state.phase === 'online' && (
-                  <>
-                    <p className="mt-3 mb-0">System Status: Online</p>
-                    <p className="mt-3 mb-1">Supported Request Categories:</p>
-                    <ol className="mb-0">
-                      {state.categories.map((category) => (
-                        <li key={category.id}>{category.name}</li>
-                      ))}
-                    </ol>
-                  </>
-                )}
+      {/* Guarded Ticket Routes (FR-04, AC-02) */}
+      <Route
+        path="/tickets"
+        element={
+          <RequesterGuard>
+            <AppShell>
+              <MyTickets />
+            </AppShell>
+          </RequesterGuard>
+        }
+      />
+      <Route
+        path="/tickets/new"
+        element={
+          <RequesterGuard>
+            <AppShell>
+              <CreateTicket />
+            </AppShell>
+          </RequesterGuard>
+        }
+      />
+      <Route
+        path="/tickets/:id"
+        element={
+          <RequesterGuard>
+            <AppShell
+              breadcrumbs={[
+                { label: 'My Tickets', to: '/tickets' },
+                { label: 'Ticket Details' },
+              ]}
+            >
+              <RequesterTicketDetail />
+            </AppShell>
+          </RequesterGuard>
+        }
+      />
 
-                {state.phase === 'offline' && (
-                  <>
-                    <p className="mt-3 mb-0">System Status: Offline</p>
-                    <p className="text-danger mb-0">{state.message}</p>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    </>
+      {/* Lab 1 diagnostic screen */}
+      <Route
+        path="/system"
+        element={
+          <AppShell>
+            <CheckSystem />
+          </AppShell>
+        }
+      />
+
+      {/* Not-found route */}
+      <Route
+        path="*"
+        element={
+          <AppShell>
+            <NotFoundPage />
+          </AppShell>
+        }
+      />
+    </Routes>
+  )
+}
+
+export function App() {
+  return (
+    <RequesterProvider>
+      <AppRoutes />
+    </RequesterProvider>
   )
 }
 
