@@ -1,39 +1,43 @@
 # TokTickIT
 
-IT service desk app, built one **vertical slice** per lab. Lab 1 proved the stack end to end: React page → Express REST → Prisma → PostgreSQL. Lab 2 builds the Requester-facing ticketing MVP on top of it.
+IT service desk app, built one **vertical slice** per lab. Lab 1 proved the stack end to end: React page → Express REST → Prisma → PostgreSQL. Lab 2 built the Requester-facing ticketing MVP. Lab 3 replaces the temporary Development Requester with real authentication, role-based authorization (Requester, IT Staff, Administrator), an operational IT Staff Ticket Queue and Ticket Detail workflow, Public Comments and Internal Notes, and minimalist Administrator User Management.
 
-**Contract (Lab 2):** four documents that together are one contract — read before starting an Issue, opening a PR, or calling an Issue done:
+**Contract (Lab 3):** four documents that together are one contract — read before starting an Issue, opening a PR, or calling an Issue done:
 
 | Document | Authoritative for |
-| ---------------------------------------------------------- | ------------------------------------------------------------------ |
-| [`docs/lab-02/specification.md`](docs/lab-02/specification.md) | Scope, FR-nn, BR-nn, AC-nn, data changes, Definition of Done, decisions |
-| [`docs/lab-02/api-spec.md`](docs/lab-02/api-spec.md)           | Endpoints, payloads, validation, error envelope, status codes       |
-| [`docs/lab-02/ui-spec.md`](docs/lab-02/ui-spec.md)             | Zen Green tokens, components and their states, layout, responsive, a11y |
-| [`docs/lab-02/tests.md`](docs/lab-02/tests.md)                 | Planned tests, AC→test traceability, test commands                  |
+| --- | --- |
+| [`docs/lab-03/specification.md`](docs/lab-03/specification.md) | Scope, FR-nn, BR-nn, AC-nn, data changes, Definition of Done, decisions |
+| [`docs/lab-03/api-spec.md`](docs/lab-03/api-spec.md) | Endpoints, payloads, validation, error envelope, status codes |
+| [`docs/lab-03/ui-spec.md`](docs/lab-03/ui-spec.md) | Zen Green tokens, components and their states, layout, responsive, a11y |
+| [`docs/lab-03/tests.md`](docs/lab-03/tests.md) | Planned tests, AC→test traceability, test commands |
 
-Lab 1's contract stays at [`docs/lab-01/contract.md`](docs/lab-01/contract.md) as the record of what Lab 1 promised; it is history, not current scope.
+Lab 1's contract stays at [`docs/lab-01/contract.md`](docs/lab-01/contract.md) and Lab 2's at [`docs/lab-02/specification.md`](docs/lab-02/specification.md) as the record of what previous labs delivered; they are history, not current scope.
 
 Behavior is cited by number, not by paraphrase — a PR description, a test name, or a code comment says `BR-35` or `AC-30`. If the code and the contract disagree, the contract wins until a PR changes it.
 
 ## Stack (locked)
 
-| Layer    | Choice                                          |
-| -------- | ----------------------------------------------- |
+| Layer | Choice |
+| --- | --- |
 | Frontend | React + TypeScript + Vite + Bootstrap + React Router |
-| Backend  | Node.js + Express + TypeScript + Multer + Zod   |
-| Data     | PostgreSQL + Prisma                             |
-| API      | REST                                            |
-| Tests    | Vitest (UI) + Supertest (API) + Playwright (E2E) |
+| Backend | Node.js + Express + TypeScript + Multer + Zod |
+| Data | PostgreSQL + Prisma |
+| API | REST |
+| Tests | Vitest (UI) + Supertest (API) + Playwright (E2E) |
 
 Bootstrap classes and components carry all styling; Zen Green is CSS custom properties overriding Bootstrap's own variables in one theme file (`ui-spec.md` §1). A dependency outside this table needs the contract to name it or the user to approve it — that bar covers styling especially, where Tailwind and component kits are the reflex.
 
-## Lab 2 scope
+## Lab 3 scope
 
-A Requester selects a Development Requester identity, creates a Ticket, receives an official Ticket Number, finds it in My Tickets with search/filter/sort/pagination, opens Ticket Detail, and adds, downloads, or soft-removes Attachments — seeing only their own data.
+A user authenticates with email and password, changes initial password upon first login if required, and enters a role-governed application shell (Requester, IT Staff, Administrator):
 
-Out of scope, and not to be helpfully added: authentication, IT Staff workflow, IT Priority, Ticket Owner, Resolution Summary, comments and notes, and every status transition beyond `NEW`. The handout's illustrations show several of these; `specification.md` §3 and decision D-03 explain why they are absent.
+- **Requester**: Creates and manages owned Tickets and Attachments without the Development Requester selector; posts Public Comments; indicates problem appears resolved.
+- **IT Staff**: Accesses shared Ticket Queue with search, filters, sorting, and pagination; opens Ticket Detail; claims or reassigns Ticket Owner; sets IT Priority; updates permitted status transitions; posts Public Comments; writes and views private Internal Notes.
+- **Administrator**: Minimalist User Management screen to view users, create accounts with one role and initial password, edit basic user info, activate/deactivate accounts, and set new initial passwords. Administrators do not manage Tickets.
 
-The **Development Requester** is a testing mechanism, never authentication (`CONTEXT.md`). It travels in `X-Requester-Id`; a `requesterId` in a request body is an error, not a fallback (ADR-0003). Ownership is enforced server-side regardless, and an ownership failure answers 404, identically to a missing row (ADR-0005).
+Out of scope, and not to be helpfully added: email delivery, password-reset emails, MFA, social login, self-registration, multiple roles per user, hard user deletion, bulk user operations, departments/organizations, IT Staff Actions Taken (deferred to Lab 4), SLA calculation, and automated escalations.
+
+The **Development Requester** selector is completely retired; identity is established server-side through session/cookie authentication. Ownership and role restrictions are strictly enforced server-side.
 
 ## Layout
 
@@ -42,17 +46,22 @@ client/
   src/styles/theme.css  Zen Green tokens — the only file with hex values
   tests/lab-01/         UI-*.test.tsx   (Vitest)
   tests/lab-02/         *.test.tsx + style/  (Vitest + Testing Library)
+  tests/lab-03/         *.test.tsx  (Vitest + Testing Library)
 server/
   prisma/               schema.prisma, migrations, seed
   src/                  Express app + routes
   scripts/db-check.ts   database reachability probe
   tests/lab-01/         API-*.test.ts   (Supertest)
   tests/lab-02/         *.api.test.ts, *.unit.test.ts
+  tests/lab-03/         *.api.test.ts, *.unit.test.ts
   tests/setup/          creates, migrates, and seeds `toktickit_test`
   uploads/              attachment bytes, git-ignored (ADR-0004)
-e2e/lab-02/             Playwright specs
-artifacts/lab-02/       committed screenshots, generated by Playwright
-docs/lab-02/            specification.md, api-spec.md, ui-spec.md, tests.md, reviewer.md, ai-use.md
+e2e/lab-02/             Playwright specs (Lab 2)
+e2e/lab-03/             Playwright specs (Lab 3)
+artifacts/lab-02/       committed screenshots, generated by Playwright (Lab 2)
+artifacts/lab-03/       committed screenshots, generated by Playwright (Lab 3)
+docs/lab-02/            Lab 2 contract and records
+docs/lab-03/            specification.md, api-spec.md, ui-spec.md, tests.md, reviewer.md, ai-use.md
 docs/adr/               architecture decision records
 CONTEXT.md              glossary — the project's ubiquitous language
 compose.yaml            PostgreSQL 17 for local development
@@ -71,21 +80,20 @@ Lab 1's test filenames carry the contract's IDs (`API-01`, `UI-02`); Lab 2's are
 
 Each Issue owns one branch, and every commit for that Issue lands on it. Issue numbers run continuously across labs and are independent of GitHub's shared issue/PR sequence:
 
-| Issue                          | Branch                          | Depends on |
-| ------------------------------ | ------------------------------- | ---------- |
-| 5. Lab 2 contract (docs only)  | `feature/5-lab2-contract`       | —          |
-| 6. Data model, migration, seed | `feature/6-data-model-seed`     | 5          |
-| 7. App shell, routing, theme   | `feature/7-app-shell-theme`     | 5          |
-| 8. Development Requester context | `feature/8-requester-context` | 6, 7       |
-| 9. Create Ticket               | `feature/9-create-ticket`       | 8          |
-| 10. My Tickets                 | `feature/10-my-tickets`         | 8          |
-| 11. Ticket Detail              | `feature/11-ticket-detail`      | 10         |
-| 12. Attachment lifecycle       | `feature/12-attachments`        | 11         |
-| 13. E2E, visual evidence, release | `feature/13-e2e-visual-release` | 12      |
+| Issue | Branch | Depends on |
+| ----- | ------ | ---------- |
+| 14. Lab 3 contract (docs only) | `feature/14-lab3-contract` | — |
+| 15. User model, auth foundation, and migration | `feature/15-auth-foundation` | 14 |
+| 16. Authenticated app shell, navigation, and Requester regression | `feature/16-auth-shell-regression` | 15 |
+| 17. IT Staff Ticket Queue | `feature/17-staff-ticket-queue` | 16 |
+| 18. IT Staff Ticket Detail & Operations | `feature/18-staff-ticket-detail` | 17 |
+| 19. Public Comments, Internal Notes, and Resolution Indication | `feature/19-comments-and-notes` | 18 |
+| 20. Administrator User Management | `feature/20-admin-user-management` | 16 |
+| 21. E2E tests, visual evidence, and release | `feature/21-e2e-visual-release` | 19, 20 |
 
-Issue 5 merges before any implementation PR opens — that ordering is the Spec-DD evidence and cannot be reconstructed afterwards.
+Issue 14 merges before any implementation PR opens — that ordering is the Spec-DD evidence and cannot be reconstructed afterwards.
 
-Feature branches PR into `lab2-staging`; `lab2-staging` PRs into `main`. Both integration branches move only through a peer-reviewed PR — never a local commit or merge.
+Feature branches PR into `lab3-staging`; `lab3-staging` PRs into `main`. Both integration branches move only through a peer-reviewed PR — never a local commit or merge.
 
 ## Secrets
 
@@ -103,4 +111,4 @@ The five canonical triage roles, each label string equal to its name. See [`docs
 
 ### Domain docs
 
-Single-context — `CONTEXT.md` and `docs/adr/` at the repo root, plus the current lab contract under `docs/lab-02/`. See [`docs/agents/domain.md`](docs/agents/domain.md).
+Single-context — `CONTEXT.md` and `docs/adr/` at the repo root, plus the current lab contract under `docs/lab-03/`. See [`docs/agents/domain.md`](docs/agents/domain.md).
