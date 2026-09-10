@@ -74,8 +74,8 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-20 | AC-18, BR-29 | Administrator attempts to deactivate own account | 400 Bad Request with `CANNOT_DEACTIVATE_SELF` | `users-admin.api.test.ts` | Planned |
 | API-21 | AC-19, BR-30 | Administrator attempts to deactivate sole active Admin | 400 Bad Request with `CANNOT_DEACTIVATE_LAST_ADMIN` | `users-admin.api.test.ts` | Planned |
 | API-22 | AC-20, BR-33 | Administrator resets initial password for a user | 200 OK, updates hash, sets `mustChangePassword: true` | `users-admin.api.test.ts` | Planned |
-| API-23 | AC-21, BR-43 | Error envelopes conform to standard schema | Standardized `{ error: { code, message, fields? } }` | `auth.api.test.ts` | Planned |
-| API-24 | BR-44 | Re-running database seed idempotency check | Seed runs twice without duplicate rows or errors | `users-admin.api.test.ts` | Planned |
+| API-23 | AC-21, BR-35 | Error envelopes conform to standard schema | Standardized `{ error: { code, message, fields? } }` | `auth.api.test.ts` | Planned |
+| API-24 | BR-36 | Re-running database seed idempotency check | Seed runs twice without duplicate rows or errors | `users-admin.api.test.ts` | Planned |
 | API-25 | AC-01, BR-09 | Login with incorrect password | 401 Unauthorized with generic safe error | `auth.api.test.ts` | Planned |
 
 ### UI Component Tests — `client/tests/lab-03/*.test.tsx`

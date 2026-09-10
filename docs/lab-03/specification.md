@@ -193,6 +193,13 @@ all new and existing screens.
 | BR-33 | An Administrator setting a new initial password for a user must supply a valid initial password (minimum 8 characters) and automatically marks `mustChangePassword: true`. |
 | BR-34 | A deactivated user cannot authenticate; existing active sessions for that user are rejected on their next API interaction. |
 
+### System Behavior and Data Integrity
+
+| ID | Rule |
+| --- | --- |
+| BR-35 | Error responses never expose stack traces, SQL, Prisma errors, filesystem paths, or internal identifiers. |
+| BR-36 | The database seed is idempotent: repeated runs upsert on natural keys and never create duplicates or errors. |
+
 ---
 
 ## 6. UI Specification Summary

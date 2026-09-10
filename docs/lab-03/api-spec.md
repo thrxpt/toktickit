@@ -68,7 +68,7 @@ Every failure across all endpoints conforms to:
 - `code`: Machine-readable string identifying the error condition.
 - `message`: Human-readable, safe message suitable for presentation.
 - `fields`: Optional key-value map detailing field-specific validation failures.
-- No response ever includes stack traces, SQL, Prisma errors, or file paths (BR-43).
+- No response ever includes stack traces, SQL, Prisma errors, or file paths (BR-35).
 
 ### Status Codes
 
