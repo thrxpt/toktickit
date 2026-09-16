@@ -10,6 +10,7 @@
 // The envelope's optional `fields` member arrives with routes that
 // validate input (Decision D-16).
 import type { Response } from "express";
+import type { z } from "zod";
 
 export type ErrorCode =
   | "DATABASE_UNAVAILABLE"
@@ -137,4 +138,21 @@ export function sendError(
   } else {
     res.status(status).json({ error: { code, message } });
   }
+}
+
+export function formatZodErrors(error: z.ZodError): Record<string, string> {
+  const fields: Record<string, string> = {};
+  for (const issue of error.issues) {
+    if (issue.code === "unrecognized_keys") {
+      for (const key of issue.keys) {
+        fields[key] = `Unrecognized query parameter '${key}'`;
+      }
+    } else {
+      const fieldName = issue.path[0];
+      if (typeof fieldName === "string" && !fields[fieldName]) {
+        fields[fieldName] = issue.message;
+      }
+    }
+  }
+  return fields;
 }

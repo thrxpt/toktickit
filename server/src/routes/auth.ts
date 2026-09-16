@@ -11,22 +11,11 @@ import {
   createSessionToken,
   setSessionCookie,
 } from "../auth/session";
-import { sendError } from "../errors";
+import { formatZodErrors, sendError } from "../errors";
 import { requireAuth } from "../middleware/auth";
 import { prisma } from "../prisma";
 
 export const authRouter = express.Router();
-
-function formatZodErrors(error: z.ZodError): Record<string, string> {
-  const fields: Record<string, string> = {};
-  for (const issue of error.issues) {
-    const fieldName = issue.path[0];
-    if (typeof fieldName === "string" && !fields[fieldName]) {
-      fields[fieldName] = issue.message;
-    }
-  }
-  return fields;
-}
 
 const loginSchema = z.object({
   email: z
@@ -123,7 +112,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
 /**
  * POST /api/auth/logout (FR-05, BR-11, AC-05, API-05)
  */
-authRouter.post("/logout", (_req: Request, res: Response) => {
+authRouter.post("/logout", requireAuth, (_req: Request, res: Response) => {
   clearSessionCookie(res);
   res.status(200).json({ message: "Logged out successfully." });
 });

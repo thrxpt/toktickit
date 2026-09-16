@@ -94,11 +94,13 @@ export async function requireAuth(
     // Users with mustChangePassword === true can only access /api/auth/change-password,
     // /api/auth/me, and /api/auth/logout.
     if (user.mustChangePassword) {
-      const url = req.originalUrl || req.url;
-      const isWhitelisted =
-        url.includes("/api/auth/change-password") ||
-        url.includes("/api/auth/me") ||
-        url.includes("/api/auth/logout");
+      const pathname = (req.baseUrl + req.path).split("?")[0].replace(/\/+$/, "");
+      const whitelistedPaths = [
+        "/api/auth/change-password",
+        "/api/auth/me",
+        "/api/auth/logout",
+      ];
+      const isWhitelisted = whitelistedPaths.includes(pathname);
 
       if (!isWhitelisted) {
         sendError(res, "PASSWORD_CHANGE_REQUIRED");

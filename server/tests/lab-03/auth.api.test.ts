@@ -172,6 +172,22 @@ describe("API-03 — User with mustChangePassword accessing protected API (AC-02
     expect(meRes.body.user.mustChangePassword).toBe(true);
     expect(meRes.body.user.email).toBe("somchai.prasert@example.ac.th");
   });
+
+  it("blocks user with mustChangePassword: true even if whitelisted path is in query string (BR-02)", async () => {
+    const loginRes = await request(app).post("/api/auth/login").send({
+      email: "somchai.prasert@example.ac.th",
+      password: "Password123!",
+    });
+
+    const token = loginRes.body.token;
+
+    const bypassAttempt = await request(app)
+      .get("/api/tickets?search=/api/auth/me")
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(bypassAttempt.status).toBe(403);
+    expect(bypassAttempt.body.error.code).toBe("PASSWORD_CHANGE_REQUIRED");
+  });
 });
 
 describe("API-04 — Successful mandatory password change (AC-03, BR-12)", () => {
@@ -346,6 +362,13 @@ describe("API-05 — Logout endpoint execution (AC-05, BR-11)", () => {
     const meRes = await request(app).get("/api/auth/me");
     expect(meRes.status).toBe(401);
     expect(meRes.body.error.code).toBe("UNAUTHENTICATED");
+  });
+
+  it("rejects unauthenticated logout request with 401 UNAUTHENTICATED", async () => {
+    const response = await request(app).post("/api/auth/logout");
+
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe("UNAUTHENTICATED");
   });
 });
 

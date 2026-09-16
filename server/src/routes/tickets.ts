@@ -1,7 +1,7 @@
 import express, { type Request, type Response } from "express";
 import { z } from "zod";
 
-import { sendError } from "../errors";
+import { formatZodErrors, sendError } from "../errors";
 import type { Prisma } from "../generated/prisma/client";
 import {
   rejectRequesterIdInBody,
@@ -70,23 +70,6 @@ const listTicketsQuerySchema = z
       ),
   })
   .strict();
-
-function formatZodErrors(error: z.ZodError): Record<string, string> {
-  const fields: Record<string, string> = {};
-  for (const issue of error.issues) {
-    if (issue.code === "unrecognized_keys") {
-      for (const key of issue.keys) {
-        fields[key] = `Unrecognized query parameter '${key}'`;
-      }
-    } else {
-      const fieldName = issue.path[0];
-      if (typeof fieldName === "string" && !fields[fieldName]) {
-        fields[fieldName] = issue.message;
-      }
-    }
-  }
-  return fields;
-}
 
 export const ticketsRouter = express.Router();
 ticketsRouter.use(requireRequesterContext);
