@@ -1,8 +1,10 @@
+import cookieParser from "cookie-parser";
 import express, { type Response } from "express";
 
 import { sendError } from "./errors";
 import { prisma } from "./prisma";
 import { attachmentsRouter } from "./routes/attachments";
+import { authRouter } from "./routes/auth";
 import { ticketsRouter } from "./routes/tickets";
 
 // The app is built here and started in index.ts, so Supertest can mount it
@@ -10,6 +12,7 @@ import { ticketsRouter } from "./routes/tickets";
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/api/health", (_req, res) => {
   res.status(200).json({ status: "ok", service: "TokTickIT API" });
@@ -60,14 +63,18 @@ app.get("/api/related-systems", async (_req, res) => {
 app.get("/api/requesters", async (_req, res) => {
   // Inactive Requesters never appear (BR-05): the selector must never offer
   // an identity the API would reject the moment it was used.
+  // Role is restricted to REQUESTER.
   await sendReferenceData(res, () =>
-    prisma.requester.findMany({
-      where: { isActive: true },
+    prisma.user.findMany({
+      where: { isActive: true, role: "REQUESTER" },
       orderBy: { name: "asc" },
       select: { id: true, name: true, email: true },
     }),
   );
 });
+
+// Authentication routes (Lab 3 foundation).
+app.use("/api/auth", authRouter);
 
 // Ticket routes require requester context (BR-04, ADR-0003).
 app.use("/api/tickets", ticketsRouter);

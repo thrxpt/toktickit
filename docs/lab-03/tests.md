@@ -42,8 +42,8 @@ that the server returns strict `401`, `403`, or `404` responses.
 
 | Test ID | AC / BR | What It Tests | Expected Result | Automated Test File | Final |
 | --- | --- | --- | --- | --- | --- |
-| UNIT-01 | BR-07 | Password complexity: compliant password | Validated successfully | `password-policy.unit.test.ts` | Planned |
-| UNIT-02 | BR-07 | Password complexity: missing uppercase, digit, or special character | Fails validation with specific field error | `password-policy.unit.test.ts` | Planned |
+| UNIT-01 | BR-07 | Password complexity: compliant password | Validated successfully | `password-policy.unit.test.ts` | Passed |
+| UNIT-02 | BR-07 | Password complexity: missing uppercase, digit, or special character | Fails validation with specific field error | `password-policy.unit.test.ts` | Passed |
 | UNIT-03 | BR-22 | Ticket lifecycle: permitted transitions (`NEW`→`OPEN`, `OPEN`→`IN_PROGRESS`, etc.) | Transition accepted | `status-transitions.unit.test.ts` | Planned |
 | UNIT-04 | BR-22 | Ticket lifecycle: invalid transitions (`NEW`→`RESOLVED`, `CLOSED`→`OPEN`) | Rejected with `INVALID_STATUS_TRANSITION` | `status-transitions.unit.test.ts` | Planned |
 | UNIT-05 | BR-27 | Comment and note text length bounds (1–2000 chars, whitespace trimming) | Empty/whitespace rejected; 1-2000 chars accepted | `comment-validation.unit.test.ts` | Planned |
@@ -52,11 +52,11 @@ that the server returns strict `401`, `403`, or `404` responses.
 
 | Test ID | AC / BR | What It Tests | Expected Result | Automated Test File | Final |
 | --- | --- | --- | --- | --- | --- |
-| API-01 | AC-01, BR-01 | Login with valid credentials | 200 OK, sets `toktickit_session` cookie, returns user data | `auth.api.test.ts` | Planned |
-| API-02 | AC-04, BR-10 | Login with inactive user account | 401 Unauthorized with `ACCOUNT_INACTIVE` error | `auth.api.test.ts` | Planned |
-| API-03 | AC-02, BR-02 | User with `mustChangePassword` accessing protected API | 403 Forbidden with `PASSWORD_CHANGE_REQUIRED` | `auth.api.test.ts` | Planned |
-| API-04 | AC-03, BR-12 | Successful mandatory password change | 200 OK, clears `mustChangePassword`, unlocks API access | `auth.api.test.ts` | Planned |
-| API-05 | AC-05, BR-11 | Logout endpoint execution | 200 OK, clears session cookie; subsequent requests answer 401 | `auth.api.test.ts` | Planned |
+| API-01 | AC-01, BR-01 | Login with valid credentials | 200 OK, sets `toktickit_session` cookie, returns user data | `auth.api.test.ts` | Passed |
+| API-02 | AC-04, BR-10 | Login with inactive user account | 401 Unauthorized with `ACCOUNT_INACTIVE` error | `auth.api.test.ts` | Passed |
+| API-03 | AC-02, BR-02 | User with `mustChangePassword` accessing protected API | 403 Forbidden with `PASSWORD_CHANGE_REQUIRED` | `auth.api.test.ts` | Passed |
+| API-04 | AC-03, BR-12 | Successful mandatory password change | 200 OK, clears `mustChangePassword`, unlocks API access | `auth.api.test.ts` | Passed |
+| API-05 | AC-05, BR-11 | Logout endpoint execution | 200 OK, clears session cookie; subsequent requests answer 401 | `auth.api.test.ts` | Passed |
 | API-06 | AC-06, BR-03 | Requester ticket creation derives owner from session | 201 Created; `requesterId` in body rejected | `authorization.api.test.ts` | Planned |
 | API-07 | AC-07, BR-16 | Requester fetching another user's Ticket | 404 Not Found (safe error, no enumeration) | `authorization.api.test.ts` | Planned |
 | API-08 | AC-08, BR-17 | Requester requesting Internal Notes endpoint | 403 Forbidden without note data | `authorization.api.test.ts` | Planned |
@@ -74,9 +74,9 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-20 | AC-18, BR-29 | Administrator attempts to deactivate own account | 400 Bad Request with `CANNOT_DEACTIVATE_SELF` | `users-admin.api.test.ts` | Planned |
 | API-21 | AC-19, BR-30 | Administrator attempts to deactivate sole active Admin | 400 Bad Request with `CANNOT_DEACTIVATE_LAST_ADMIN` | `users-admin.api.test.ts` | Planned |
 | API-22 | AC-20, BR-33 | Administrator resets initial password for a user | 200 OK, updates hash, sets `mustChangePassword: true` | `users-admin.api.test.ts` | Planned |
-| API-23 | AC-21, BR-35 | Error envelopes conform to standard schema | Standardized `{ error: { code, message, fields? } }` | `auth.api.test.ts` | Planned |
-| API-24 | BR-36 | Re-running database seed idempotency check | Seed runs twice without duplicate rows or errors | `users-admin.api.test.ts` | Planned |
-| API-25 | AC-01, BR-09 | Login with incorrect password | 401 Unauthorized with generic safe error | `auth.api.test.ts` | Planned |
+| API-23 | AC-21, BR-35 | Error envelopes conform to standard schema | Standardized `{ error: { code, message, fields? } }` | `auth.api.test.ts` | Passed |
+| API-24 | BR-36 | Re-running database seed idempotency check | Seed runs twice without duplicate rows or errors | `users-admin.api.test.ts` | Passed |
+| API-25 | AC-01, BR-09 | Login with incorrect password | 401 Unauthorized with generic safe error | `auth.api.test.ts` | Passed |
 
 ### UI Component Tests — `client/tests/lab-03/*.test.tsx`
 

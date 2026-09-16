@@ -21,6 +21,7 @@ server/uploads/
 coverage/
 test-results/
 playwright-report/
+.vitest/
 
 # Playwright report output is noise; artifacts/lab-02/screenshots/ IS committed
 

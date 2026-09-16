@@ -24,7 +24,15 @@ export type ErrorCode =
   | "ATTACHMENT_LIMIT_REACHED"
   | "FILE_TOO_LARGE"
   | "UNSUPPORTED_FILE_TYPE"
-  | "ATTACHMENT_NOT_FOUND";
+  | "ATTACHMENT_NOT_FOUND"
+  | "UNAUTHENTICATED"
+  | "INVALID_CREDENTIALS"
+  | "ACCOUNT_INACTIVE"
+  | "PASSWORD_CHANGE_REQUIRED"
+  | "FORBIDDEN"
+  | "DUPLICATE_EMAIL"
+  | "CANNOT_DEACTIVATE_SELF"
+  | "CANNOT_DEACTIVATE_LAST_ADMIN";
 
 const failures = {
   DATABASE_UNAVAILABLE: {
@@ -80,14 +88,49 @@ const failures = {
     status: 404,
     message: "Attachment not found",
   },
+  UNAUTHENTICATED: {
+    status: 401,
+    message: "Authentication required.",
+  },
+  INVALID_CREDENTIALS: {
+    status: 401,
+    message: "Invalid email or password.",
+  },
+  ACCOUNT_INACTIVE: {
+    status: 401,
+    message: "Account is deactivated. Please contact an administrator.",
+  },
+  PASSWORD_CHANGE_REQUIRED: {
+    status: 403,
+    message: "Password change is required before continuing.",
+  },
+  FORBIDDEN: {
+    status: 403,
+    message: "You do not have permission to access this resource.",
+  },
+  DUPLICATE_EMAIL: {
+    status: 409,
+    message: "A user with this email address already exists.",
+  },
+  CANNOT_DEACTIVATE_SELF: {
+    status: 400,
+    message: "Administrators cannot deactivate their own accounts.",
+  },
+  CANNOT_DEACTIVATE_LAST_ADMIN: {
+    status: 400,
+    message: "Cannot deactivate or demote the last active Administrator.",
+  },
 } satisfies Record<ErrorCode, { status: number; message: string }>;
 
 export function sendError(
   res: Response,
   code: ErrorCode,
   fields?: Record<string, string>,
+  customMessage?: string,
 ): void {
-  const { status, message } = failures[code];
+  const failure = failures[code];
+  const status = failure.status;
+  const message = customMessage ?? failure.message;
 
   if (fields && Object.keys(fields).length > 0) {
     res.status(status).json({ error: { code, message, fields } });
