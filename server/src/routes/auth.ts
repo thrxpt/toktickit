@@ -2,6 +2,7 @@ import express, { type Request, type Response } from "express";
 import { z } from "zod";
 
 import {
+  DUMMY_PASSWORD_HASH,
   hashPassword,
   passwordPolicySchema,
   verifyPassword,
@@ -68,8 +69,9 @@ authRouter.post("/login", async (req: Request, res: Response) => {
       },
     });
 
-    // BR-09, API-25: Generic error message to prevent user enumeration
+    // BR-09, API-25: Generic error message and constant-time check to prevent user enumeration
     if (!user) {
+      await verifyPassword(password, DUMMY_PASSWORD_HASH);
       sendError(res, "INVALID_CREDENTIALS");
       return;
     }

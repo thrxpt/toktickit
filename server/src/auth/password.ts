@@ -5,6 +5,12 @@ import { z } from "zod";
 // hashed using bcrypt with a minimum work factor of 10.
 export const BCRYPT_SALT_ROUNDS = 10;
 
+// Dummy hash for constant-time comparison on unknown email to prevent timing-based user enumeration (BR-09).
+export const DUMMY_PASSWORD_HASH = bcrypt.hashSync(
+  "dummy-password-timing-defense",
+  BCRYPT_SALT_ROUNDS,
+);
+
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 }

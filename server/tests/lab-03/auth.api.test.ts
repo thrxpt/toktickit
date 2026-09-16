@@ -120,6 +120,16 @@ describe("API-02 — Login with inactive user account (AC-04, BR-10)", () => {
 
   it("rejects inactive Requester with 401 ACCOUNT_INACTIVE", async () => {
     const response = await request(app).post("/api/auth/login").send({
+      email: "retired.staff@example.ac.th",
+      password: "Password123!",
+    });
+
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe("ACCOUNT_INACTIVE");
+  });
+
+  it("rejects legacy inactive Requester (daniel.okafor) with 401 ACCOUNT_INACTIVE", async () => {
+    const response = await request(app).post("/api/auth/login").send({
       email: "daniel.okafor@example.ac.th",
       password: "Password123!",
     });

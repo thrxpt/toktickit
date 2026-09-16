@@ -88,13 +88,17 @@ export async function requireAuth(
     }
 
     req.user = user;
-    req.requesterId = user.id;
+    if (user.role === "REQUESTER") {
+      req.requesterId = user.id;
+    }
 
     // BR-02, AC-02: Mandatory password change gate.
     // Users with mustChangePassword === true can only access /api/auth/change-password,
     // /api/auth/me, and /api/auth/logout.
     if (user.mustChangePassword) {
-      const pathname = (req.baseUrl + req.path).split("?")[0].replace(/\/+$/, "");
+      const pathname = (req.baseUrl + req.path)
+        .split("?")[0]
+        .replace(/\/+$/, "");
       const whitelistedPaths = [
         "/api/auth/change-password",
         "/api/auth/me",

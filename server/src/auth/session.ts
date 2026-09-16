@@ -6,8 +6,18 @@ import type { Role } from "../generated/prisma/client";
 export const SESSION_COOKIE_NAME = "toktickit_session";
 
 // Secret used for signing session tokens (ADR-0007).
-const JWT_SECRET =
-  process.env["JWT_SECRET"] || "toktickit-dev-jwt-secret-key-for-sessions-2026";
+const JWT_SECRET = (() => {
+  const secret = process.env["JWT_SECRET"];
+  if (secret) {
+    return secret;
+  }
+  if (process.env["NODE_ENV"] === "production") {
+    throw new Error(
+      "JWT_SECRET environment variable must be set in production.",
+    );
+  }
+  return "toktickit-dev-jwt-secret-key-for-sessions-2026";
+})();
 
 export interface SessionPayload {
   userId: number;
