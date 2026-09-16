@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import { sendError } from "../errors";
 import { prisma } from "../prisma";
+import { extractSessionToken, requireAuth } from "./auth";
 
 declare global {
   namespace Express {
@@ -11,14 +12,20 @@ declare global {
   }
 }
 
-// Resolves X-Requester-Id once and attaches req.requesterId: number (ADR-0003).
-// Applied to every route except /api/health, /api/categories, /api/related-systems,
-// and /api/requesters (api-spec.md, "Requester context").
+// Resolves requester context. In Lab 3, authentication derives identity from
+// signed session tokens (ADR-0007). In Lab 2 backward-compatibility mode,
+// it falls back to X-Requester-Id (ADR-0003).
 export async function requireRequesterContext(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
+  const sessionToken = extractSessionToken(req);
+  if (sessionToken) {
+    await requireAuth(req, res, next);
+    return;
+  }
+
   const header = req.header("X-Requester-Id");
 
   if (!header || header.trim() === "") {

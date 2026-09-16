@@ -287,7 +287,8 @@ tables.
 The database seed must be safe to re-run without duplicating records:
 
 - **Requesters**: 4 active (`jennifer.anderson@example.ac.th`, `somchai.prasert@example.ac.th`,
-  `kanya.s@example.ac.th`, `chatchai.n@example.ac.th`), 1 inactive (`retired.staff@example.ac.th`).
+  `marcus.chen@example.ac.th`, `priya.raman@example.ac.th`), 2 inactive (`retired.staff@example.ac.th`,
+  `daniel.okafor@example.ac.th`).
 - **IT Staff**: 3 active (`michael.brown@toktickit.com`, `sarah.johnson@toktickit.com`,
   `david.lee@toktickit.com`), 1 inactive (`former.agent@toktickit.com`).
 - **Administrator**: 1 active (`admin@toktickit.com`).
