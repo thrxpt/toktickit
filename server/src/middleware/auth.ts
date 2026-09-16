@@ -1,9 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
-import {
-  SESSION_COOKIE_NAME,
-  verifySessionToken,
-} from "../auth/session";
+import { SESSION_COOKIE_NAME, verifySessionToken } from "../auth/session";
 import { sendError } from "../errors";
 import type { Role } from "../generated/prisma/client";
 import { prisma } from "../prisma";

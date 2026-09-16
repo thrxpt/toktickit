@@ -149,7 +149,9 @@ export type SeedCounts = {
   users: number;
 };
 
-export async function seedReferenceData(prisma: PrismaClient): Promise<SeedCounts> {
+export async function seedReferenceData(
+  prisma: PrismaClient,
+): Promise<SeedCounts> {
   for (const { name, isActive } of categories) {
     await prisma.category.upsert({
       where: { name },

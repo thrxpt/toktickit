@@ -113,8 +113,7 @@ describe("API-02 — Login with inactive user account (AC-04, BR-10)", () => {
     expect(response.body).toEqual({
       error: {
         code: "ACCOUNT_INACTIVE",
-        message:
-          "Account is deactivated. Please contact an administrator.",
+        message: "Account is deactivated. Please contact an administrator.",
       },
     });
   });
@@ -327,7 +326,9 @@ describe("API-05 — Logout endpoint execution (AC-05, BR-11)", () => {
     expect(loginRes.status).toBe(200);
 
     const cookieHeader = loginRes.headers["set-cookie"];
-    const rawCookie = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader;
+    const rawCookie = Array.isArray(cookieHeader)
+      ? cookieHeader[0]
+      : cookieHeader;
 
     // Logout request
     const logoutRes = await request(app)
