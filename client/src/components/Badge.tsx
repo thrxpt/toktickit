@@ -1,4 +1,12 @@
-export type BadgeValue = 'LOW' | 'MEDIUM' | 'HIGH' | 'NEW' | string
+export type BadgeValue =
+  | 'LOW'
+  | 'MEDIUM'
+  | 'HIGH'
+  | 'NEW'
+  | 'REQUESTER'
+  | 'IT_STAFF'
+  | 'ADMINISTRATOR'
+  | string
 
 export interface BadgeProps {
   value: BadgeValue
@@ -10,6 +18,9 @@ const BADGE_MAP: Record<string, { label: string; className: string }> = {
   MEDIUM: { label: 'Medium', className: 'zen-badge-medium' },
   HIGH: { label: 'High', className: 'zen-badge-high' },
   NEW: { label: 'New', className: 'zen-badge-new' },
+  REQUESTER: { label: 'Requester', className: 'zen-badge-role-requester' },
+  IT_STAFF: { label: 'IT Staff', className: 'zen-badge-role-staff' },
+  ADMINISTRATOR: { label: 'Administrator', className: 'zen-badge-role-admin' },
 }
 
 export function Badge({ value, className = '' }: BadgeProps) {

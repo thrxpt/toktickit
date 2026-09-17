@@ -57,8 +57,8 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-03 | AC-02, BR-02 | User with `mustChangePassword` accessing protected API | 403 Forbidden with `PASSWORD_CHANGE_REQUIRED` | `auth.api.test.ts` | Passed |
 | API-04 | AC-03, BR-12 | Successful mandatory password change | 200 OK, clears `mustChangePassword`, unlocks API access | `auth.api.test.ts` | Passed |
 | API-05 | AC-05, BR-11 | Logout endpoint execution | 200 OK, clears session cookie; subsequent requests answer 401 | `auth.api.test.ts` | Passed |
-| API-06 | AC-06, BR-03 | Requester ticket creation derives owner from session | 201 Created; `requesterId` in body rejected | `authorization.api.test.ts` | Planned |
-| API-07 | AC-07, BR-16 | Requester fetching another user's Ticket | 404 Not Found (safe error, no enumeration) | `authorization.api.test.ts` | Planned |
+| API-06 | AC-06, BR-03 | Requester ticket creation derives owner from session | 201 Created; `requesterId` in body rejected | `authorization.api.test.ts` | Passed |
+| API-07 | AC-07, BR-16 | Requester fetching another user's Ticket | 404 Not Found (safe error, no enumeration) | `authorization.api.test.ts` | Passed |
 | API-08 | AC-08, BR-17 | Requester requesting Internal Notes endpoint | 403 Forbidden without note data | `authorization.api.test.ts` | Planned |
 | API-09 | AC-09, BR-24 | Requester indicates "Problem Appears Resolved" | 200 OK, `resolvedByRequester: true`, status unchanged | `authorization.api.test.ts` | Planned |
 | API-10 | AC-10, FR-09 | IT Staff queries Ticket Queue with filters and pagination | 200 OK, returns filtered tickets and pagination metadata | `staff-queue.api.test.ts` | Planned |
@@ -82,10 +82,10 @@ that the server returns strict `401`, `403`, or `404` responses.
 
 | Test ID | AC / BR | What It Tests | Expected Result | Automated Test File | Final |
 | --- | --- | --- | --- | --- | --- |
-| UI-01 | AC-01, AC-04 | Login form submission, busy state, and inactive account alert | Disables submit button, shows spinner, renders alert on failure | `Login.test.tsx` | Planned |
-| UI-02 | AC-02, BR-02 | User flagged with `mustChangePassword` forced to change screen | Redirects away from normal routes to `/change-password` | `ChangePassword.test.tsx` | Planned |
-| UI-03 | AC-03, BR-07 | Password change form checklist criteria validation | Validates length, case, digits, special chars in real-time | `ChangePassword.test.tsx` | Planned |
-| UI-04 | AC-05, FR-04 | AppShell renders user name, role badge, and handles Logout | Displays name & badge; clicking Logout clears session and redirects | `AppShell.test.tsx` | Planned |
+| UI-01 | AC-01, AC-04 | Login form submission, busy state, and inactive account alert | Disables submit button, shows spinner, renders alert on failure | `Login.test.tsx` | Passed |
+| UI-02 | AC-02, BR-02 | User flagged with `mustChangePassword` forced to change screen | Redirects away from normal routes to `/change-password` | `ChangePassword.test.tsx` | Passed |
+| UI-03 | AC-03, BR-07 | Password change form checklist criteria validation | Validates length, case, digits, special chars in real-time | `ChangePassword.test.tsx` | Passed |
+| UI-04 | AC-05, FR-04 | AppShell renders user name, role badge, and handles Logout | Displays name & badge; clicking Logout clears session and redirects | `AppShell.test.tsx` | Passed |
 | UI-05 | AC-09, FR-08 | Requester clicks "Problem Appears Resolved" | Shows confirm dialog, updates indication state, disables button | `RequesterTicketDetail.test.tsx` | Planned |
 | UI-06 | AC-10, FR-09 | IT Staff Queue renders table, search filter, and pagination | Renders columns, filters rows on search, paginates results | `StaffTicketQueue.test.tsx` | Planned |
 | UI-07 | AC-11, BR-23 | IT Staff clicks "Claim" on unassigned ticket | Calls owner endpoint and updates owner display | `StaffTicketDetail.test.tsx` | Planned |
@@ -96,7 +96,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | UI-12 | AC-17, BR-31 | Admin user creation displays validation error on duplicate email | Form renders field-level duplicate email error | `UserManagement.test.tsx` | Planned |
 | UI-13 | AC-18, AC-19 | Admin edit user disables deactivation toggle on self & last admin | Switch disabled with tooltip explanation | `UserManagement.test.tsx` | Planned |
 | UI-14 | AC-20, BR-33 | Admin resets initial password from edit drawer | Opens modal, captures password, displays success feedback | `UserManagement.test.tsx` | Planned |
-| UI-15 | FR-20 | Role-based navigation hides unauthorized links | Requesters see no Queue or Admin; Staff see Queue only; Admin sees Users | `AppShell.test.tsx` | Planned |
+| UI-15 | FR-20 | Role-based navigation hides unauthorized links | Requesters see no Queue or Admin; Staff see Queue only; Admin sees Users | `AppShell.test.tsx` | Passed |
 
 ### UI Style Tests — `client/tests/lab-03/style/*.test.tsx`
 

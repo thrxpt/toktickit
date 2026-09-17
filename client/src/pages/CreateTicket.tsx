@@ -9,6 +9,7 @@ import ReferenceSelect, {
 } from "../components/ReferenceSelect";
 import StateBlock from "../components/StateBlock";
 import SubmitButton from "../components/SubmitButton";
+import { useAuth } from "../auth/AuthContext";
 import { useRequester } from "../context/RequesterContext";
 
 interface CreatedTicket {
@@ -25,7 +26,19 @@ export interface AttachmentOutcome {
 }
 
 export function CreateTicket() {
-  const { selectedRequester } = useRequester();
+  let user: { name: string } | null = null;
+  try {
+    user = useAuth().user;
+  } catch {
+    // outside AuthProvider
+  }
+  let selectedRequester: { name: string } | null = null;
+  try {
+    selectedRequester = useRequester().selectedRequester;
+  } catch {
+    // outside RequesterProvider
+  }
+  const requesterDisplayName = user?.name || selectedRequester?.name || "";
 
   const [categories, setCategories] = useState<ReferenceOption[]>([]);
   const [relatedSystems, setRelatedSystems] = useState<ReferenceOption[]>([]);
@@ -332,7 +345,7 @@ export function CreateTicket() {
                     id="requester"
                     label="Requester"
                     readOnly
-                    readOnlyValue={selectedRequester?.name || ""}
+                    readOnlyValue={requesterDisplayName}
                   />
                 </div>
               </div>

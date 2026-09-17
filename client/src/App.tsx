@@ -1,13 +1,18 @@
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 
+import { AuthProvider } from './auth/AuthContext'
 import AppShell from './components/AppShell'
 import RequesterGuard from './components/RequesterGuard'
 import { RequesterProvider } from './context/RequesterContext'
+import ChangePassword from './pages/ChangePassword'
 import CheckSystem from './pages/CheckSystem'
 import CreateTicket from './pages/CreateTicket'
+import Login from './pages/Login'
 import MyTickets from './pages/MyTickets'
 import RequesterSelection from './pages/RequesterSelection'
 import RequesterTicketDetail from './pages/RequesterTicketDetail'
+import { RequirePasswordChange } from './routes/RequirePasswordChange'
+import { RequireRole } from './routes/RequireRole'
 
 function NotFoundPage() {
   return (
@@ -30,6 +35,17 @@ export function AppRoutes() {
     <Routes>
       {/* Root redirects to /tickets */}
       <Route path="/" element={<Navigate to="/tickets" replace />} />
+
+      {/* Authentication screens (Lab 3) */}
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/change-password"
+        element={
+          <RequirePasswordChange>
+            <ChangePassword />
+          </RequirePasswordChange>
+        }
+      />
 
       {/* Lab 2 Development Requester Selection (Issue 8) */}
       <Route
@@ -78,6 +94,34 @@ export function AppRoutes() {
         }
       />
 
+      {/* Staff & Admin Routes (Lab 3) */}
+      <Route
+        path="/staff/queue"
+        element={
+          <RequireRole roles={['IT_STAFF', 'ADMINISTRATOR']}>
+            <AppShell>
+              <div className="container py-4">
+                <h2>Ticket Queue</h2>
+                <p className="text-muted">Staff ticket queue will be available in Issue 17.</p>
+              </div>
+            </AppShell>
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <RequireRole roles={['ADMINISTRATOR']}>
+            <AppShell>
+              <div className="container py-4">
+                <h2>User Management</h2>
+                <p className="text-muted">Administrator user management will be available in Issue 20.</p>
+              </div>
+            </AppShell>
+          </RequireRole>
+        }
+      />
+
       {/* Lab 1 diagnostic screen */}
       <Route
         path="/system"
@@ -103,9 +147,11 @@ export function AppRoutes() {
 
 export function App() {
   return (
-    <RequesterProvider>
-      <AppRoutes />
-    </RequesterProvider>
+    <AuthProvider>
+      <RequesterProvider>
+        <AppRoutes />
+      </RequesterProvider>
+    </AuthProvider>
   )
 }
 

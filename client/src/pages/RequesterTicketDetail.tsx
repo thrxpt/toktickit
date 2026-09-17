@@ -6,13 +6,26 @@ import AttachmentSection from "../components/AttachmentSection";
 import Badge from "../components/Badge";
 import ReadOnlyField from "../components/ReadOnlyField";
 import StateBlock from "../components/StateBlock";
+import { useAuth } from "../auth/AuthContext";
 import { useRequester } from "../context/RequesterContext";
 import type { TicketDetail } from "../types/ticket";
 import { formatDate } from "../utils/date";
 
 export function RequesterTicketDetail() {
   const { id } = useParams<{ id: string }>();
-  const { selectedRequester } = useRequester();
+  let user: { id: number; name: string } | null = null;
+  try {
+    user = useAuth().user;
+  } catch {
+    // outside AuthProvider
+  }
+  let selectedRequester: { id: number; name: string } | null = null;
+  try {
+    selectedRequester = useRequester().selectedRequester;
+  } catch {
+    // outside RequesterProvider
+  }
+  const activeRequester = user || selectedRequester;
 
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,7 +33,7 @@ export function RequesterTicketDetail() {
   const [error, setError] = useState(false);
 
   const fetchTicket = useCallback(() => {
-    if (!id || !selectedRequester) {
+    if (!id || !activeRequester) {
       setLoading(false);
       return;
     }
@@ -60,7 +73,7 @@ export function RequesterTicketDetail() {
     return () => {
       controller.abort();
     };
-  }, [id, selectedRequester]);
+  }, [id, activeRequester]);
 
   useEffect(() => {
     const abort = fetchTicket();

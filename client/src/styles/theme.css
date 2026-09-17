@@ -13,7 +13,13 @@
   --zen-text-muted: #5a6b62;
   --zen-readonly-bg: #f2f4f1;
   --zen-danger: #b02a2a;
+  --zen-danger-bg: #fdf2f2;
   --zen-warning: #b8860b;
+  --zen-warning-bg: #fffbeb;
+  --zen-info: #1e40af;
+  --zen-info-bg: #eff6ff;
+  --zen-admin: #6b21a8;
+  --zen-admin-bg: #f3e8ff;
   --zen-success: #006b3c;
 
   /* Badge colors */
@@ -249,6 +255,40 @@ textarea.form-control {
   background-color: var(--zen-badge-new-bg);
   color: var(--zen-badge-new-text);
   border: 1px solid var(--zen-border);
+}
+
+/* Role Badges (ui-spec.md §3) */
+.zen-badge-role-requester {
+  background-color: var(--zen-pale);
+  color: var(--zen-primary);
+  border: 1px solid var(--zen-border);
+}
+
+.zen-badge-role-staff {
+  background-color: var(--zen-info-bg);
+  color: var(--zen-info);
+  border: 1px solid rgba(30, 64, 175, 0.2);
+}
+
+.zen-badge-role-admin {
+  background-color: var(--zen-admin-bg);
+  color: var(--zen-admin);
+  border: 1px solid rgba(107, 33, 168, 0.2);
+}
+
+/* User Avatar Initials (ui-spec.md §4.3) */
+.zen-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: var(--zen-pale);
+  color: var(--zen-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  user-select: none;
 }
 
 /* Touch targets */

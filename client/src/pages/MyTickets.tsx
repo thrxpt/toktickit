@@ -6,6 +6,7 @@ import Badge from '../components/Badge'
 import Pagination from '../components/Pagination'
 import StateBlock from '../components/StateBlock'
 import Toolbar from '../components/Toolbar'
+import { useAuth } from '../auth/AuthContext'
 import { useRequester } from '../context/RequesterContext'
 import type { TicketListItem, TicketListMeta } from '../types/ticket'
 import { formatDate } from '../utils/date'
@@ -16,7 +17,19 @@ interface CategoryOption {
 }
 
 export function MyTickets() {
-  const { selectedRequester } = useRequester()
+  let user: { id: number; name: string } | null = null
+  try {
+    user = useAuth().user
+  } catch {
+    // outside AuthProvider
+  }
+  let selectedRequester: { id: number; name: string } | null = null
+  try {
+    selectedRequester = useRequester().selectedRequester
+  } catch {
+    // outside RequesterProvider
+  }
+  const activeRequester = user || selectedRequester
   const [searchParams, setSearchParams] = useSearchParams()
 
   const searchInputId = useId()
@@ -77,7 +90,7 @@ export function MyTickets() {
 
   // Fetch tickets with AbortController to prevent race conditions
   useEffect(() => {
-    if (!selectedRequester) {
+    if (!activeRequester) {
       setLoading(false)
       return
     }
@@ -134,7 +147,7 @@ export function MyTickets() {
       controller.abort()
     }
   }, [
-    selectedRequester?.id,
+    activeRequester,
     search,
     categoryId,
     requestedPriority,
