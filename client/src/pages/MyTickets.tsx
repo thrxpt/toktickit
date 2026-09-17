@@ -74,7 +74,10 @@ export function MyTickets() {
       .then((res) => (res.ok ? res.json() : []))
       .then((data: CategoryOption[]) => {
         if (!controller.signal.aborted) {
-          setCategories(data)
+          const validCategories = Array.isArray(data)
+            ? data.filter((cat) => !('email' in (cat as unknown as Record<string, unknown>)))
+            : []
+          setCategories(validCategories)
         }
       })
       .catch((err: unknown) => {
