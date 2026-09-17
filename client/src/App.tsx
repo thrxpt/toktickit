@@ -1,18 +1,18 @@
-import { Link, Navigate, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Route, Routes } from "react-router-dom";
 
-import { AuthProvider } from './auth/AuthContext'
-import AppShell from './components/AppShell'
-import RequesterGuard from './components/RequesterGuard'
-import { RequesterProvider } from './context/RequesterContext'
-import ChangePassword from './pages/ChangePassword'
-import CheckSystem from './pages/CheckSystem'
-import CreateTicket from './pages/CreateTicket'
-import Login from './pages/Login'
-import MyTickets from './pages/MyTickets'
-import RequesterSelection from './pages/RequesterSelection'
-import RequesterTicketDetail from './pages/RequesterTicketDetail'
-import { RequirePasswordChange } from './routes/RequirePasswordChange'
-import { RequireRole } from './routes/RequireRole'
+import { AuthProvider } from "./auth/AuthContext";
+import AppShell from "./components/AppShell";
+import RequesterGuard from "./components/RequesterGuard";
+import { RequesterProvider } from "./context/RequesterContext";
+import ChangePassword from "./pages/ChangePassword";
+import CheckSystem from "./pages/CheckSystem";
+import CreateTicket from "./pages/CreateTicket";
+import Login from "./pages/Login";
+import MyTickets from "./pages/MyTickets";
+import RequesterSelection from "./pages/RequesterSelection";
+import RequesterTicketDetail from "./pages/RequesterTicketDetail";
+import { RequirePasswordChange } from "./routes/RequirePasswordChange";
+import { RequireRole } from "./routes/RequireRole";
 
 function NotFoundPage() {
   return (
@@ -27,7 +27,7 @@ function NotFoundPage() {
         </Link>
       </div>
     </div>
-  )
+  );
 }
 
 export function AppRoutes() {
@@ -84,8 +84,8 @@ export function AppRoutes() {
           <RequesterGuard>
             <AppShell
               breadcrumbs={[
-                { label: 'My Tickets', to: '/tickets' },
-                { label: 'Ticket Details' },
+                { label: "My Tickets", to: "/tickets" },
+                { label: "Ticket Details" },
               ]}
             >
               <RequesterTicketDetail />
@@ -98,11 +98,13 @@ export function AppRoutes() {
       <Route
         path="/staff/queue"
         element={
-          <RequireRole roles={['IT_STAFF', 'ADMINISTRATOR']}>
+          <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
             <AppShell>
               <div className="container py-4">
                 <h2>Ticket Queue</h2>
-                <p className="text-muted">Staff ticket queue will be available in Issue 17.</p>
+                <p className="text-muted">
+                  Staff ticket queue will be available in Issue 17.
+                </p>
               </div>
             </AppShell>
           </RequireRole>
@@ -111,11 +113,13 @@ export function AppRoutes() {
       <Route
         path="/admin/users"
         element={
-          <RequireRole roles={['ADMINISTRATOR']}>
+          <RequireRole roles={["ADMINISTRATOR"]}>
             <AppShell>
               <div className="container py-4">
                 <h2>User Management</h2>
-                <p className="text-muted">Administrator user management will be available in Issue 20.</p>
+                <p className="text-muted">
+                  Administrator user management will be available in Issue 20.
+                </p>
               </div>
             </AppShell>
           </RequireRole>
@@ -142,7 +146,7 @@ export function AppRoutes() {
         }
       />
     </Routes>
-  )
+  );
 }
 
 export function App() {
@@ -152,7 +156,7 @@ export function App() {
         <AppRoutes />
       </RequesterProvider>
     </AuthProvider>
-  )
+  );
 }
 
-export default App
+export default App;

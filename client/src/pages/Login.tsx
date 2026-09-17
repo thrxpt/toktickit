@@ -1,76 +1,81 @@
-import React, { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
-import { useAuth } from '../auth/AuthContext'
-import { FormField } from '../components/FormField'
-import { SubmitButton } from '../components/SubmitButton'
-import { getDefaultRouteForRole } from '../utils/navigation'
+import { useAuth } from "../auth/AuthContext";
+import { FormField } from "../components/FormField";
+import { SubmitButton } from "../components/SubmitButton";
+import { getDefaultRouteForRole } from "../utils/navigation";
 
 export function Login() {
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const [emailError, setEmailError] = useState('')
-  const [passwordError, setPasswordError] = useState('')
-  const [formError, setFormError] = useState('')
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [formError, setFormError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    let hasError = false
+    let hasError = false;
     if (!email.trim()) {
-      setEmailError('Email is required.')
-      hasError = true
+      setEmailError("Email is required.");
+      hasError = true;
     } else {
-      setEmailError('')
+      setEmailError("");
     }
 
     if (!password) {
-      setPasswordError('Password is required.')
-      hasError = true
+      setPasswordError("Password is required.");
+      hasError = true;
     } else {
-      setPasswordError('')
+      setPasswordError("");
     }
 
     if (hasError) {
-      return
+      return;
     }
 
-    setSubmitting(true)
-    setFormError('')
+    setSubmitting(true);
+    setFormError("");
 
     try {
-      const user = await login({ email: email.trim(), password })
+      const user = await login({ email: email.trim(), password });
       if (user.mustChangePassword) {
-        navigate('/change-password', { replace: true })
+        navigate("/change-password", { replace: true });
       } else {
-        const fromPath = (location.state as { from?: { pathname?: string } })?.from?.pathname
-        const targetPath = fromPath && fromPath !== '/login' ? fromPath : getDefaultRouteForRole(user.role)
-        navigate(targetPath, { replace: true })
+        const fromPath = (location.state as { from?: { pathname?: string } })
+          ?.from?.pathname;
+        const targetPath =
+          fromPath && fromPath !== "/login"
+            ? fromPath
+            : getDefaultRouteForRole(user.role);
+        navigate(targetPath, { replace: true });
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Invalid email or password.'
-      setFormError(message)
+      const message =
+        err instanceof Error ? err.message : "Invalid email or password.";
+      setFormError(message);
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="min-vh-100 d-flex flex-column justify-content-center align-items-center px-3 py-5 bg-body">
-      <div className="card shadow-sm w-100" style={{ maxWidth: '440px' }}>
+      <div className="card shadow-sm w-100" style={{ maxWidth: "440px" }}>
         <div className="card-body p-4 p-sm-5">
           {/* Brand Header */}
           <div className="text-center mb-4">
             <div
               className="d-inline-flex align-items-center justify-content-center mb-2"
-              style={{ color: 'var(--zen-primary)' }}
+              style={{ color: "var(--zen-primary)" }}
             >
               <svg
                 width="36"
@@ -87,7 +92,10 @@ export function Login() {
                 <polyline points="12 6 12 12 16 14" />
               </svg>
             </div>
-            <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--zen-primary)' }}>
+            <h1
+              className="h3 fw-bold mb-1"
+              style={{ color: "var(--zen-primary)" }}
+            >
               TokTickIT
             </h1>
             <p className="text-body-secondary small mb-0">
@@ -97,26 +105,24 @@ export function Login() {
 
           {/* Form-level Error Alert */}
           {formError && (
-            <div className="alert alert-danger py-2 px-3 mb-3 small" role="alert">
+            <div
+              className="alert alert-danger py-2 px-3 mb-3 small"
+              role="alert"
+            >
               {formError}
             </div>
           )}
 
           <form onSubmit={handleSubmit} noValidate>
-            <FormField
-              id="email"
-              label="Email"
-              required
-              error={emailError}
-            >
+            <FormField id="email" label="Email" required error={emailError}>
               <input
                 id="email"
                 type="email"
                 className="form-control"
                 value={email}
                 onChange={(e) => {
-                  setEmail(e.target.value)
-                  if (emailError) setEmailError('')
+                  setEmail(e.target.value);
+                  if (emailError) setEmailError("");
                 }}
                 autoFocus
                 autoComplete="email"
@@ -134,22 +140,24 @@ export function Login() {
               <div className="input-group">
                 <input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  className={`form-control ${passwordError ? 'is-invalid' : ''}`}
+                  type={showPassword ? "text" : "password"}
+                  className={`form-control ${passwordError ? "is-invalid" : ""}`}
                   value={password}
                   onChange={(e) => {
-                    setPassword(e.target.value)
-                    if (passwordError) setPasswordError('')
+                    setPassword(e.target.value);
+                    if (passwordError) setPasswordError("");
                   }}
                   autoComplete="current-password"
-                  aria-invalid={passwordError ? 'true' : undefined}
-                  aria-describedby={passwordError ? 'password-error' : undefined}
+                  aria-invalid={passwordError ? "true" : undefined}
+                  aria-describedby={
+                    passwordError ? "password-error" : undefined
+                  }
                 />
                 <button
                   type="button"
                   className="btn btn-outline-secondary"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <svg
@@ -203,7 +211,7 @@ export function Login() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Login
+export default Login;

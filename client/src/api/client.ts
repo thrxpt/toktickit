@@ -5,19 +5,19 @@ export async function apiFetch(
   input: string | URL | Request,
   init?: RequestInit,
 ): Promise<Response> {
-  const headers = new Headers(init?.headers)
+  const headers = new Headers(init?.headers);
 
-  const requesterId = localStorage.getItem('toktickit_requester_id')
-  if (requesterId && !headers.has('X-Requester-Id')) {
-    headers.set('X-Requester-Id', requesterId)
+  const requesterId = localStorage.getItem("toktickit_requester_id");
+  if (requesterId && !headers.has("X-Requester-Id")) {
+    headers.set("X-Requester-Id", requesterId);
   }
 
   // pi-lens-ignore: ts-ssrf
   return fetch(input, {
-    credentials: 'same-origin',
+    credentials: "same-origin",
     ...init,
     headers,
-  })
+  });
 }
 
-export default apiFetch
+export default apiFetch;

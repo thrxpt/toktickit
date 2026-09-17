@@ -73,7 +73,7 @@ export function rejectRequesterIdInBody(
   if (
     req.body &&
     typeof req.body === "object" &&
-    Object.prototype.hasOwnProperty.call(req.body, "requesterId")
+    Object.hasOwn(req.body, "requesterId")
   ) {
     sendError(res, "REQUESTER_ID_IN_BODY");
     return;

@@ -1,55 +1,53 @@
-import React, { useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import React, { useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 
-import { useAuth } from '../auth/AuthContext'
-import { useRequester } from '../context/RequesterContext'
-import type { AuthenticatedUser, UserRole } from '../types/auth'
-import { getDefaultRouteForRole } from '../utils/navigation'
-import { Badge } from './Badge'
+import { useAuth } from "../auth/AuthContext";
+import { useRequester } from "../context/RequesterContext";
+import type { AuthenticatedUser, UserRole } from "../types/auth";
+import { getDefaultRouteForRole } from "../utils/navigation";
+import { Badge } from "./Badge";
 
 export interface BreadcrumbItem {
-  label: string
-  to?: string
+  label: string;
+  to?: string;
 }
 
 export interface AppShellProps {
-  children?: React.ReactNode
-  breadcrumbs?: BreadcrumbItem[]
-  user?: AuthenticatedUser | null
-  onLogout?: () => void
-  requesterName?: string
-  onChangeRequester?: () => void
+  children?: React.ReactNode;
+  breadcrumbs?: BreadcrumbItem[];
+  user?: AuthenticatedUser | null;
+  onLogout?: () => void;
+  requesterName?: string;
+  onChangeRequester?: () => void;
 }
 
 function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  if (parts.length === 0 || !parts[0]) return '?'
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0 || !parts[0]) return "?";
   if (parts.length === 1) {
-    return parts[0].substring(0, 2).toUpperCase()
+    return parts[0].substring(0, 2).toUpperCase();
   }
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function getNavLinksForRole(role?: UserRole): { to: string; label: string; end: boolean }[] {
+function getNavLinksForRole(
+  role?: UserRole,
+): { to: string; label: string; end: boolean }[] {
   switch (role) {
-    case 'REQUESTER':
+    case "REQUESTER":
       return [
-        { to: '/tickets', label: 'My Tickets', end: true },
-        { to: '/tickets/new', label: 'Create Ticket', end: false },
-      ]
-    case 'IT_STAFF':
-      return [
-        { to: '/staff/queue', label: 'Ticket Queue', end: false },
-      ]
-    case 'ADMINISTRATOR':
-      return [
-        { to: '/admin/users', label: 'Users', end: false },
-      ]
+        { to: "/tickets", label: "My Tickets", end: true },
+        { to: "/tickets/new", label: "Create Ticket", end: false },
+      ];
+    case "IT_STAFF":
+      return [{ to: "/staff/queue", label: "Ticket Queue", end: false }];
+    case "ADMINISTRATOR":
+      return [{ to: "/admin/users", label: "Users", end: false }];
     default:
       return [
-        { to: '/tickets', label: 'My Tickets', end: true },
-        { to: '/tickets/new', label: 'Create Ticket', end: false },
-      ]
+        { to: "/tickets", label: "My Tickets", end: true },
+        { to: "/tickets/new", label: "Create Ticket", end: false },
+      ];
   }
 }
 
@@ -61,48 +59,50 @@ export function AppShell({
   requesterName: propRequesterName,
   onChangeRequester,
 }: AppShellProps) {
-  const navigate = useNavigate()
-  const [navOpen, setNavOpen] = useState(false)
-  const [profileOpen, setProfileOpen] = useState(false)
+  const navigate = useNavigate();
+  const [navOpen, setNavOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
-  let contextUser: AuthenticatedUser | null = null
-  let contextLogout: (() => Promise<void>) | undefined
+  let contextUser: AuthenticatedUser | null = null;
+  let contextLogout: (() => Promise<void>) | undefined;
   try {
-    const auth = useAuth()
-    contextUser = auth.user
-    contextLogout = auth.logout
+    const auth = useAuth();
+    contextUser = auth.user;
+    contextLogout = auth.logout;
   } catch {
     // Rendered outside AuthProvider in an isolated test
   }
 
-  let contextRequesterName: string | undefined
+  let contextRequesterName: string | undefined;
   try {
-    const requesterCtx = useRequester()
-    contextRequesterName = requesterCtx.selectedRequester?.name
+    const requesterCtx = useRequester();
+    contextRequesterName = requesterCtx.selectedRequester?.name;
   } catch {
     // Rendered outside RequesterProvider
   }
 
-  const activeUser = propUser !== undefined ? propUser : contextUser
-  const isLab3Auth = activeUser !== null && activeUser !== undefined
+  const activeUser = propUser !== undefined ? propUser : contextUser;
+  const isLab3Auth = activeUser !== null && activeUser !== undefined;
   const requesterName =
-    propRequesterName || contextRequesterName || 'Development Requester'
+    propRequesterName || contextRequesterName || "Development Requester";
 
-  const navLinks = getNavLinksForRole(activeUser?.role)
+  const navLinks = getNavLinksForRole(activeUser?.role);
 
   const handleLogout = async () => {
-    setProfileOpen(false)
+    setProfileOpen(false);
     if (propOnLogout) {
-      propOnLogout()
+      propOnLogout();
     } else if (contextLogout) {
-      await contextLogout()
-      navigate('/login', { replace: true })
+      await contextLogout();
+      navigate("/login", { replace: true });
     } else {
-      navigate('/login', { replace: true })
+      navigate("/login", { replace: true });
     }
-  }
+  };
 
-  const brandTarget = activeUser ? getDefaultRouteForRole(activeUser.role) : '/tickets'
+  const brandTarget = activeUser
+    ? getDefaultRouteForRole(activeUser.role)
+    : "/tickets";
 
   return (
     <div className="min-vh-100 d-flex flex-column bg-body">
@@ -124,7 +124,7 @@ export function AppShell({
         <nav className="navbar navbar-expand-md navbar-dark p-0">
           <div
             className="container py-2 d-flex align-items-center justify-content-between"
-            style={{ maxWidth: '1200px' }}
+            style={{ maxWidth: "1200px" }}
           >
             <div className="d-flex align-items-center">
               {/* Brand Logo & Wordmark */}
@@ -154,7 +154,7 @@ export function AppShell({
                     to={link.to}
                     end={link.end}
                     className={({ isActive }) =>
-                      `zen-nav-link ${isActive ? 'active' : ''}`
+                      `zen-nav-link ${isActive ? "active" : ""}`
                     }
                   >
                     {link.label}
@@ -243,7 +243,7 @@ export function AppShell({
                     </svg>
                     <span
                       className="d-inline-block text-truncate"
-                      style={{ maxWidth: '160px' }}
+                      style={{ maxWidth: "160px" }}
                     >
                       {requesterName}
                     </span>
@@ -268,8 +268,8 @@ export function AppShell({
                             type="button"
                             className="dropdown-item"
                             onClick={() => {
-                              setProfileOpen(false)
-                              onChangeRequester()
+                              setProfileOpen(false);
+                              onChangeRequester();
                             }}
                           >
                             Change Requester
@@ -314,7 +314,7 @@ export function AppShell({
                     to={link.to}
                     end={link.end}
                     className={({ isActive }) =>
-                      `zen-nav-link py-2 ${isActive ? 'active' : ''}`
+                      `zen-nav-link py-2 ${isActive ? "active" : ""}`
                     }
                     onClick={() => setNavOpen(false)}
                   >
@@ -332,16 +332,16 @@ export function AppShell({
         <nav
           aria-label="breadcrumb"
           className="container pt-3"
-          style={{ maxWidth: '1200px' }}
+          style={{ maxWidth: "1200px" }}
         >
           <ol className="breadcrumb mb-0">
             {breadcrumbs.map((crumb, index) => {
-              const isLast = index === breadcrumbs.length - 1
+              const isLast = index === breadcrumbs.length - 1;
               return (
                 <li
                   key={crumb.label}
-                  className={`breadcrumb-item ${isLast ? 'active' : ''}`}
-                  aria-current={isLast ? 'page' : undefined}
+                  className={`breadcrumb-item ${isLast ? "active" : ""}`}
+                  aria-current={isLast ? "page" : undefined}
                 >
                   {isLast || !crumb.to ? (
                     crumb.label
@@ -349,7 +349,7 @@ export function AppShell({
                     <Link to={crumb.to}>{crumb.label}</Link>
                   )}
                 </li>
-              )
+              );
             })}
           </ol>
         </nav>
@@ -358,12 +358,12 @@ export function AppShell({
       {/* Main Content */}
       <main
         className="container my-4 flex-grow-1"
-        style={{ maxWidth: '1200px' }}
+        style={{ maxWidth: "1200px" }}
       >
         {children}
       </main>
     </div>
-  )
+  );
 }
 
-export default AppShell
+export default AppShell;

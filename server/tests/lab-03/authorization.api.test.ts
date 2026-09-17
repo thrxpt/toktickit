@@ -18,7 +18,9 @@ const PNG_HEADER = Buffer.from([
 ]);
 
 async function loginAs(email: string, password = "Password123!") {
-  const res = await request(app).post("/api/auth/login").send({ email, password });
+  const res = await request(app)
+    .post("/api/auth/login")
+    .send({ email, password });
   expect(res.status).toBe(200);
   const cookieHeader = res.headers["set-cookie"];
   const sessionCookie = Array.isArray(cookieHeader)
