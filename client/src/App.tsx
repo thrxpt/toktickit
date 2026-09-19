@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import MyTickets from "./pages/MyTickets";
 import RequesterSelection from "./pages/RequesterSelection";
 import RequesterTicketDetail from "./pages/RequesterTicketDetail";
+import StaffTicketQueue from "./pages/staff/StaffTicketQueue";
 import { RequirePasswordChange } from "./routes/RequirePasswordChange";
 import { RequireRole } from "./routes/RequireRole";
 
@@ -99,16 +100,12 @@ export function AppRoutes() {
         element={
           <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
             <AppShell>
-              <div className="container py-4">
-                <h2>Ticket Queue</h2>
-                <p className="text-muted">
-                  Staff ticket queue will be available in Issue 17.
-                </p>
-              </div>
+              <StaffTicketQueue />
             </AppShell>
           </RequireRole>
         }
       />
+      <Route path="/queue" element={<Navigate to="/staff/queue" replace />} />
       <Route
         path="/admin/users"
         element={

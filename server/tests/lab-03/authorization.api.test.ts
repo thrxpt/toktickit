@@ -414,6 +414,16 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
       },
     });
 
+    // GET /api/staff/tickets without auth -> 401
+    const anonStaffQueueRes = await request(app).get("/api/staff/tickets");
+    expect(anonStaffQueueRes.status).toBe(401);
+    expect(anonStaffQueueRes.body).toEqual({
+      error: {
+        code: "UNAUTHENTICATED",
+        message: expect.any(String),
+      },
+    });
+
     // GET /api/attachments/1/content without auth -> 401
     const anonAttRes = await request(app).get("/api/attachments/1/content");
     expect(anonAttRes.status).toBe(401);
@@ -423,6 +433,29 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
         message: expect.any(String),
       },
     });
+  });
+
+  it("API-17 — rejects Requester requesting /api/staff/tickets with 403 FORBIDDEN (BR-14, BR-15)", async () => {
+    const requester = await loginAs("jennifer.anderson@example.ac.th");
+
+    const res = await request(app)
+      .get("/api/staff/tickets")
+      .set("Cookie", requester.cookie);
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: expect.any(String),
+      },
+    });
+
+    // Also verify /api/staff/assignees rejects Requester
+    const assigneesRes = await request(app)
+      .get("/api/staff/assignees")
+      .set("Cookie", requester.cookie);
+    expect(assigneesRes.status).toBe(403);
+    expect(assigneesRes.body.error.code).toBe("FORBIDDEN");
   });
 
   it("allows status query filtering with valid statuses beyond NEW (W6)", async () => {
