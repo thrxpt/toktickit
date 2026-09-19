@@ -35,9 +35,10 @@ or deleting legacy page components would immediately break Lab 2 regression suit
 2. **Strict Role Segregation**: Authenticated sessions with non-Requester roles (`IT_STAFF`,
    `ADMINISTRATOR`) are blocked from Requester endpoints (`/api/tickets/*`) with `403 FORBIDDEN`
    (BR-14, BR-15, ADR-0008).
-3. **Staff Attachment Access**: In accordance with `specification.md` §8, `GET /api/attachments/:id/content`
-   permits IT Staff and Administrators to inspect and download active attachments across all tickets,
-   while Requesters remain restricted to attachments on tickets they own.
+3. **Staff Attachment Access**: In accordance with `specification.md` §8 and ADR-0008, `GET /api/attachments/:id/content`
+   permits IT Staff to inspect and download active attachments across all tickets,
+   while Requesters remain restricted to attachments on tickets they own. Administrators are
+   segregated to user management and receive `403 FORBIDDEN`.
 4. **Endpoint Aliases**: Attachment soft-removal is supported at both `POST /api/attachments/:id/removal`
    (Lab 2 contract) and `POST /api/attachments/:id/remove` (Lab 3 specification).
 5. **Legacy Test Header Fallback**: If no session token is provided, the server accepts `X-Requester-Id`

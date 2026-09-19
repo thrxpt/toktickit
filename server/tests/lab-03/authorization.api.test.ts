@@ -388,6 +388,19 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
     expect(downloadRes.status).toBe(200);
     expect(downloadRes.header["content-type"]).toBe("image/png");
     expect(downloadRes.body).toBeDefined();
+
+    // Administrator attempts to download attachment -> 403 FORBIDDEN (BR-14, ADR-0008)
+    const admin = await loginAs("admin@toktickit.com");
+    const adminDownloadRes = await request(app)
+      .get(`/api/attachments/${attachmentId}/content`)
+      .set("Cookie", admin.cookie);
+    expect(adminDownloadRes.status).toBe(403);
+    expect(adminDownloadRes.body).toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: expect.any(String),
+      },
+    });
   });
 
   it("returns 401 UNAUTHENTICATED on anonymous requests to protected routes without session or header", async () => {

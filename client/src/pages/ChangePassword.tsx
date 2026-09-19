@@ -39,7 +39,6 @@ export function ChangePassword() {
     newPassword !== currentPassword;
 
   const canSubmit =
-    currentPassword.length > 0 &&
     isPolicySatisfied &&
     passwordsMatch &&
     isDifferentFromCurrent;

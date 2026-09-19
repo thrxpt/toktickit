@@ -302,8 +302,8 @@ attachmentsRouter.get("/:id/content", async (req: Request, res: Response) => {
 
       try {
         let attachment;
-        if (user.role === "IT_STAFF" || user.role === "ADMINISTRATOR") {
-          // IT Staff and Administrator can access active attachments on any ticket (specification.md §8)
+        if (user.role === "IT_STAFF") {
+          // IT Staff can access active attachments on any ticket (specification.md §8)
           attachment = await prisma.attachment.findFirst({
             where: {
               id,
@@ -320,6 +320,7 @@ attachmentsRouter.get("/:id/content", async (req: Request, res: Response) => {
             },
           });
         } else {
+          // Administrators are segregated to user management and cannot access ticket attachments (BR-14, ADR-0008)
           sendError(res, "FORBIDDEN");
           return;
         }
