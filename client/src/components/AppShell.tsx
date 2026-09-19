@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
@@ -62,6 +62,33 @@ export function AppShell({
   const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setProfileOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [profileOpen]);
 
   let contextUser: AuthenticatedUser | null = null;
   let contextLogout: (() => Promise<void>) | undefined;
@@ -181,7 +208,7 @@ export function AppShell({
                   <Badge value={activeUser.role} />
 
                   {/* Profile Dropdown */}
-                  <div className="dropdown position-relative">
+                  <div className="dropdown position-relative" ref={dropdownRef}>
                     <button
                       type="button"
                       className="btn btn-sm text-white d-flex align-items-center gap-1 border border-white-50 ms-1"
@@ -219,7 +246,7 @@ export function AppShell({
                 </div>
               ) : (
                 /* Lab 2 Fallback: Requester Profile Menu */
-                <div className="dropdown position-relative">
+                <div className="dropdown position-relative" ref={dropdownRef}>
                   <button
                     type="button"
                     className="btn btn-sm text-white d-flex align-items-center gap-1 border border-white-50"

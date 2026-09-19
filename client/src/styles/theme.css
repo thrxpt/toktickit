@@ -18,8 +18,10 @@
   --zen-warning-bg: #fffbeb;
   --zen-info: #1e40af;
   --zen-info-bg: #eff6ff;
+  --zen-info-border: #bfdbfe;
   --zen-admin: #6b21a8;
   --zen-admin-bg: #f3e8ff;
+  --zen-admin-border: #e9d5ff;
   --zen-success: #006b3c;
 
   /* Badge colors */
@@ -267,13 +269,13 @@ textarea.form-control {
 .zen-badge-role-staff {
   background-color: var(--zen-info-bg);
   color: var(--zen-info);
-  border: 1px solid rgba(30, 64, 175, 0.2);
+  border: 1px solid var(--zen-info-border);
 }
 
 .zen-badge-role-admin {
   background-color: var(--zen-admin-bg);
   color: var(--zen-admin);
-  border: 1px solid rgba(107, 33, 168, 0.2);
+  border: 1px solid var(--zen-admin-border);
 }
 
 /* User Avatar Initials (ui-spec.md §4.3) */

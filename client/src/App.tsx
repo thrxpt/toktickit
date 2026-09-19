@@ -2,7 +2,6 @@ import { Link, Navigate, Route, Routes } from "react-router-dom";
 
 import { AuthProvider } from "./auth/AuthContext";
 import AppShell from "./components/AppShell";
-import RequesterGuard from "./components/RequesterGuard";
 import { RequesterProvider } from "./context/RequesterContext";
 import ChangePassword from "./pages/ChangePassword";
 import CheckSystem from "./pages/CheckSystem";
@@ -57,31 +56,31 @@ export function AppRoutes() {
         }
       />
 
-      {/* Guarded Ticket Routes (FR-04, AC-02) */}
+      {/* Guarded Ticket Routes (FR-02, FR-04, FR-06, AC-02, AC-03, AC-06, BR-02, BR-03) */}
       <Route
         path="/tickets"
         element={
-          <RequesterGuard>
+          <RequireRole roles={["REQUESTER"]}>
             <AppShell>
               <MyTickets />
             </AppShell>
-          </RequesterGuard>
+          </RequireRole>
         }
       />
       <Route
         path="/tickets/new"
         element={
-          <RequesterGuard>
+          <RequireRole roles={["REQUESTER"]}>
             <AppShell>
               <CreateTicket />
             </AppShell>
-          </RequesterGuard>
+          </RequireRole>
         }
       />
       <Route
         path="/tickets/:id"
         element={
-          <RequesterGuard>
+          <RequireRole roles={["REQUESTER"]}>
             <AppShell
               breadcrumbs={[
                 { label: "My Tickets", to: "/tickets" },
@@ -90,7 +89,7 @@ export function AppRoutes() {
             >
               <RequesterTicketDetail />
             </AppShell>
-          </RequesterGuard>
+          </RequireRole>
         }
       />
 

@@ -42,7 +42,7 @@ export function ChangePassword() {
     currentPassword.length > 0 &&
     isPolicySatisfied &&
     passwordsMatch &&
-    (currentPassword === "" || isDifferentFromCurrent);
+    isDifferentFromCurrent;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,6 +162,7 @@ export function ChangePassword() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   autoComplete="new-password"
+                  aria-describedby="password-criteria"
                 />
                 <button
                   type="button"
@@ -178,6 +179,7 @@ export function ChangePassword() {
 
             {/* Live Criteria Checklist (UI-03, BR-07) */}
             <div
+              id="password-criteria"
               className="card bg-light border-0 p-3 mb-3"
               aria-label="Password criteria"
             >
@@ -277,6 +279,14 @@ export function ChangePassword() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   autoComplete="new-password"
+                  aria-invalid={
+                    confirmPassword.length > 0 && !passwordsMatch
+                      ? "true"
+                      : undefined
+                  }
+                  aria-describedby={
+                    confirmPassword.length > 0 ? "confirm-feedback" : undefined
+                  }
                 />
                 <button
                   type="button"
@@ -295,7 +305,7 @@ export function ChangePassword() {
 
             {/* Confirm match message */}
             {confirmPassword.length > 0 && (
-              <div className="mb-3 small">
+              <div id="confirm-feedback" className="mb-3 small">
                 {passwordsMatch ? (
                   <span
                     className="text-success fw-medium"

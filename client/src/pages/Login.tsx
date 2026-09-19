@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
@@ -7,9 +7,19 @@ import { SubmitButton } from "../components/SubmitButton";
 import { getDefaultRouteForRole } from "../utils/navigation";
 
 export function Login() {
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    if (user) {
+      if (user.mustChangePassword) {
+        navigate("/change-password", { replace: true });
+      } else {
+        navigate(getDefaultRouteForRole(user.role), { replace: true });
+      }
+    }
+  }, [user, navigate]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
