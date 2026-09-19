@@ -179,17 +179,6 @@ describe("API-10 — IT Staff queries Ticket Queue with filters and pagination (
     expect(res.body.items[0].ticketOwner).toBeNull();
   });
 
-  it("allows Administrator to query the ticket queue with 200 OK", async () => {
-    const admin = await loginAs("admin@toktickit.com");
-
-    const res = await request(app)
-      .get("/api/staff/tickets")
-      .set("Cookie", admin.cookie);
-
-    expect(res.status).toBe(200);
-    expect(res.body.items).toBeDefined();
-  });
-
   describe("search filter", () => {
     it("filters tickets by substring in ticketNumber (case-insensitive)", async () => {
       const staff = await loginAs("michael.brown@toktickit.com");
@@ -639,25 +628,6 @@ describe("API-10 — IT Staff queries Ticket Queue with filters and pagination (
 
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe("INVALID_QUERY_PARAMETER");
-    });
-  });
-
-  describe("GET /api/staff/assignees", () => {
-    it("returns list of active staff and admin members", async () => {
-      const staff = await loginAs("michael.brown@toktickit.com");
-
-      const res = await request(app)
-        .get("/api/staff/assignees")
-        .set("Cookie", staff.cookie);
-
-      expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBeGreaterThan(0);
-      expect(res.body[0]).toMatchObject({
-        id: expect.any(Number),
-        name: expect.any(String),
-        role: expect.stringMatching(/^(IT_STAFF|ADMINISTRATOR)$/),
-      });
     });
   });
 });

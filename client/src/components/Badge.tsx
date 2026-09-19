@@ -13,19 +13,14 @@ export type BadgeValue =
   | "CANCELLED"
   | "REQUESTER"
   | "IT_STAFF"
-  | "ADMINISTRATOR"
-  | "ACTIVE"
-  | "Active"
-  | "INACTIVE"
-  | "Inactive"
-  | string;
+  | "ADMINISTRATOR";
 
 export interface BadgeProps {
   value: BadgeValue;
   className?: string;
 }
 
-const BADGE_MAP: Record<string, { label: string; className: string }> = {
+const BADGE_MAP: Record<BadgeValue, { label: string; className: string }> = {
   // Priorities
   LOW: { label: "Low", className: "zen-badge-low" },
   MEDIUM: { label: "Medium", className: "zen-badge-medium" },
@@ -52,12 +47,6 @@ const BADGE_MAP: Record<string, { label: string; className: string }> = {
   REQUESTER: { label: "Requester", className: "zen-badge-role-requester" },
   IT_STAFF: { label: "IT Staff", className: "zen-badge-role-staff" },
   ADMINISTRATOR: { label: "Administrator", className: "zen-badge-role-admin" },
-
-  // Account statuses
-  ACTIVE: { label: "Active", className: "zen-badge-active" },
-  Active: { label: "Active", className: "zen-badge-active" },
-  INACTIVE: { label: "Inactive", className: "zen-badge-inactive" },
-  Inactive: { label: "Inactive", className: "zen-badge-inactive" },
 };
 
 export function Badge({ value, className = "" }: BadgeProps) {

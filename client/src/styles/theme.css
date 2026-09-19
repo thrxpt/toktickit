@@ -54,12 +54,6 @@
   --zen-status-cancelled-bg: #fee2e2;
   --zen-status-cancelled-text: #991b1b;
 
-  /* Account status badge colors */
-  --zen-account-active-bg: var(--zen-pale);
-  --zen-account-active-text: var(--zen-primary);
-  --zen-account-inactive-bg: #fee2e2;
-  --zen-account-inactive-text: var(--zen-danger);
-
   /* Bootstrap bindings */
   --bs-primary: var(--zen-primary);
   --bs-primary-rgb: 0, 107, 60;
@@ -338,19 +332,6 @@ textarea.form-control {
   background-color: var(--zen-status-cancelled-bg);
   color: var(--zen-status-cancelled-text);
   border: 1px solid rgba(153, 27, 27, 0.2);
-}
-
-/* Account Status Badges */
-.zen-badge-active {
-  background-color: var(--zen-account-active-bg);
-  color: var(--zen-account-active-text);
-  border: 1px solid var(--zen-border);
-}
-
-.zen-badge-inactive {
-  background-color: var(--zen-account-inactive-bg);
-  color: var(--zen-account-inactive-text);
-  border: 1px solid rgba(176, 42, 42, 0.2);
 }
 
 /* Role Badges (ui-spec.md §3) */

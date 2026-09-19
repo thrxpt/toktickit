@@ -18,11 +18,6 @@ interface CategoryOption {
   name: string;
 }
 
-interface StaffMemberOption {
-  id: number;
-  name: string;
-}
-
 const STATUS_OPTIONS: { value: TicketStatus; label: string }[] = [
   { value: "NEW", label: "New" },
   { value: "OPEN", label: "Open" },
@@ -74,7 +69,6 @@ export function StaffTicketQueue() {
   const [searchInput, setSearchInput] = useState(search);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
-  const [staffMembers, setStaffMembers] = useState<StaffMemberOption[]>([]);
   const [tickets, setTickets] = useState<StaffQueueTicketItem[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -115,30 +109,6 @@ export function StaffTicketQueue() {
     };
   }, []);
 
-  // Load staff assignees for owner filter dropdown
-  useEffect(() => {
-    const controller = new AbortController();
-    apiFetch("/api/staff/assignees", { signal: controller.signal })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: StaffMemberOption[]) => {
-        if (!controller.signal.aborted && Array.isArray(data)) {
-          setStaffMembers(data);
-        }
-      })
-      .catch((err: unknown) => {
-        if (
-          controller.signal.aborted ||
-          (err as Error)?.name === "AbortError"
-        ) {
-          return;
-        }
-      });
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
-
   // Fetch queue data from server
   useEffect(() => {
     const controller = new AbortController();
@@ -162,7 +132,7 @@ export function StaffTicketQueue() {
       : "/api/staff/tickets";
 
     apiFetch(endpoint, { signal: controller.signal })
-      .then(async (res) => {
+      .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
@@ -480,11 +450,6 @@ export function StaffTicketQueue() {
                     <option value="">All Owners</option>
                     <option value="unassigned">Unassigned</option>
                     <option value="me">Assigned to Me</option>
-                    {staffMembers.map((sm) => (
-                      <option key={sm.id} value={sm.id}>
-                        {sm.name}
-                      </option>
-                    ))}
                   </select>
                 </div>
               </div>
@@ -531,8 +496,8 @@ export function StaffTicketQueue() {
         )
       ) : (
         <>
-          {/* Desktop Table View (>= 992px) */}
-          <div className="card shadow-sm border-0 d-none d-lg-block mb-3">
+          {/* Desktop & Tablet Table View (>= 768px, condensed on tablet 768-991px per ui-spec §5) */}
+          <div className="card shadow-sm border-0 d-none d-md-block mb-3">
             <div className="table-responsive">
               <table
                 className="table table-hover align-middle mb-0"
@@ -550,7 +515,7 @@ export function StaffTicketQueue() {
                     </th>
                     <th
                       scope="col"
-                      className="zen-col-date"
+                      className="zen-col-date d-none d-lg-table-cell"
                       onClick={() => handleSort("createdAt")}
                       aria-sort={getSortAria("createdAt")}
                     >
@@ -560,7 +525,7 @@ export function StaffTicketQueue() {
                     <th scope="col" className="zen-col-category">
                       Category
                     </th>
-                    <th scope="col" className="zen-col-priority">
+                    <th scope="col" className="zen-col-priority d-none d-lg-table-cell">
                       Req. Priority
                     </th>
                     <th
@@ -601,14 +566,14 @@ export function StaffTicketQueue() {
                           {t.ticketNumber}
                         </Link>
                       </td>
-                      <td className="text-body-secondary small">
+                      <td className="text-body-secondary small d-none d-lg-table-cell">
                         {formatDate(t.createdAt)}
                       </td>
                       <td className="fw-medium text-truncate zen-summary-truncate">
                         {t.summary}
                       </td>
                       <td>{t.categoryName}</td>
-                      <td>
+                      <td className="d-none d-lg-table-cell">
                         <Badge value={t.requestedPriority} />
                       </td>
                       <td>
@@ -633,8 +598,8 @@ export function StaffTicketQueue() {
             </div>
           </div>
 
-          {/* Mobile Card View (< 992px) */}
-          <div className="d-lg-none d-flex flex-column gap-3 mb-3">
+          {/* Mobile Card View (< 768px per ui-spec §4.4, §5) */}
+          <div className="d-md-none d-flex flex-column gap-3 mb-3">
             {tickets.map((t) => (
               <div
                 key={t.id}

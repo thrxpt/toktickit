@@ -94,11 +94,11 @@ export function AppRoutes() {
         }
       />
 
-      {/* Staff & Admin Routes (Lab 3) */}
+      {/* Staff Routes (Lab 3) */}
       <Route
         path="/staff/queue"
         element={
-          <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
+          <RequireRole roles={["IT_STAFF"]}>
             <AppShell>
               <StaffTicketQueue />
             </AppShell>

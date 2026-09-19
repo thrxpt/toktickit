@@ -435,27 +435,33 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
     });
   });
 
-  it("API-17 — rejects Requester requesting /api/staff/tickets with 403 FORBIDDEN (BR-14, BR-15)", async () => {
+  it("rejects Requester and Administrator requesting /api/staff/tickets with 403 FORBIDDEN (BR-14, BR-15, ADR-0008)", async () => {
     const requester = await loginAs("jennifer.anderson@example.ac.th");
+    const admin = await loginAs("admin@toktickit.com");
 
-    const res = await request(app)
+    const requesterRes = await request(app)
       .get("/api/staff/tickets")
       .set("Cookie", requester.cookie);
 
-    expect(res.status).toBe(403);
-    expect(res.body).toEqual({
+    expect(requesterRes.status).toBe(403);
+    expect(requesterRes.body).toEqual({
       error: {
         code: "FORBIDDEN",
         message: expect.any(String),
       },
     });
 
-    // Also verify /api/staff/assignees rejects Requester
-    const assigneesRes = await request(app)
-      .get("/api/staff/assignees")
-      .set("Cookie", requester.cookie);
-    expect(assigneesRes.status).toBe(403);
-    expect(assigneesRes.body.error.code).toBe("FORBIDDEN");
+    const adminRes = await request(app)
+      .get("/api/staff/tickets")
+      .set("Cookie", admin.cookie);
+
+    expect(adminRes.status).toBe(403);
+    expect(adminRes.body).toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: expect.any(String),
+      },
+    });
   });
 
   it("allows status query filtering with valid statuses beyond NEW (W6)", async () => {

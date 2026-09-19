@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import Badge from "../../../src/components/Badge";
+import Badge, { type BadgeValue } from "../../../src/components/Badge";
 
 describe("STYLE-02 — Role badges render correct semantic colors and text (ui-spec §3)", () => {
   it("renders Requester role badge with correct text and semantic class", () => {
@@ -71,7 +71,7 @@ describe("STYLE-03 — Priority badges render semantic Zen Green tokens and text
 });
 
 describe("STYLE-04 — Status badges render all 8 statuses with text and semantic styling (ui-spec §3)", () => {
-  const statuses = [
+  const statuses: { value: BadgeValue; label: string; expectedClass: string }[] = [
     { value: "NEW", label: "New", expectedClass: "zen-badge-status-new" },
     { value: "OPEN", label: "Open", expectedClass: "zen-badge-status-open" },
     {

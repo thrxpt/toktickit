@@ -61,11 +61,6 @@ const mockCategories = [
   { id: 4, name: "Network" },
 ];
 
-const mockAssignees = [
-  { id: 2, name: "Michael Brown", role: "IT_STAFF" },
-  { id: 3, name: "Sarah Johnson", role: "IT_STAFF" },
-];
-
 describe("UI-06 — IT Staff Queue renders table, search filter, and pagination (AC-10, FR-09)", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -80,9 +75,6 @@ describe("UI-06 — IT Staff Queue renders table, search filter, and pagination 
       const url = typeof input === "string" ? input : input.toString();
       if (url.startsWith("/api/categories")) {
         return Promise.resolve({ ok: true, json: async () => mockCategories } as Response);
-      }
-      if (url.startsWith("/api/staff/assignees")) {
-        return Promise.resolve({ ok: true, json: async () => mockAssignees } as Response);
       }
       if (url.startsWith("/api/staff/tickets")) {
         const payload: StaffQueueResponse = {
@@ -187,9 +179,6 @@ describe("UI-06 — IT Staff Queue renders table, search filter, and pagination 
       const url = typeof input === "string" ? input : input.toString();
       if (url.startsWith("/api/categories")) {
         return Promise.resolve({ ok: true, json: async () => mockCategories } as Response);
-      }
-      if (url.startsWith("/api/staff/assignees")) {
-        return Promise.resolve({ ok: true, json: async () => mockAssignees } as Response);
       }
       if (url.startsWith("/api/staff/tickets")) {
         capturedUrl = url;

@@ -49,6 +49,22 @@ test.describe("Responsive Layout and Viewports — IT Staff Ticket Queue (ui-spe
     await page.goto("/staff/queue");
     await expect(page.locator('h1:has-text("Ticket Queue")')).toBeVisible();
     await assertNoHorizontalScroll(page);
+
+    // Table is visible on tablet
+    const table = page.locator('table[aria-label="IT Staff Ticket Queue"]');
+    await expect(table).toBeVisible();
+
+    // Primary columns remain visible
+    await expect(table.locator('th:has-text("Ticket No.")')).toBeVisible();
+    await expect(table.locator('th:has-text("Summary")')).toBeVisible();
+    await expect(table.locator('th:has-text("Category")')).toBeVisible();
+    await expect(table.locator('th:has-text("IT Priority")')).toBeVisible();
+    await expect(table.locator('th:has-text("Status")')).toBeVisible();
+    await expect(table.locator('th:has-text("Owner")')).toBeVisible();
+
+    // Secondary columns are hidden to condense the table on tablet per ui-spec §5
+    await expect(table.locator('th:has-text("Created Date")')).not.toBeVisible();
+    await expect(table.locator('th:has-text("Req. Priority")')).not.toBeVisible();
   });
 
   test("RESP-03 — Mobile viewport (390px) renders queue as cards with touch targets >= 44px", async ({
