@@ -277,5 +277,147 @@ describe("API-07 — Requester fetching another user's Ticket (AC-07, BR-16)", (
         message: expect.any(String),
       },
     });
+
+    // Also verify /remove alias returns 404 for Requester B
+    const removeAliasRes = await request(app)
+      .post(`/api/attachments/${attachmentId}/remove`)
+      .set("Cookie", requesterB.cookie)
+      .send({ reason: "Unauthorized attempt" });
+    expect(removeAliasRes.status).toBe(404);
+  });
+});
+
+describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-20, ADR-0008)", () => {
+  it("rejects IT Staff and Administrator accessing requester endpoints with 403 FORBIDDEN", async () => {
+    const requester = await loginAs("jennifer.anderson@example.ac.th");
+    const staff = await loginAs("michael.brown@toktickit.com");
+    const admin = await loginAs("admin@toktickit.com");
+    const { category, relatedSystem } = await getActiveFixtures();
+
+    const createRes = await request(app)
+      .post("/api/tickets")
+      .set("Cookie", requester.cookie)
+      .send({
+        summary: "Staff leak test ticket",
+        description: "Checking that staff and admin cannot access requester ticket list",
+        categoryId: category.id,
+        relatedSystemId: relatedSystem.id,
+        requestedPriority: "LOW",
+      });
+    const ticketId = createRes.body.id;
+
+    // Staff calling GET /api/tickets -> 403
+    const staffListRes = await request(app)
+      .get("/api/tickets")
+      .set("Cookie", staff.cookie);
+    expect(staffListRes.status).toBe(403);
+    expect(staffListRes.body).toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: expect.any(String),
+      },
+    });
+
+    // Admin calling GET /api/tickets -> 403
+    const adminListRes = await request(app)
+      .get("/api/tickets")
+      .set("Cookie", admin.cookie);
+    expect(adminListRes.status).toBe(403);
+    expect(adminListRes.body).toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: expect.any(String),
+      },
+    });
+
+    // Staff calling GET /api/tickets/:id -> 403
+    const staffDetailRes = await request(app)
+      .get(`/api/tickets/${ticketId}`)
+      .set("Cookie", staff.cookie);
+    expect(staffDetailRes.status).toBe(403);
+    expect(staffDetailRes.body).toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: expect.any(String),
+      },
+    });
+
+    // Staff calling POST /api/tickets -> 403
+    const staffCreateRes = await request(app)
+      .post("/api/tickets")
+      .set("Cookie", staff.cookie)
+      .send({
+        summary: "Staff cannot create requester ticket",
+        description: "Staff creation forbidden",
+        categoryId: category.id,
+        relatedSystemId: relatedSystem.id,
+        requestedPriority: "LOW",
+      });
+    expect(staffCreateRes.status).toBe(403);
+    expect(staffCreateRes.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("permits IT Staff to download active attachments via GET /api/attachments/:id/content", async () => {
+    const requester = await loginAs("jennifer.anderson@example.ac.th");
+    const staff = await loginAs("michael.brown@toktickit.com");
+    const { category, relatedSystem } = await getActiveFixtures();
+
+    const createTicketRes = await request(app)
+      .post("/api/tickets")
+      .set("Cookie", requester.cookie)
+      .send({
+        summary: "Attachment for staff inspection",
+        description: "IT Staff should be able to download this active attachment",
+        categoryId: category.id,
+        relatedSystemId: relatedSystem.id,
+        requestedPriority: "MEDIUM",
+      });
+    const ticketId = createTicketRes.body.id;
+
+    const uploadRes = await request(app)
+      .post(`/api/tickets/${ticketId}/attachments`)
+      .set("Cookie", requester.cookie)
+      .attach("file", PNG_HEADER, "staff-test.png");
+    expect(uploadRes.status).toBe(201);
+    const attachmentId = uploadRes.body.id;
+
+    // IT Staff downloads attachment -> 200 OK
+    const downloadRes = await request(app)
+      .get(`/api/attachments/${attachmentId}/content`)
+      .set("Cookie", staff.cookie);
+    expect(downloadRes.status).toBe(200);
+    expect(downloadRes.header["content-type"]).toBe("image/png");
+    expect(downloadRes.body).toBeDefined();
+  });
+
+  it("returns 401 UNAUTHENTICATED on anonymous requests to protected routes without session or header", async () => {
+    // GET /api/tickets without auth -> 401
+    const anonTicketsRes = await request(app).get("/api/tickets");
+    expect(anonTicketsRes.status).toBe(401);
+    expect(anonTicketsRes.body).toEqual({
+      error: {
+        code: "UNAUTHENTICATED",
+        message: expect.any(String),
+      },
+    });
+
+    // GET /api/attachments/1/content without auth -> 401
+    const anonAttRes = await request(app).get("/api/attachments/1/content");
+    expect(anonAttRes.status).toBe(401);
+    expect(anonAttRes.body).toEqual({
+      error: {
+        code: "UNAUTHENTICATED",
+        message: expect.any(String),
+      },
+    });
+  });
+
+  it("allows status query filtering with valid statuses beyond NEW (W6)", async () => {
+    const requester = await loginAs("jennifer.anderson@example.ac.th");
+    const res = await request(app)
+      .get("/api/tickets?status=OPEN")
+      .set("Cookie", requester.cookie);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual([]);
   });
 });

@@ -38,9 +38,22 @@ const listTicketsQuerySchema = z
       })
       .optional(),
     status: z
-      .enum(["NEW"], {
-        message: "Status must be NEW",
-      })
+      .enum(
+        [
+          "NEW",
+          "OPEN",
+          "IN_PROGRESS",
+          "WAITING_FOR_REQUESTER",
+          "RESOLVED",
+          "CLOSED",
+          "REOPENED",
+          "CANCELLED",
+        ],
+        {
+          message:
+            "Status must be NEW, OPEN, IN_PROGRESS, WAITING_FOR_REQUESTER, RESOLVED, CLOSED, REOPENED, or CANCELLED",
+        },
+      )
       .optional(),
     sort: z
       .enum(["createdAt", "ticketNumber", "updatedAt"], {
@@ -113,9 +126,14 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
       }
     }
 
+    if (!req.requesterId) {
+      sendError(res, "FORBIDDEN");
+      return;
+    }
+
     // Requester ownership is ALWAYS enforced first (BR-07, AC-20)
     const where: Prisma.TicketWhereInput = {
-      requesterId: req.requesterId!,
+      requesterId: req.requesterId,
     };
 
     if (search) {
