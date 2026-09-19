@@ -57,8 +57,8 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-03 | AC-02, BR-02 | User with `mustChangePassword` accessing protected API | 403 Forbidden with `PASSWORD_CHANGE_REQUIRED` | `auth.api.test.ts` | Passed |
 | API-04 | AC-03, BR-12 | Successful mandatory password change | 200 OK, clears `mustChangePassword`, unlocks API access | `auth.api.test.ts` | Passed |
 | API-05 | AC-05, BR-11 | Logout endpoint execution | 200 OK, clears session cookie; subsequent requests answer 401 | `auth.api.test.ts` | Passed |
-| API-06 | AC-06, BR-03 | Requester ticket creation derives owner from session | 201 Created; `requesterId` in body rejected | `authorization.api.test.ts` | Planned |
-| API-07 | AC-07, BR-16 | Requester fetching another user's Ticket | 404 Not Found (safe error, no enumeration) | `authorization.api.test.ts` | Planned |
+| API-06 | AC-06, BR-03 | Requester ticket creation derives owner from session | 201 Created; `requesterId` in body rejected | `authorization.api.test.ts` | Passed |
+| API-07 | AC-07, BR-16 | Requester fetching another user's Ticket | 404 Not Found (safe error, no enumeration) | `authorization.api.test.ts` | Passed |
 | API-08 | AC-08, BR-17 | Requester requesting Internal Notes endpoint | 403 Forbidden without note data | `authorization.api.test.ts` | Planned |
 | API-09 | AC-09, BR-24 | Requester indicates "Problem Appears Resolved" | 200 OK, `resolvedByRequester: true`, status unchanged | `authorization.api.test.ts` | Planned |
 | API-10 | AC-10, FR-09 | IT Staff queries Ticket Queue with filters and pagination | 200 OK, returns filtered tickets and pagination metadata | `staff-queue.api.test.ts` | Planned |
@@ -77,15 +77,19 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-23 | AC-21, BR-35 | Error envelopes conform to standard schema | Standardized `{ error: { code, message, fields? } }` | `auth.api.test.ts` | Passed |
 | API-24 | BR-36 | Re-running database seed idempotency check | Seed runs twice without duplicate rows or errors | `users-admin.api.test.ts` | Passed |
 | API-25 | AC-01, BR-09 | Login with incorrect password | 401 Unauthorized with generic safe error | `auth.api.test.ts` | Passed |
+| API-26 | BR-14, BR-15, FR-20 | IT Staff and Administrator access to Requester ticket routes | 403 Forbidden without leaking requester tickets | `authorization.api.test.ts` | Passed |
+| API-27 | specification §8, ADR-0008 | IT Staff and Administrator access to attachment content | 200 OK for Staff; 403 Forbidden for Administrator | `authorization.api.test.ts` | Passed |
+| API-28 | api-spec Gate 1 | Anonymous requests to protected routes without session or header | 401 Unauthorized with standard error envelope | `authorization.api.test.ts` | Passed |
+| API-29 | api-spec §GET /api/tickets | Query filtering with 8 ticket statuses beyond NEW (W6) | 200 OK with matching tickets | `authorization.api.test.ts` | Passed |
 
 ### UI Component Tests — `client/tests/lab-03/*.test.tsx`
 
 | Test ID | AC / BR | What It Tests | Expected Result | Automated Test File | Final |
 | --- | --- | --- | --- | --- | --- |
-| UI-01 | AC-01, AC-04 | Login form submission, busy state, and inactive account alert | Disables submit button, shows spinner, renders alert on failure | `Login.test.tsx` | Planned |
-| UI-02 | AC-02, BR-02 | User flagged with `mustChangePassword` forced to change screen | Redirects away from normal routes to `/change-password` | `ChangePassword.test.tsx` | Planned |
-| UI-03 | AC-03, BR-07 | Password change form checklist criteria validation | Validates length, case, digits, special chars in real-time | `ChangePassword.test.tsx` | Planned |
-| UI-04 | AC-05, FR-04 | AppShell renders user name, role badge, and handles Logout | Displays name & badge; clicking Logout clears session and redirects | `AppShell.test.tsx` | Planned |
+| UI-01 | AC-01, AC-04 | Login form submission, busy state, and inactive account alert | Disables submit button, shows spinner, renders alert on failure | `Login.test.tsx` | Passed |
+| UI-02 | AC-02, BR-02 | User flagged with `mustChangePassword` forced to change screen | Redirects away from normal routes to `/change-password` | `ChangePassword.test.tsx` | Passed |
+| UI-03 | AC-03, BR-07 | Password change form checklist criteria validation | Validates length, case, digits, special chars in real-time | `ChangePassword.test.tsx` | Passed |
+| UI-04 | AC-05, FR-04 | AppShell renders user name, role badge, and handles Logout | Displays name & badge; clicking Logout clears session and redirects | `AppShell.test.tsx` | Passed |
 | UI-05 | AC-09, FR-08 | Requester clicks "Problem Appears Resolved" | Shows confirm dialog, updates indication state, disables button | `RequesterTicketDetail.test.tsx` | Planned |
 | UI-06 | AC-10, FR-09 | IT Staff Queue renders table, search filter, and pagination | Renders columns, filters rows on search, paginates results | `StaffTicketQueue.test.tsx` | Planned |
 | UI-07 | AC-11, BR-23 | IT Staff clicks "Claim" on unassigned ticket | Calls owner endpoint and updates owner display | `StaffTicketDetail.test.tsx` | Planned |
@@ -96,7 +100,8 @@ that the server returns strict `401`, `403`, or `404` responses.
 | UI-12 | AC-17, BR-31 | Admin user creation displays validation error on duplicate email | Form renders field-level duplicate email error | `UserManagement.test.tsx` | Planned |
 | UI-13 | AC-18, AC-19 | Admin edit user disables deactivation toggle on self & last admin | Switch disabled with tooltip explanation | `UserManagement.test.tsx` | Planned |
 | UI-14 | AC-20, BR-33 | Admin resets initial password from edit drawer | Opens modal, captures password, displays success feedback | `UserManagement.test.tsx` | Planned |
-| UI-15 | FR-20 | Role-based navigation hides unauthorized links | Requesters see no Queue or Admin; Staff see Queue only; Admin sees Users | `AppShell.test.tsx` | Planned |
+| UI-15 | FR-20 | Role-based navigation hides unauthorized links | Requesters see no Queue or Admin; Staff see Queue only; Admin sees Users | `AppShell.test.tsx` | Passed |
+| UI-16 | FR-02, FR-06, BR-02, AC-02, AC-03 | Full App route guarding, role redirection, and logout state clearing | Unauthenticated redirected to `/login`, `mustChangePassword` to `/change-password`, logout purges state | `AppRoutes.test.tsx` | Passed |
 
 ### UI Style Tests — `client/tests/lab-03/style/*.test.tsx`
 
@@ -133,11 +138,11 @@ that the server returns strict `401`, `403`, or `404` responses.
 | Acceptance Criterion | Planned Tests | Coverage Level |
 | --- | --- | --- |
 | **AC-01** (Valid login) | `API-01`, `API-25`, `UI-01`, `E2E-01` | API + UI + E2E |
-| **AC-02** (Must change password gate) | `API-03`, `UI-02`, `E2E-02` | API + UI + E2E |
-| **AC-03** (Change password execution) | `API-04`, `UI-03`, `E2E-02` | API + UI + E2E |
+| **AC-02** (Must change password gate) | `API-03`, `UI-02`, `UI-16`, `E2E-02` | API + UI + E2E |
+| **AC-03** (Change password execution) | `API-04`, `UI-03`, `UI-16`, `E2E-02` | API + UI + E2E |
 | **AC-04** (Inactive account login failure) | `API-02`, `UI-01` | API + UI |
-| **AC-05** (Logout session invalidation) | `API-05`, `UI-04`, `E2E-01` | API + UI + E2E |
-| **AC-06** (Requester session ownership) | `API-06` | API |
+| **AC-05** (Logout session invalidation) | `API-05`, `UI-04`, `UI-16`, `E2E-01` | API + UI + E2E |
+| **AC-06** (Requester session ownership) | `API-06`, `API-26`, `API-28`, `UI-16` | API + UI |
 | **AC-07** (Requester cross-owner access 404) | `API-07` | API |
 | **AC-08** (Requester internal note forbidden) | `API-08`, `API-16` | API |
 | **AC-09** (Requester resolution indication) | `API-09`, `UI-05` | API + UI |

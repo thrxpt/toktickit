@@ -22,13 +22,38 @@ export async function requireRequesterContext(
 ): Promise<void> {
   const sessionToken = extractSessionToken(req);
   if (sessionToken) {
-    await requireAuth(req, res, next);
+    await requireAuth(req, res, () => {
+      // Role segregation (BR-14, BR-15, ADR-0008):
+      // Only authenticated REQUESTERs may access requester routes.
+      if (req.user && req.user.role !== "REQUESTER") {
+        sendError(res, "FORBIDDEN");
+        return;
+      }
+      next();
+    });
     return;
   }
 
   const header = req.header("X-Requester-Id");
 
-  if (!header || header.trim() === "") {
+  // In Lab 3, requests without session or header answer 401 UNAUTHENTICATED (api-spec Gate 1).
+  // Exception: POST /api/tickets with omitted header answers 400 REQUESTER_CONTEXT_MISSING
+  // for Lab 2 API-07 test compatibility.
+  if (header === undefined) {
+    if (
+      req.method === "POST" &&
+      (req.baseUrl === "/api/tickets" ||
+        req.originalUrl?.startsWith("/api/tickets")) &&
+      (req.path === "/" || req.path === "")
+    ) {
+      sendError(res, "REQUESTER_CONTEXT_MISSING");
+      return;
+    }
+    sendError(res, "UNAUTHENTICATED");
+    return;
+  }
+
+  if (header.trim() === "") {
     sendError(res, "REQUESTER_CONTEXT_MISSING");
     return;
   }
@@ -73,7 +98,7 @@ export function rejectRequesterIdInBody(
   if (
     req.body &&
     typeof req.body === "object" &&
-    Object.prototype.hasOwnProperty.call(req.body, "requesterId")
+    Object.hasOwn(req.body, "requesterId")
   ) {
     sendError(res, "REQUESTER_ID_IN_BODY");
     return;

@@ -317,7 +317,7 @@ Full JSON schemas, parameters, and error envelopes are detailed in [`api-spec.md
 | **Requester** | `GET /api/tickets/:id` | Requester | View owned ticket detail |
 | **Requester** | `POST /api/tickets/:id/attachments` | Requester | Upload attachment to owned ticket |
 | **Requester** | `GET /api/attachments/:id/content` | Requester / Staff | Download active attachment |
-| **Requester** | `POST /api/attachments/:id/remove` | Requester | Soft-remove attachment on owned ticket |
+| **Requester** | `POST /api/attachments/:id/remove` | Requester | Soft-remove attachment on owned ticket (aliased to `/removal`, ADR-0009) |
 | **Requester** | `POST /api/tickets/:id/resolve-indication` | Requester | Indicate problem appears resolved |
 | **Staff** | `GET /api/staff/tickets` | IT Staff, Admin | Paginated, filterable IT Staff Ticket Queue |
 | **Staff** | `GET /api/staff/tickets/:id` | IT Staff, Admin | Comprehensive ticket detail for staff operations |

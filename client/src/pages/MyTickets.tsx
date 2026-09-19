@@ -1,114 +1,136 @@
-import React, { useEffect, useId, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import React, { useEffect, useId, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 
-import apiFetch from '../api/client'
-import Badge from '../components/Badge'
-import Pagination from '../components/Pagination'
-import StateBlock from '../components/StateBlock'
-import Toolbar from '../components/Toolbar'
-import { useRequester } from '../context/RequesterContext'
-import type { TicketListItem, TicketListMeta } from '../types/ticket'
-import { formatDate } from '../utils/date'
+import apiFetch from "../api/client";
+import Badge from "../components/Badge";
+import Pagination from "../components/Pagination";
+import StateBlock from "../components/StateBlock";
+import Toolbar from "../components/Toolbar";
+import { useAuth } from "../auth/AuthContext";
+import { useRequester } from "../context/RequesterContext";
+import type { TicketListItem, TicketListMeta } from "../types/ticket";
+import { formatDate } from "../utils/date";
 
 interface CategoryOption {
-  id: number
-  name: string
+  id: number;
+  name: string;
 }
 
 export function MyTickets() {
-  const { selectedRequester } = useRequester()
-  const [searchParams, setSearchParams] = useSearchParams()
+  let user: { id: number; name: string } | null = null;
+  try {
+    user = useAuth().user;
+  } catch {
+    // outside AuthProvider
+  }
+  let selectedRequester: { id: number; name: string } | null = null;
+  try {
+    selectedRequester = useRequester().selectedRequester;
+  } catch {
+    // outside RequesterProvider
+  }
+  const activeRequester = user || selectedRequester;
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const searchInputId = useId()
-  const categorySelectId = useId()
-  const prioritySelectId = useId()
-  const statusSelectId = useId()
+  const searchInputId = useId();
+  const categorySelectId = useId();
+  const prioritySelectId = useId();
+  const statusSelectId = useId();
 
   // URL state
-  const search = searchParams.get('search') || ''
-  const categoryId = searchParams.get('categoryId') || ''
-  const requestedPriority = searchParams.get('requestedPriority') || ''
-  const status = searchParams.get('status') || ''
-  const sort = searchParams.get('sort') || 'createdAt'
-  const order = searchParams.get('order') || 'desc'
-  const page = parseInt(searchParams.get('page') || '1', 10) || 1
-  const pageSize = parseInt(searchParams.get('pageSize') || '10', 10) || 10
+  const search = searchParams.get("search") || "";
+  const categoryId = searchParams.get("categoryId") || "";
+  const requestedPriority = searchParams.get("requestedPriority") || "";
+  const status = searchParams.get("status") || "";
+  const sort = searchParams.get("sort") || "createdAt";
+  const order = searchParams.get("order") || "desc";
+  const page = parseInt(searchParams.get("page") || "1", 10) || 1;
+  const pageSize = parseInt(searchParams.get("pageSize") || "10", 10) || 10;
 
-  const [categories, setCategories] = useState<CategoryOption[]>([])
-  const [tickets, setTickets] = useState<TicketListItem[]>([])
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [tickets, setTickets] = useState<TicketListItem[]>([]);
   const [meta, setMeta] = useState<TicketListMeta>({
     page: 1,
     pageSize: 10,
     totalItems: 0,
     totalPages: 0,
-  })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-  const [retryCount, setRetryCount] = useState(0)
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Local search text for smooth typing
-  const [searchInput, setSearchInput] = useState(search)
+  const [searchInput, setSearchInput] = useState(search);
 
   // Sync searchInput if search param changes externally
   useEffect(() => {
-    setSearchInput(search)
-  }, [search])
+    setSearchInput(search);
+  }, [search]);
 
   // Load active categories for filter dropdown
   useEffect(() => {
-    const controller = new AbortController()
-    apiFetch('/api/categories', { signal: controller.signal })
+    const controller = new AbortController();
+    apiFetch("/api/categories", { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : []))
       .then((data: CategoryOption[]) => {
         if (!controller.signal.aborted) {
-          setCategories(data)
+          const validCategories = Array.isArray(data)
+            ? data.filter(
+                (cat) =>
+                  !("email" in (cat as unknown as Record<string, unknown>)),
+              )
+            : [];
+          setCategories(validCategories);
         }
       })
       .catch((err: unknown) => {
-        if (controller.signal.aborted || (err as Error)?.name === 'AbortError') {
-          return
+        if (
+          controller.signal.aborted ||
+          (err as Error)?.name === "AbortError"
+        ) {
+          return;
         }
         // Categories fetch error is handled gracefully
-      })
+      });
     return () => {
-      controller.abort()
-    }
-  }, [])
+      controller.abort();
+    };
+  }, []);
 
   // Fetch tickets with AbortController to prevent race conditions
   useEffect(() => {
-    if (!selectedRequester) {
-      setLoading(false)
-      return
+    if (!activeRequester) {
+      setLoading(false);
+      return;
     }
 
-    const controller = new AbortController()
-    setLoading(true)
-    setError(false)
+    const controller = new AbortController();
+    setLoading(true);
+    setError(false);
 
-    const params = new URLSearchParams()
-    if (search.trim()) params.set('search', search.trim())
-    if (categoryId) params.set('categoryId', categoryId)
-    if (requestedPriority) params.set('requestedPriority', requestedPriority)
-    if (status) params.set('status', status)
-    if (sort) params.set('sort', sort)
-    if (order) params.set('order', order)
-    if (page > 1) params.set('page', String(page))
-    if (pageSize !== 10) params.set('pageSize', String(pageSize))
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("search", search.trim());
+    if (categoryId) params.set("categoryId", categoryId);
+    if (requestedPriority) params.set("requestedPriority", requestedPriority);
+    if (status) params.set("status", status);
+    if (sort) params.set("sort", sort);
+    if (order) params.set("order", order);
+    if (page > 1) params.set("page", String(page));
+    if (pageSize !== 10) params.set("pageSize", String(pageSize));
 
-    const queryString = params.toString()
-    const url = `/api/tickets${queryString ? `?${queryString}` : ''}`
+    const queryString = params.toString();
+    const url = `/api/tickets${queryString ? `?${queryString}` : ""}`;
 
     apiFetch(url, { signal: controller.signal })
       .then(async (res) => {
         if (!res.ok) {
-          throw new Error('Failed to fetch tickets')
+          throw new Error("Failed to fetch tickets");
         }
-        return res.json()
+        return res.json();
       })
       .then((json: { data: TicketListItem[]; meta: TicketListMeta }) => {
-        if (controller.signal.aborted) return
-        setTickets(json.data || [])
+        if (controller.signal.aborted) return;
+        setTickets(json.data || []);
         setMeta(
           json.meta || {
             page: 1,
@@ -116,25 +138,28 @@ export function MyTickets() {
             totalItems: 0,
             totalPages: 0,
           },
-        )
+        );
       })
       .catch((err: unknown) => {
-        if (controller.signal.aborted || (err as Error)?.name === 'AbortError') {
-          return
+        if (
+          controller.signal.aborted ||
+          (err as Error)?.name === "AbortError"
+        ) {
+          return;
         }
-        setError(true)
+        setError(true);
       })
       .finally(() => {
         if (!controller.signal.aborted) {
-          setLoading(false)
+          setLoading(false);
         }
-      })
+      });
 
     return () => {
-      controller.abort()
-    }
+      controller.abort();
+    };
   }, [
-    selectedRequester?.id,
+    activeRequester,
     search,
     categoryId,
     requestedPriority,
@@ -144,99 +169,100 @@ export function MyTickets() {
     page,
     pageSize,
     retryCount,
-  ])
+  ]);
 
   // Parameter update helper
   const updateParam = (updates: Record<string, string | null>) => {
-    const next = new URLSearchParams(searchParams)
+    const next = new URLSearchParams(searchParams);
     Object.entries(updates).forEach(([key, value]) => {
-      if (value === null || value === '') {
-        next.delete(key)
+      if (value === null || value === "") {
+        next.delete(key);
       } else {
-        next.set(key, value)
+        next.set(key, value);
       }
-    })
-    setSearchParams(next)
-  }
+    });
+    setSearchParams(next);
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    updateParam({ search: searchInput.trim() || null, page: '1' })
-  }
+    e.preventDefault();
+    updateParam({ search: searchInput.trim() || null, page: "1" });
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value
-    setSearchInput(val)
-    if (val === '') {
-      updateParam({ search: null, page: '1' })
+    const val = e.target.value;
+    setSearchInput(val);
+    if (val === "") {
+      updateParam({ search: null, page: "1" });
     }
-  }
+  };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    updateParam({ categoryId: e.target.value || null, page: '1' })
-  }
+    updateParam({ categoryId: e.target.value || null, page: "1" });
+  };
 
   const handlePriorityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    updateParam({ requestedPriority: e.target.value || null, page: '1' })
-  }
+    updateParam({ requestedPriority: e.target.value || null, page: "1" });
+  };
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    updateParam({ status: e.target.value || null, page: '1' })
-  }
+    updateParam({ status: e.target.value || null, page: "1" });
+  };
 
   const handleClearFilters = () => {
-    setSearchInput('')
-    const next = new URLSearchParams()
-    if (sort !== 'createdAt') next.set('sort', sort)
-    if (order !== 'desc') next.set('order', order)
-    if (pageSize !== 10) next.set('pageSize', String(pageSize))
-    setSearchParams(next)
-  }
+    setSearchInput("");
+    const next = new URLSearchParams();
+    if (sort !== "createdAt") next.set("sort", sort);
+    if (order !== "desc") next.set("order", order);
+    if (pageSize !== 10) next.set("pageSize", String(pageSize));
+    setSearchParams(next);
+  };
 
-  const handleSort = (field: 'ticketNumber' | 'createdAt' | 'updatedAt') => {
+  const handleSort = (field: "ticketNumber" | "createdAt" | "updatedAt") => {
     if (sort === field) {
-      updateParam({ order: order === 'asc' ? 'desc' : 'asc', page: '1' })
+      updateParam({ order: order === "asc" ? "desc" : "asc", page: "1" });
     } else {
-      updateParam({ sort: field, order: 'asc', page: '1' })
+      updateParam({ sort: field, order: "asc", page: "1" });
     }
-  }
+  };
 
   const handlePageChange = (newPage: number) => {
-    updateParam({ page: newPage > 1 ? String(newPage) : null })
-  }
+    updateParam({ page: newPage > 1 ? String(newPage) : null });
+  };
 
   const handleRetry = () => {
-    setRetryCount((c) => c + 1)
-  }
+    setRetryCount((c) => c + 1);
+  };
 
   const hasActiveFilters = Boolean(
     search.trim() || categoryId || requestedPriority || status,
-  )
+  );
 
   const renderSortIndicator = (
-    field: 'ticketNumber' | 'createdAt' | 'updatedAt',
+    field: "ticketNumber" | "createdAt" | "updatedAt",
   ) => {
-    if (sort !== field) return null
+    if (sort !== field) return null;
     return (
       <span className="ms-1" aria-hidden="true">
-        {order === 'asc' ? '↑' : '↓'}
+        {order === "asc" ? "↑" : "↓"}
       </span>
-    )
-  }
+    );
+  };
 
   const getSortAria = (
-    field: 'ticketNumber' | 'createdAt' | 'updatedAt',
-  ): 'ascending' | 'descending' | 'none' => {
-    if (sort !== field) return 'none'
-    return order === 'asc' ? 'ascending' : 'descending'
-  }
+    field: "ticketNumber" | "createdAt" | "updatedAt",
+  ): "ascending" | "descending" | "none" => {
+    if (sort !== field) return "none";
+    return order === "asc" ? "ascending" : "descending";
+  };
 
   // Calculate showing X to Y of N
-  const fromCount = meta.totalItems === 0 ? 0 : (meta.page - 1) * meta.pageSize + 1
+  const fromCount =
+    meta.totalItems === 0 ? 0 : (meta.page - 1) * meta.pageSize + 1;
   const toCount =
     meta.totalItems === 0
       ? 0
-      : Math.min(meta.page * meta.pageSize, meta.totalItems)
+      : Math.min(meta.page * meta.pageSize, meta.totalItems);
 
   const filterControls = (
     <div className="row g-2 align-items-center">
@@ -259,8 +285,8 @@ export function MyTickets() {
                 aria-label="Clear search"
                 title="Clear search"
                 onClick={() => {
-                  setSearchInput('')
-                  updateParam({ search: null, page: '1' })
+                  setSearchInput("");
+                  updateParam({ search: null, page: "1" });
                 }}
               >
                 ✕
@@ -312,7 +338,7 @@ export function MyTickets() {
         </select>
       </div>
     </div>
-  )
+  );
 
   return (
     <div className="container-fluid px-0">
@@ -391,60 +417,60 @@ export function MyTickets() {
                   <tr>
                     <th
                       scope="col"
-                      aria-sort={getSortAria('ticketNumber')}
-                      style={{ width: '16%' }}
+                      aria-sort={getSortAria("ticketNumber")}
+                      style={{ width: "16%" }}
                     >
                       <button
                         type="button"
                         className="btn btn-link text-decoration-none p-0 fw-semibold text-body d-inline-flex align-items-center"
-                        onClick={() => handleSort('ticketNumber')}
+                        onClick={() => handleSort("ticketNumber")}
                         aria-label="Sort by Ticket Number"
                       >
                         Ticket No.
-                        {renderSortIndicator('ticketNumber')}
+                        {renderSortIndicator("ticketNumber")}
                       </button>
                     </th>
                     <th
                       scope="col"
-                      aria-sort={getSortAria('createdAt')}
-                      style={{ width: '14%' }}
+                      aria-sort={getSortAria("createdAt")}
+                      style={{ width: "14%" }}
                     >
                       <button
                         type="button"
                         className="btn btn-link text-decoration-none p-0 fw-semibold text-body d-inline-flex align-items-center"
-                        onClick={() => handleSort('createdAt')}
+                        onClick={() => handleSort("createdAt")}
                         aria-label="Sort by Created Date"
                       >
                         Created Date
-                        {renderSortIndicator('createdAt')}
+                        {renderSortIndicator("createdAt")}
                       </button>
                     </th>
-                    <th scope="col" style={{ width: '26%' }}>
+                    <th scope="col" style={{ width: "26%" }}>
                       Summary
                     </th>
-                    <th scope="col" style={{ width: '12%' }}>
+                    <th scope="col" style={{ width: "12%" }}>
                       Category
                     </th>
-                    <th scope="col" style={{ width: '10%' }}>
+                    <th scope="col" style={{ width: "10%" }}>
                       Requested Priority
                     </th>
-                    <th scope="col" style={{ width: '10%' }}>
+                    <th scope="col" style={{ width: "10%" }}>
                       Current Status
                     </th>
                     <th
                       scope="col"
                       className="d-none d-lg-table-cell"
-                      aria-sort={getSortAria('updatedAt')}
-                      style={{ width: '12%' }}
+                      aria-sort={getSortAria("updatedAt")}
+                      style={{ width: "12%" }}
                     >
                       <button
                         type="button"
                         className="btn btn-link text-decoration-none p-0 fw-semibold text-body d-inline-flex align-items-center"
-                        onClick={() => handleSort('updatedAt')}
+                        onClick={() => handleSort("updatedAt")}
                         aria-label="Sort by Last Updated"
                       >
                         Last Updated
-                        {renderSortIndicator('updatedAt')}
+                        {renderSortIndicator("updatedAt")}
                       </button>
                     </th>
                   </tr>
@@ -456,7 +482,7 @@ export function MyTickets() {
                         <Link
                           to={`/tickets/${ticket.id}`}
                           className="fw-semibold text-decoration-none"
-                          style={{ color: 'var(--zen-secondary)' }}
+                          style={{ color: "var(--zen-secondary)" }}
                         >
                           {ticket.ticketNumber}
                         </Link>
@@ -501,7 +527,7 @@ export function MyTickets() {
                     <Link
                       to={`/tickets/${ticket.id}`}
                       className="fw-semibold text-decoration-none fs-6"
-                      style={{ color: 'var(--zen-secondary)' }}
+                      style={{ color: "var(--zen-secondary)" }}
                     >
                       {ticket.ticketNumber}
                     </Link>
@@ -536,7 +562,7 @@ export function MyTickets() {
         </>
       )}
     </div>
-  )
+  );
 }
 
-export default MyTickets
+export default MyTickets;

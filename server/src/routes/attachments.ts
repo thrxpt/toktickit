@@ -18,6 +18,7 @@ import {
   writeAttachmentFile,
 } from "../attachments/storage";
 import { sendError } from "../errors";
+import { extractSessionToken, requireAuth } from "../middleware/auth";
 import {
   rejectRequesterIdInBody,
   requireRequesterContext,
@@ -42,7 +43,6 @@ const upload = multer({
 });
 
 export const attachmentsRouter = express.Router();
-attachmentsRouter.use(requireRequesterContext);
 
 // Middleware to check ticket existence and ownership before multer consumes payload (api-spec.md ordering).
 async function checkTicketOwnershipAndLimit(
@@ -241,14 +241,45 @@ export const postTicketAttachmentHandlers = [
   },
 ];
 
-// GET /api/attachments/:id/content (FR-13, BR-36, BR-37, BR-39, BR-40, AC-35, AC-37, AC-40)
-attachmentsRouter.get("/:id/content", async (req: Request, res: Response) => {
-  const requesterId = req.requesterId;
-  if (!requesterId) {
-    sendError(res, "REQUESTER_CONTEXT_MISSING");
+// Helper to stream attachment content once authorization is established
+async function streamAttachmentContent(
+  res: Response,
+  attachment: {
+    storageKey: string;
+    mimeType: string;
+    originalFilename: string;
+    sizeBytes: number;
+  },
+): Promise<void> {
+  const fileExists = await attachmentFileExists(attachment.storageKey);
+  if (!fileExists) {
+    sendError(res, "ATTACHMENT_NOT_FOUND");
     return;
   }
 
+  const filePath = getStorageFilePath(attachment.storageKey);
+  const disposition = formatContentDisposition(
+    attachment.mimeType,
+    attachment.originalFilename,
+  );
+
+  res.setHeader("Content-Type", attachment.mimeType);
+  res.setHeader("Content-Length", attachment.sizeBytes);
+  res.setHeader("Content-Disposition", disposition);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+
+  const stream = fs.createReadStream(filePath);
+  stream.on("error", () => {
+    if (!res.headersSent) {
+      sendError(res, "ATTACHMENT_NOT_FOUND");
+    }
+  });
+  stream.pipe(res);
+}
+
+// GET /api/attachments/:id/content (FR-13, BR-36, BR-37, BR-39, BR-40, AC-35, AC-37, AC-40)
+// Permitted roles per specification.md §8: Requester / Staff
+attachmentsRouter.get("/:id/content", async (req: Request, res: Response) => {
   const idResult = z
     .string()
     .regex(/^[1-9]\d*$/)
@@ -260,14 +291,88 @@ attachmentsRouter.get("/:id/content", async (req: Request, res: Response) => {
 
   const id = parseInt(idResult.data, 10);
 
+  const sessionToken = extractSessionToken(req);
+  if (sessionToken) {
+    await requireAuth(req, res, async () => {
+      const user = req.user;
+      if (!user) {
+        sendError(res, "UNAUTHENTICATED");
+        return;
+      }
+
+      try {
+        let attachment;
+        if (user.role === "IT_STAFF") {
+          // IT Staff can access active attachments on any ticket (specification.md §8)
+          attachment = await prisma.attachment.findFirst({
+            where: {
+              id,
+              removedAt: null,
+            },
+          });
+        } else if (user.role === "REQUESTER") {
+          // Requester can only access active attachments on tickets they own (BR-40, AC-40)
+          attachment = await prisma.attachment.findFirst({
+            where: {
+              id,
+              removedAt: null,
+              ticket: { requesterId: user.id },
+            },
+          });
+        } else {
+          // Administrators are segregated to user management and cannot access ticket attachments (BR-14, ADR-0008)
+          sendError(res, "FORBIDDEN");
+          return;
+        }
+
+        if (!attachment) {
+          sendError(res, "ATTACHMENT_NOT_FOUND");
+          return;
+        }
+
+        await streamAttachmentContent(res, attachment);
+      } catch {
+        sendError(res, "DATABASE_UNAVAILABLE");
+      }
+    });
+    return;
+  }
+
+  // Lab 2 backward compatibility mode using X-Requester-Id header (ADR-0003, ADR-0009)
+  const header = req.header("X-Requester-Id");
+  if (!header || header.trim() === "") {
+    sendError(res, "UNAUTHENTICATED");
+    return;
+  }
+
+  const trimmed = header.trim();
+  if (!/^[1-9]\d*$/.test(trimmed)) {
+    sendError(res, "REQUESTER_CONTEXT_INVALID");
+    return;
+  }
+
+  const requesterId = parseInt(trimmed, 10);
   try {
+    const requester = await prisma.requester.findUnique({
+      where: { id: requesterId },
+      select: { id: true, isActive: true },
+    });
+
+    if (!requester) {
+      sendError(res, "REQUESTER_CONTEXT_INVALID");
+      return;
+    }
+
+    if (!requester.isActive) {
+      sendError(res, "REQUESTER_INACTIVE");
+      return;
+    }
+
     const attachment = await prisma.attachment.findFirst({
       where: {
         id,
-        removedAt: null, // Removed attachments 404 (BR-39, AC-37)
-        ticket: {
-          requesterId, // Cross-requester attachments 404 (BR-40, AC-40)
-        },
+        removedAt: null,
+        ticket: { requesterId: requester.id },
       },
     });
 
@@ -276,38 +381,16 @@ attachmentsRouter.get("/:id/content", async (req: Request, res: Response) => {
       return;
     }
 
-    const fileExists = await attachmentFileExists(attachment.storageKey);
-    if (!fileExists) {
-      sendError(res, "ATTACHMENT_NOT_FOUND");
-      return;
-    }
-
-    const filePath = getStorageFilePath(attachment.storageKey);
-    const disposition = formatContentDisposition(
-      attachment.mimeType,
-      attachment.originalFilename,
-    );
-
-    res.setHeader("Content-Type", attachment.mimeType);
-    res.setHeader("Content-Length", attachment.sizeBytes);
-    res.setHeader("Content-Disposition", disposition);
-    res.setHeader("X-Content-Type-Options", "nosniff");
-
-    const stream = fs.createReadStream(filePath);
-    stream.on("error", () => {
-      if (!res.headersSent) {
-        sendError(res, "ATTACHMENT_NOT_FOUND");
-      }
-    });
-    stream.pipe(res);
+    await streamAttachmentContent(res, attachment);
   } catch {
     sendError(res, "DATABASE_UNAVAILABLE");
   }
 });
 
-// POST /api/attachments/:id/removal (FR-14, BR-04, BR-22, BR-38, BR-42, AC-36, AC-38)
+// POST /api/attachments/:id/removal and /api/attachments/:id/remove (FR-14, BR-04, BR-22, BR-38, BR-42, AC-36, AC-38)
 attachmentsRouter.post(
-  "/:id/removal",
+  ["/:id/removal", "/:id/remove"],
+  requireRequesterContext,
   rejectRequesterIdInBody,
   async (req: Request, res: Response) => {
     const requesterId = req.requesterId;
