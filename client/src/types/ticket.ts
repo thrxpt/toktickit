@@ -1,6 +1,47 @@
-export type RequestedPriority = 'LOW' | 'MEDIUM' | 'HIGH'
+export type RequestedPriority = "LOW" | "MEDIUM" | "HIGH";
 
-export type TicketStatus = 'NEW'
+export type ITPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export type TicketStatus =
+  | "NEW"
+  | "OPEN"
+  | "IN_PROGRESS"
+  | "WAITING_FOR_REQUESTER"
+  | "RESOLVED"
+  | "CLOSED"
+  | "REOPENED"
+  | "CANCELLED";
+
+export interface StaffQueueTicketItem {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  categoryName: string;
+  requestedPriority: RequestedPriority;
+  itPriority: ITPriority;
+  status: TicketStatus;
+  ticketOwner: {
+    id: number;
+    name: string;
+  } | null;
+  requester: {
+    id: number;
+    name: string;
+  };
+  resolvedByRequester: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffQueueResponse {
+  items: StaffQueueTicketItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
 
 export interface TicketListItem {
   id: number

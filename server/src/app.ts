@@ -6,6 +6,7 @@ import { prisma } from "./prisma";
 import { attachmentsRouter } from "./routes/attachments";
 import { authRouter } from "./routes/auth";
 import { ticketsRouter } from "./routes/tickets";
+import { staffQueueRouter } from "./staff/staff-queue.router";
 
 // The app is built here and started in index.ts, so Supertest can mount it
 // without binding a port.
@@ -79,6 +80,9 @@ app.use("/api/auth", authRouter);
 // Ticket routes require requester context (BR-04, ADR-0003).
 app.use("/api/tickets", ticketsRouter);
 app.use("/api/attachments", attachmentsRouter);
+
+// Staff routes (Lab 3)
+app.use("/api/staff/tickets", staffQueueRouter);
 
 // Unmatched paths fall through to Express's default 404, which API-00 asserts.
 

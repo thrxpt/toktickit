@@ -31,8 +31,28 @@
   --zen-badge-medium-text: #92400e;
   --zen-badge-high-bg: #fee2e2;
   --zen-badge-high-text: var(--zen-danger);
+  --zen-badge-critical-bg: var(--zen-danger);
+  --zen-badge-critical-text: var(--zen-surface);
   --zen-badge-new-bg: var(--zen-pale);
   --zen-badge-new-text: var(--zen-primary);
+
+  /* Status badge semantic colors (ui-spec.md §3) */
+  --zen-status-new-bg: var(--zen-pale);
+  --zen-status-new-text: var(--zen-primary);
+  --zen-status-open-bg: var(--zen-info-bg);
+  --zen-status-open-text: var(--zen-info);
+  --zen-status-in-progress-bg: #ecfdf5;
+  --zen-status-in-progress-text: #065f46;
+  --zen-status-waiting-bg: #fffbeb;
+  --zen-status-waiting-text: #92400e;
+  --zen-status-resolved-bg: #f0fdf4;
+  --zen-status-resolved-text: #166534;
+  --zen-status-closed-bg: #f3f4f6;
+  --zen-status-closed-text: #4b5563;
+  --zen-status-reopened-bg: #fef3c7;
+  --zen-status-reopened-text: #b45309;
+  --zen-status-cancelled-bg: #fee2e2;
+  --zen-status-cancelled-text: #991b1b;
 
   /* Bootstrap bindings */
   --bs-primary: var(--zen-primary);
@@ -253,10 +273,65 @@ textarea.form-control {
   border: 1px solid rgba(176, 42, 42, 0.2);
 }
 
+.zen-badge-critical {
+  background-color: var(--zen-badge-critical-bg);
+  color: var(--zen-badge-critical-text);
+  border: 1px solid var(--zen-danger);
+}
+
 .zen-badge-new {
   background-color: var(--zen-badge-new-bg);
   color: var(--zen-badge-new-text);
   border: 1px solid var(--zen-border);
+}
+
+/* Status Badges (ui-spec.md §3) */
+.zen-badge-status-new {
+  background-color: var(--zen-status-new-bg);
+  color: var(--zen-status-new-text);
+  border: 1px solid var(--zen-border);
+}
+
+.zen-badge-status-open {
+  background-color: var(--zen-status-open-bg);
+  color: var(--zen-status-open-text);
+  border: 1px solid var(--zen-info-border);
+}
+
+.zen-badge-status-in-progress {
+  background-color: var(--zen-status-in-progress-bg);
+  color: var(--zen-status-in-progress-text);
+  border: 1px solid rgba(6, 95, 70, 0.2);
+}
+
+.zen-badge-status-waiting-for-requester {
+  background-color: var(--zen-status-waiting-bg);
+  color: var(--zen-status-waiting-text);
+  border: 1px solid rgba(146, 64, 14, 0.2);
+}
+
+.zen-badge-status-resolved {
+  background-color: var(--zen-status-resolved-bg);
+  color: var(--zen-status-resolved-text);
+  border: 1px solid rgba(22, 101, 52, 0.2);
+}
+
+.zen-badge-status-closed {
+  background-color: var(--zen-status-closed-bg);
+  color: var(--zen-status-closed-text);
+  border: 1px solid rgba(75, 85, 99, 0.2);
+}
+
+.zen-badge-status-reopened {
+  background-color: var(--zen-status-reopened-bg);
+  color: var(--zen-status-reopened-text);
+  border: 1px solid rgba(180, 83, 9, 0.2);
+}
+
+.zen-badge-status-cancelled {
+  background-color: var(--zen-status-cancelled-bg);
+  color: var(--zen-status-cancelled-text);
+  border: 1px solid rgba(153, 27, 27, 0.2);
 }
 
 /* Role Badges (ui-spec.md §3) */
@@ -291,6 +366,43 @@ textarea.form-control {
   font-weight: 600;
   font-size: 0.875rem;
   user-select: none;
+}
+
+/* Table & Queue helpers */
+.zen-clickable-row {
+  cursor: pointer;
+}
+
+.zen-col-ticket-no {
+  width: 160px;
+  cursor: pointer;
+}
+
+.zen-col-date {
+  width: 130px;
+  cursor: pointer;
+}
+
+.zen-col-category {
+  width: 140px;
+}
+
+.zen-col-priority {
+  width: 120px;
+  cursor: pointer;
+}
+
+.zen-col-status {
+  width: 140px;
+  cursor: pointer;
+}
+
+.zen-col-owner {
+  width: 150px;
+}
+
+.zen-summary-truncate {
+  max-width: 260px;
 }
 
 /* Touch targets */
