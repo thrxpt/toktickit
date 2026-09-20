@@ -118,3 +118,36 @@ export interface TicketDetail {
     removed: AttachmentDto[]
   }
 }
+
+export interface StaffTicketDetailDto {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  description: string;
+  category: {
+    id: number;
+    name: string;
+  };
+  relatedSystem: {
+    id: number;
+    name: string;
+  };
+  requester: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  ticketOwner: {
+    id: number;
+    name: string;
+  } | null;
+  requestedPriority: RequestedPriority;
+  itPriority: ITPriority;
+  status: TicketStatus;
+  resolvedByRequester: boolean;
+  createdAt: string;
+  updatedAt: string;
+  attachments: AttachmentDto[];
+  publicCommentsCount: number;
+  internalNotesCount: number;
+}

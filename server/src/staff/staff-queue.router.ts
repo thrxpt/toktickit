@@ -118,10 +118,9 @@ export const staffQueueRouter = express.Router();
 
 // Guarded by authentication and role check (IT_STAFF only; Requesters and Administrators receive 403 Forbidden per BR-14 and ADR-0008).
 staffQueueRouter.use(requireAuth);
-staffQueueRouter.use(requireRole("IT_STAFF"));
 
 // GET /api/staff/tickets (FR-09, AC-10, BR-14, BR-15, BR-18, BR-20, BR-21)
-staffQueueRouter.get("/", async (req: Request, res: Response) => {
+staffQueueRouter.get("/", requireRole("IT_STAFF"), async (req: Request, res: Response) => {
   const parseResult = staffQueueQuerySchema.safeParse(req.query);
 
   if (!parseResult.success) {
