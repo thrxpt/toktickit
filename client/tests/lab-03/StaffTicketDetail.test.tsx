@@ -473,6 +473,7 @@ describe("UI-08 — IT Staff modifies IT Priority and status dropdown (AC-12, AC
 
     await waitFor(() => {
       expect(screen.getByText("battery-report.pdf")).toBeInTheDocument();
+      expect(screen.getByText("Active")).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /Download/i })).toHaveAttribute(
         "href",
         "/api/attachments/1/content",

@@ -96,7 +96,7 @@ async function createTicket(overrides: {
   });
 }
 
-describe("GET /api/staff/tickets/:id", () => {
+describe("GET /api/staff/tickets/:id (FR-10, AC-10, BR-14, BR-15)", () => {
   it("returns comprehensive ticket detail for authenticated IT Staff", async () => {
     const fixtures = await getFixtures();
     const staff = await loginAs("michael.brown@toktickit.com");
@@ -180,13 +180,15 @@ describe("GET /api/staff/tickets/:id", () => {
     expect(res.body.error.code).toBe("TICKET_NOT_FOUND");
   });
 
-  it("returns 400 or 404 for invalid non-numeric ticket ID", async () => {
+  it("returns 400 for invalid non-numeric ticket ID (AC-21)", async () => {
     const staff = await loginAs("michael.brown@toktickit.com");
     const res = await request(app)
       .get("/api/staff/tickets/invalid-id")
       .set("Cookie", staff.cookie);
 
-    expect([400, 404]).toContain(res.status);
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_FAILED");
+    expect(res.body.error.fields).toHaveProperty("id");
   });
 
   it("rejects Requester with 403 Forbidden (BR-15)", async () => {
@@ -302,6 +304,41 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     expect(updated.ticketOwnerId).toBeNull();
   });
 
+  it("does not auto-advance status from NEW when unassigning ownerId to null (BR-23)", async () => {
+    const staff = await loginAs("michael.brown@toktickit.com");
+    const ticket = await createTicket({
+      status: "NEW",
+      ticketOwnerId: null,
+    });
+
+    const res = await request(app)
+      .patch(`/api/staff/tickets/${ticket.id}/owner`)
+      .set("Cookie", staff.cookie)
+      .send({ ownerId: null });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("NEW");
+    expect(res.body.ticketOwnerId).toBeNull();
+
+    const updated = await prisma.ticket.findUniqueOrThrow({
+      where: { id: ticket.id },
+    });
+    expect(updated.status).toBe("NEW");
+    expect(updated.ticketOwnerId).toBeNull();
+  });
+
+  it("returns 400 for invalid non-numeric ticket ID (AC-21)", async () => {
+    const staff = await loginAs("michael.brown@toktickit.com");
+    const res = await request(app)
+      .patch("/api/staff/tickets/invalid-id/owner")
+      .set("Cookie", staff.cookie)
+      .send({ ownerId: staff.user.id });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_FAILED");
+    expect(res.body.error.fields).toHaveProperty("id");
+  });
+
   it("rejects assigning ownership to inactive staff member (BR-18)", async () => {
     const fixtures = await getFixtures();
     const staff = await loginAs("michael.brown@toktickit.com");
@@ -406,6 +443,18 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
     expect(res.status).toBe(400);
   });
 
+  it("returns 400 for invalid non-numeric ticket ID (AC-21)", async () => {
+    const staff = await loginAs("michael.brown@toktickit.com");
+    const res = await request(app)
+      .patch("/api/staff/tickets/invalid-id/priority")
+      .set("Cookie", staff.cookie)
+      .send({ itPriority: "HIGH" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_FAILED");
+    expect(res.body.error.fields).toHaveProperty("id");
+  });
+
   it("returns 404 for nonexistent ticket ID", async () => {
     const staff = await loginAs("michael.brown@toktickit.com");
     const res = await request(app)
@@ -501,6 +550,18 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("INVALID_STATUS_TRANSITION");
+  });
+
+  it("returns 400 for invalid non-numeric ticket ID (AC-21)", async () => {
+    const staff = await loginAs("michael.brown@toktickit.com");
+    const res = await request(app)
+      .patch("/api/staff/tickets/invalid-id/status")
+      .set("Cookie", staff.cookie)
+      .send({ status: "OPEN" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_FAILED");
+    expect(res.body.error.fields).toHaveProperty("id");
   });
 
   it("returns 404 for nonexistent ticket ID", async () => {

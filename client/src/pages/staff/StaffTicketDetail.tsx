@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import apiFetch from "../../api/client";
 import { useAuth } from "../../auth/useAuth";
 import Badge from "../../components/Badge";
+import ReadOnlyField from "../../components/ReadOnlyField";
 import StateBlock from "../../components/StateBlock";
 import type {
   ITPriority,
@@ -105,48 +106,13 @@ export function StaffTicketDetail() {
     loadData();
   }, [loadData]);
 
-  // Claim unassigned ticket (AC-11, BR-23)
-  const handleClaim = async () => {
-    if (!ticket || !user) return;
-    setSavingOwner(true);
-    setErrorMessage(null);
-
-    try {
-      const res = await apiFetch(`/api/staff/tickets/${ticket.id}/owner`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId: user.id }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error?.message || "Failed to claim ticket.");
-      }
-
-      const data = await res.json();
-      setTicket((prev) =>
-        prev
-          ? {
-              ...prev,
-              ticketOwner: { id: user.id, name: user.name },
-              status: data.status,
-            }
-          : null,
-      );
-      showFeedback("Ticket claimed successfully.");
-    } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "Failed to claim ticket.");
-    } finally {
-      setSavingOwner(false);
-    }
-  };
-
-  // Reassign or unassign owner (AC-11, BR-18)
-  const handleOwnerChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  // Shared owner update helper (AC-11, BR-18, BR-23)
+  const updateOwner = async (newOwnerId: number | null, successMessage?: string) => {
     if (!ticket) return;
-    const value = e.target.value;
-    const newOwnerId = value ? parseInt(value, 10) : null;
-    const selectedAssignee = assignees.find((a) => a.id === newOwnerId);
+    const selectedAssignee = newOwnerId
+      ? assignees.find((a) => a.id === newOwnerId) ??
+        (user?.id === newOwnerId ? { id: user.id, name: user.name } : null)
+      : null;
 
     setSavingOwner(true);
     setErrorMessage(null);
@@ -168,19 +134,38 @@ export function StaffTicketDetail() {
         prev
           ? {
               ...prev,
-              ticketOwner: newOwnerId && selectedAssignee
-                ? { id: selectedAssignee.id, name: selectedAssignee.name }
-                : null,
+              ticketOwner:
+                newOwnerId && selectedAssignee
+                  ? { id: selectedAssignee.id, name: selectedAssignee.name }
+                  : null,
               status: data.status,
             }
           : null,
       );
-      showFeedback(newOwnerId ? "Owner updated." : "Ticket unassigned.");
+      showFeedback(
+        successMessage ?? (newOwnerId ? "Owner updated." : "Ticket unassigned."),
+      );
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "Failed to update owner.");
+      setErrorMessage(
+        err instanceof Error ? err.message : "Failed to update owner.",
+      );
     } finally {
       setSavingOwner(false);
     }
+  };
+
+  // Claim unassigned ticket (AC-11, BR-23)
+  const handleClaim = () => {
+    if (user) {
+      updateOwner(user.id, "Ticket claimed successfully.");
+    }
+  };
+
+  // Reassign or unassign owner (AC-11, BR-18)
+  const handleOwnerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    const newOwnerId = value ? parseInt(value, 10) : null;
+    updateOwner(newOwnerId);
   };
 
   // Update IT Priority (AC-12, BR-19, BR-20)
@@ -469,23 +454,18 @@ export function StaffTicketDetail() {
           <h2 className="h5 mb-0">Ticket Details</h2>
         </div>
         <div className="card-body">
-          <div className="mb-3">
-            <label className="form-label fw-bold small text-secondary">
-              Summary
-            </label>
-            <p className="lead mb-0">{ticket.summary}</p>
-          </div>
-          <div>
-            <label className="form-label fw-bold small text-secondary">
-              Description
-            </label>
-            <div
-              className="p-3 bg-light rounded border"
-              style={{ whiteSpace: "pre-wrap" }}
-            >
-              {ticket.description}
-            </div>
-          </div>
+          <ReadOnlyField
+            id="staff-ticket-summary"
+            label="Summary"
+            value={ticket.summary}
+          />
+          <ReadOnlyField
+            id="staff-ticket-description"
+            label="Description"
+            value={ticket.description}
+            multiline
+            className="mb-0"
+          />
         </div>
       </div>
 
@@ -546,6 +526,7 @@ export function StaffTicketDetail() {
                         <th>Size</th>
                         <th>Uploaded By</th>
                         <th>Upload Date</th>
+                        <th>Status</th>
                         <th className="text-end">Action</th>
                       </tr>
                     </thead>
@@ -556,6 +537,11 @@ export function StaffTicketDetail() {
                           <td>{formatFileSize(att.sizeBytes)}</td>
                           <td>{att.uploadedBy.name}</td>
                           <td>{formatDate(att.createdAt)}</td>
+                          <td>
+                            <span className="badge bg-success-subtle text-success-emphasis border border-success-subtle">
+                              Active
+                            </span>
+                          </td>
                           <td className="text-end">
                             <a
                               href={att.contentUrl || `/api/attachments/${att.id}/content`}

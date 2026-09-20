@@ -55,7 +55,9 @@ function parseTicketId(idParam: string | string[] | undefined): number | null {
 staffTicketDetailRouter.get("/:id", async (req: Request, res: Response) => {
   const id = parseTicketId(req.params.id);
   if (id === null) {
-    sendError(res, "TICKET_NOT_FOUND");
+    sendError(res, "VALIDATION_FAILED", {
+      id: "Ticket ID must be a positive integer",
+    });
     return;
   }
 
@@ -133,7 +135,9 @@ staffTicketDetailRouter.patch(
   async (req: Request, res: Response) => {
     const id = parseTicketId(req.params.id);
     if (id === null) {
-      sendError(res, "TICKET_NOT_FOUND");
+      sendError(res, "VALIDATION_FAILED", {
+        id: "Ticket ID must be a positive integer",
+      });
       return;
     }
 
@@ -179,8 +183,9 @@ staffTicketDetailRouter.patch(
         }
       }
 
-      // Auto-advance NEW tickets to OPEN on claiming/assignment (BR-23)
-      const newStatus = ticket.status === "NEW" ? "OPEN" : ticket.status;
+      // Auto-advance NEW tickets to OPEN on claiming/assignment to IT staff (BR-23)
+      const newStatus =
+        ticket.status === "NEW" && ownerId !== null ? "OPEN" : ticket.status;
 
       const updated = await prisma.ticket.update({
         where: { id },
@@ -213,7 +218,9 @@ staffTicketDetailRouter.patch(
   async (req: Request, res: Response) => {
     const id = parseTicketId(req.params.id);
     if (id === null) {
-      sendError(res, "TICKET_NOT_FOUND");
+      sendError(res, "VALIDATION_FAILED", {
+        id: "Ticket ID must be a positive integer",
+      });
       return;
     }
 
@@ -266,7 +273,9 @@ staffTicketDetailRouter.patch(
   async (req: Request, res: Response) => {
     const id = parseTicketId(req.params.id);
     if (id === null) {
-      sendError(res, "TICKET_NOT_FOUND");
+      sendError(res, "VALIDATION_FAILED", {
+        id: "Ticket ID must be a positive integer",
+      });
       return;
     }
 
