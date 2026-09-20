@@ -61,7 +61,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-07 | AC-07, BR-16 | Requester fetching another user's Ticket | 404 Not Found (safe error, no enumeration) | `authorization.api.test.ts` | Passed |
 | API-08 | AC-08, BR-17 | Requester requesting Internal Notes endpoint | 403 Forbidden without note data | `authorization.api.test.ts` | Planned |
 | API-09 | AC-09, BR-24 | Requester indicates "Problem Appears Resolved" | 200 OK, `resolvedByRequester: true`, status unchanged | `authorization.api.test.ts` | Planned |
-| API-10 | AC-10, FR-09 | IT Staff queries Ticket Queue with filters and pagination | 200 OK, returns filtered tickets and pagination metadata | `staff-queue.api.test.ts` | Planned |
+| API-10 | AC-10, FR-09 | IT Staff queries Ticket Queue with filters and pagination | 200 OK, returns filtered tickets and pagination metadata | `staff-queue.api.test.ts` | Passed |
 | API-11 | AC-11, BR-23 | IT Staff claims unassigned ticket | 200 OK, sets `ticketOwnerId`, auto-advances `NEW` to `OPEN` | `staff-ticket-detail.api.test.ts` | Planned |
 | API-12 | AC-12, BR-20 | IT Staff updates IT Priority to `CRITICAL` | 200 OK, `itPriority` updated, `requestedPriority` untouched | `staff-ticket-detail.api.test.ts` | Planned |
 | API-13 | AC-13, BR-22 | IT Staff transitions status (`OPEN` → `IN_PROGRESS`) | 200 OK; invalid transition answers 400 Bad Request | `staff-ticket-detail.api.test.ts` | Planned |
@@ -81,6 +81,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-27 | specification §8, ADR-0008 | IT Staff and Administrator access to attachment content | 200 OK for Staff; 403 Forbidden for Administrator | `authorization.api.test.ts` | Passed |
 | API-28 | api-spec Gate 1 | Anonymous requests to protected routes without session or header | 401 Unauthorized with standard error envelope | `authorization.api.test.ts` | Passed |
 | API-29 | api-spec §GET /api/tickets | Query filtering with 8 ticket statuses beyond NEW (W6) | 200 OK with matching tickets | `authorization.api.test.ts` | Passed |
+| API-30 | BR-14, BR-15, ADR-0008 | Requester and Administrator access to IT Staff Ticket Queue & Assignees | 403 Forbidden | `authorization.api.test.ts` | Passed |
 
 ### UI Component Tests — `client/tests/lab-03/*.test.tsx`
 
@@ -91,7 +92,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | UI-03 | AC-03, BR-07 | Password change form checklist criteria validation | Validates length, case, digits, special chars in real-time | `ChangePassword.test.tsx` | Passed |
 | UI-04 | AC-05, FR-04 | AppShell renders user name, role badge, and handles Logout | Displays name & badge; clicking Logout clears session and redirects | `AppShell.test.tsx` | Passed |
 | UI-05 | AC-09, FR-08 | Requester clicks "Problem Appears Resolved" | Shows confirm dialog, updates indication state, disables button | `RequesterTicketDetail.test.tsx` | Planned |
-| UI-06 | AC-10, FR-09 | IT Staff Queue renders table, search filter, and pagination | Renders columns, filters rows on search, paginates results | `StaffTicketQueue.test.tsx` | Planned |
+| UI-06 | AC-10, FR-09 | IT Staff Queue renders table, search filter, and pagination | Renders columns, filters rows on search, paginates results | `StaffTicketQueue.test.tsx` | Passed |
 | UI-07 | AC-11, BR-23 | IT Staff clicks "Claim" on unassigned ticket | Calls owner endpoint and updates owner display | `StaffTicketDetail.test.tsx` | Planned |
 | UI-08 | AC-12, AC-13 | IT Staff modifies IT Priority and status dropdown | Sends PATCH requests and updates badge indicators | `StaffTicketDetail.test.tsx` | Planned |
 | UI-09 | AC-14, FR-07 | Public Comments thread displays comments and accepts new post | Appends new comment to list with author badge and timestamp | `PublicComments.test.tsx` | Planned |
@@ -108,18 +109,18 @@ that the server returns strict `401`, `403`, or `404` responses.
 | Test ID | AC / BR | What It Tests | Expected Result | Automated Test File | Final |
 | --- | --- | --- | --- | --- | --- |
 | STYLE-01 | ui-spec §1 | Zen Green color tokens and absence of external hex codes | Clean token application; no arbitrary inline hex | `theme.style.test.tsx` | Planned |
-| STYLE-02 | ui-spec §3 | Role badges render correct semantic colors and text | Requester (green), Staff (blue), Admin (purple) | `badges.style.test.tsx` | Planned |
-| STYLE-03 | ui-spec §3 | Priority badges render correct semantic colors and text | Low, Medium, High, Critical distinct | `badges.style.test.tsx` | Planned |
-| STYLE-04 | ui-spec §3 | Status badges render correct semantic colors and text | 8 distinct status presentations verified | `badges.style.test.tsx` | Planned |
+| STYLE-02 | ui-spec §3 | Role badges render correct semantic colors and text | Requester (green), Staff (blue), Admin (purple) | `badges.style.test.tsx` | Passed |
+| STYLE-03 | ui-spec §3 | Priority badges render correct semantic colors and text | Low, Medium, High, Critical distinct | `badges.style.test.tsx` | Passed |
+| STYLE-04 | ui-spec §3 | Status badges render correct semantic colors and text | 8 distinct status presentations verified | `badges.style.test.tsx` | Passed |
 | STYLE-05 | ui-spec §4 | Internal Notes tab renders amber warning callout styling | Amber callout surface and border verified | `notes.style.test.tsx` | Planned |
 
 ### Responsive Tests — `e2e/lab-03/responsive.spec.ts`
 
 | Test ID | Viewport | What It Tests | Expected Result | Final |
 | --- | --- | --- | --- | --- |
-| RESP-01 | Desktop (1280px) | Full multi-column tables, queue, and side panels | Clean spacing, no clipping, no overflow | Planned |
-| RESP-02 | Tablet (768px) | Condensed tables, 2-column forms, drawer overlays | Elements adapt cleanly without horizontal scroll | Planned |
-| RESP-03 | Mobile (390px) | Queue transforms to cards; full-width action buttons | Touch targets ≥44px, zero horizontal overflow | Planned |
+| RESP-01 | Desktop (1280px) | Full multi-column tables, queue, and side panels | Clean spacing, no clipping, no overflow | Passed |
+| RESP-02 | Tablet (768px) | Condensed tables, 2-column forms, drawer overlays | Elements adapt cleanly without horizontal scroll | Passed |
+| RESP-03 | Mobile (390px) | Queue transforms to cards; full-width action buttons | Touch targets ≥44px, zero horizontal overflow | Passed |
 | RESP-04 | Mobile (390px) | Admin User Management responsive layout | User list and drawer fit viewport cleanly | Planned |
 
 ### End-to-End Tests — `e2e/lab-03/*.spec.ts`

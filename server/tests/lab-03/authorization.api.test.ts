@@ -414,6 +414,16 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
       },
     });
 
+    // GET /api/staff/tickets without auth -> 401
+    const anonStaffQueueRes = await request(app).get("/api/staff/tickets");
+    expect(anonStaffQueueRes.status).toBe(401);
+    expect(anonStaffQueueRes.body).toEqual({
+      error: {
+        code: "UNAUTHENTICATED",
+        message: expect.any(String),
+      },
+    });
+
     // GET /api/attachments/1/content without auth -> 401
     const anonAttRes = await request(app).get("/api/attachments/1/content");
     expect(anonAttRes.status).toBe(401);
@@ -423,6 +433,58 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
         message: expect.any(String),
       },
     });
+
+    // GET /api/staff/assignees without auth -> 401
+    const anonAssigneesRes = await request(app).get("/api/staff/assignees");
+    expect(anonAssigneesRes.status).toBe(401);
+    expect(anonAssigneesRes.body).toEqual({
+      error: {
+        code: "UNAUTHENTICATED",
+        message: expect.any(String),
+      },
+    });
+  });
+
+  it("API-30 — rejects Requester and Administrator requesting /api/staff/tickets and /api/staff/assignees with 403 FORBIDDEN (BR-14, BR-15, ADR-0008)", async () => {
+    const requester = await loginAs("jennifer.anderson@example.ac.th");
+    const admin = await loginAs("admin@toktickit.com");
+
+    const requesterRes = await request(app)
+      .get("/api/staff/tickets")
+      .set("Cookie", requester.cookie);
+
+    expect(requesterRes.status).toBe(403);
+    expect(requesterRes.body).toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: expect.any(String),
+      },
+    });
+
+    const adminRes = await request(app)
+      .get("/api/staff/tickets")
+      .set("Cookie", admin.cookie);
+
+    expect(adminRes.status).toBe(403);
+    expect(adminRes.body).toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: expect.any(String),
+      },
+    });
+
+    // Verify /api/staff/assignees also rejects Requester and Administrator with 403
+    const requesterAssigneesRes = await request(app)
+      .get("/api/staff/assignees")
+      .set("Cookie", requester.cookie);
+    expect(requesterAssigneesRes.status).toBe(403);
+    expect(requesterAssigneesRes.body.error.code).toBe("FORBIDDEN");
+
+    const adminAssigneesRes = await request(app)
+      .get("/api/staff/assignees")
+      .set("Cookie", admin.cookie);
+    expect(adminAssigneesRes.status).toBe(403);
+    expect(adminAssigneesRes.body.error.code).toBe("FORBIDDEN");
   });
 
   it("allows status query filtering with valid statuses beyond NEW (W6)", async () => {
