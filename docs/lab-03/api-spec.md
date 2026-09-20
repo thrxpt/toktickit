@@ -339,7 +339,7 @@ Allows the owning Requester to indicate that the problem appears resolved (BR-05
 
 ## 3. IT Staff Ticket Queue & Operations
 
-Requires role `IT_STAFF` or `ADMINISTRATOR`. Requesters receive `403 Forbidden`.
+Requires role `IT_STAFF`. Requesters and Administrators receive `403 Forbidden` (BR-14, ADR-0008).
 
 ### GET /api/staff/tickets
 
@@ -393,6 +393,34 @@ Lists all tickets in the system with queue filtering and search.
   }
 }
 ```
+
+---
+
+### GET /api/staff/assignees
+
+Lists active IT Staff members available for ticket assignment and queue filtering.
+
+#### Responses
+
+- **200 OK**:
+
+```json
+[
+  {
+    "id": 2,
+    "name": "Michael Brown",
+    "role": "IT_STAFF"
+  },
+  {
+    "id": 3,
+    "name": "Sarah Johnson",
+    "role": "IT_STAFF"
+  }
+]
+```
+
+- **401 Unauthorized**: Unauthenticated.
+- **403 Forbidden**: Caller does not have role `IT_STAFF`.
 
 ---
 

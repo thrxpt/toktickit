@@ -373,14 +373,17 @@ textarea.form-control {
   cursor: pointer;
 }
 
+.zen-sortable-header {
+  cursor: pointer;
+  user-select: none;
+}
+
 .zen-col-ticket-no {
   width: 160px;
-  cursor: pointer;
 }
 
 .zen-col-date {
   width: 130px;
-  cursor: pointer;
 }
 
 .zen-col-category {
@@ -389,12 +392,10 @@ textarea.form-control {
 
 .zen-col-priority {
   width: 120px;
-  cursor: pointer;
 }
 
 .zen-col-status {
   width: 140px;
-  cursor: pointer;
 }
 
 .zen-col-owner {

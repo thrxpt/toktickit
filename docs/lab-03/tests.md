@@ -81,6 +81,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-27 | specification §8, ADR-0008 | IT Staff and Administrator access to attachment content | 200 OK for Staff; 403 Forbidden for Administrator | `authorization.api.test.ts` | Passed |
 | API-28 | api-spec Gate 1 | Anonymous requests to protected routes without session or header | 401 Unauthorized with standard error envelope | `authorization.api.test.ts` | Passed |
 | API-29 | api-spec §GET /api/tickets | Query filtering with 8 ticket statuses beyond NEW (W6) | 200 OK with matching tickets | `authorization.api.test.ts` | Passed |
+| API-30 | BR-14, BR-15, ADR-0008 | Requester and Administrator access to IT Staff Ticket Queue & Assignees | 403 Forbidden | `authorization.api.test.ts` | Passed |
 
 ### UI Component Tests — `client/tests/lab-03/*.test.tsx`
 
@@ -117,9 +118,9 @@ that the server returns strict `401`, `403`, or `404` responses.
 
 | Test ID | Viewport | What It Tests | Expected Result | Final |
 | --- | --- | --- | --- | --- |
-| RESP-01 | Desktop (1280px) | Full multi-column tables, queue, and side panels | Clean spacing, no clipping, no overflow | Planned |
-| RESP-02 | Tablet (768px) | Condensed tables, 2-column forms, drawer overlays | Elements adapt cleanly without horizontal scroll | Planned |
-| RESP-03 | Mobile (390px) | Queue transforms to cards; full-width action buttons | Touch targets ≥44px, zero horizontal overflow | Planned |
+| RESP-01 | Desktop (1280px) | Full multi-column tables, queue, and side panels | Clean spacing, no clipping, no overflow | Passed |
+| RESP-02 | Tablet (768px) | Condensed tables, 2-column forms, drawer overlays | Elements adapt cleanly without horizontal scroll | Passed |
+| RESP-03 | Mobile (390px) | Queue transforms to cards; full-width action buttons | Touch targets ≥44px, zero horizontal overflow | Passed |
 | RESP-04 | Mobile (390px) | Admin User Management responsive layout | User list and drawer fit viewport cleanly | Planned |
 
 ### End-to-End Tests — `e2e/lab-03/*.spec.ts`

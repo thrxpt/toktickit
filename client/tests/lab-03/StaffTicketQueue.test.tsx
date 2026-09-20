@@ -61,6 +61,11 @@ const mockCategories = [
   { id: 4, name: "Network" },
 ];
 
+const mockStaffMembers = [
+  { id: 2, name: "Michael Brown" },
+  { id: 3, name: "Sarah Johnson" },
+];
+
 describe("UI-06 — IT Staff Queue renders table, search filter, and pagination (AC-10, FR-09)", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -180,6 +185,9 @@ describe("UI-06 — IT Staff Queue renders table, search filter, and pagination 
       if (url.startsWith("/api/categories")) {
         return Promise.resolve({ ok: true, json: async () => mockCategories } as Response);
       }
+      if (url.startsWith("/api/staff/assignees")) {
+        return Promise.resolve({ ok: true, json: async () => mockStaffMembers } as Response);
+      }
       if (url.startsWith("/api/staff/tickets")) {
         capturedUrl = url;
         return Promise.resolve({
@@ -242,6 +250,13 @@ describe("UI-06 — IT Staff Queue renders table, search filter, and pagination 
     // Active filter badge shows count 3
     expect(screen.getByLabelText("3 active filters")).toBeInTheDocument();
 
+    // Select owner filter: specific staff member
+    fireEvent.change(ownerSelect, { target: { value: "2" } });
+
+    await waitFor(() => {
+      expect(capturedUrl).toContain("owner=2");
+    });
+
     // Click "Clear Filters" in drawer
     const clearFiltersBtn = screen.getByRole("button", { name: "Clear Filters" });
     fireEvent.click(clearFiltersBtn);
@@ -291,6 +306,53 @@ describe("UI-06 — IT Staff Queue renders table, search filter, and pagination 
 
     // Click again to toggle order to desc
     fireEvent.click(screen.getByRole("columnheader", { name: /Ticket No\./ }));
+
+    await waitFor(() => {
+      expect(capturedUrl).toContain("sortBy=ticketNumber");
+      expect(capturedUrl).toContain("sortOrder=desc");
+    });
+  });
+
+  it("updates sort parameters when column headers are activated via keyboard (Enter and Space)", async () => {
+    let capturedUrl = "";
+    globalThis.fetch = vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.startsWith("/api/staff/tickets")) {
+        capturedUrl = url;
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            items: mockTickets,
+            pagination: { page: 1, pageSize: 10, totalItems: 2, totalPages: 1 },
+          }),
+        } as Response);
+      }
+      return Promise.resolve({ ok: true, json: async () => [] } as Response);
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/staff/queue"]}>
+        <StaffTicketQueue />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText("TKT-2026-000101").length).toBeGreaterThan(0);
+    });
+
+    // Press Enter on Ticket No. header
+    const ticketNoHeader = screen.getByRole("columnheader", { name: /Ticket No\./ });
+    fireEvent.keyDown(ticketNoHeader, { key: "Enter" });
+
+    await waitFor(() => {
+      expect(capturedUrl).toContain("sortBy=ticketNumber");
+      expect(capturedUrl).toContain("sortOrder=asc");
+    });
+
+    // Press Space on Ticket No. header to toggle order
+    fireEvent.keyDown(screen.getByRole("columnheader", { name: /Ticket No\./ }), {
+      key: " ",
+    });
 
     await waitFor(() => {
       expect(capturedUrl).toContain("sortBy=ticketNumber");

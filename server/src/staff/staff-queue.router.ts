@@ -186,7 +186,11 @@ staffQueueRouter.get("/", async (req: Request, res: Response) => {
       if (owner === "unassigned") {
         where.ticketOwnerId = null;
       } else if (owner === "me") {
-        where.ticketOwnerId = req.user ? req.user.id : 0;
+        if (!req.user) {
+          sendError(res, "UNAUTHENTICATED");
+          return;
+        }
+        where.ticketOwnerId = req.user.id;
       } else {
         where.ticketOwnerId = parseInt(owner, 10);
       }

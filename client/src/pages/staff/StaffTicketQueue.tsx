@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import apiFetch from "../../api/client";
 import Badge from "../../components/Badge";
@@ -14,6 +14,11 @@ import type {
 import { formatDate } from "../../utils/date";
 
 interface CategoryOption {
+  id: number;
+  name: string;
+}
+
+interface StaffMemberOption {
   id: number;
   name: string;
 }
@@ -44,7 +49,6 @@ type SortableField =
   | "updatedAt";
 
 export function StaffTicketQueue() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const searchInputId = useId();
@@ -69,6 +73,7 @@ export function StaffTicketQueue() {
   const [searchInput, setSearchInput] = useState(search);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMemberOption[]>([]);
   const [tickets, setTickets] = useState<StaffQueueTicketItem[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -93,6 +98,30 @@ export function StaffTicketQueue() {
       .then((data: CategoryOption[]) => {
         if (!controller.signal.aborted && Array.isArray(data)) {
           setCategories(data);
+        }
+      })
+      .catch((err: unknown) => {
+        if (
+          controller.signal.aborted ||
+          (err as Error)?.name === "AbortError"
+        ) {
+          return;
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
+  // Load active staff members for owner filter dropdown
+  useEffect(() => {
+    const controller = new AbortController();
+    apiFetch("/api/staff/assignees", { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: StaffMemberOption[]) => {
+        if (!controller.signal.aborted && Array.isArray(data)) {
+          setStaffMembers(data);
         }
       })
       .catch((err: unknown) => {
@@ -234,6 +263,16 @@ export function StaffTicketQueue() {
       });
     } else {
       updateParam({ sortBy: field, sortOrder: "asc", page: "1" });
+    }
+  };
+
+  const handleSortKeyDown = (
+    e: React.KeyboardEvent,
+    field: SortableField,
+  ) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleSort(field);
     }
   };
 
@@ -450,6 +489,11 @@ export function StaffTicketQueue() {
                     <option value="">All Owners</option>
                     <option value="unassigned">Unassigned</option>
                     <option value="me">Assigned to Me</option>
+                    {staffMembers.map((sm) => (
+                      <option key={sm.id} value={String(sm.id)}>
+                        {sm.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -507,16 +551,20 @@ export function StaffTicketQueue() {
                   <tr>
                     <th
                       scope="col"
-                      className="zen-col-ticket-no"
+                      className="zen-col-ticket-no zen-sortable-header"
+                      tabIndex={0}
                       onClick={() => handleSort("ticketNumber")}
+                      onKeyDown={(e) => handleSortKeyDown(e, "ticketNumber")}
                       aria-sort={getSortAria("ticketNumber")}
                     >
                       Ticket No.{renderSortIndicator("ticketNumber")}
                     </th>
                     <th
                       scope="col"
-                      className="zen-col-date d-none d-lg-table-cell"
+                      className="zen-col-date zen-sortable-header d-none d-lg-table-cell"
+                      tabIndex={0}
                       onClick={() => handleSort("createdAt")}
+                      onKeyDown={(e) => handleSortKeyDown(e, "createdAt")}
                       aria-sort={getSortAria("createdAt")}
                     >
                       Created Date{renderSortIndicator("createdAt")}
@@ -530,16 +578,20 @@ export function StaffTicketQueue() {
                     </th>
                     <th
                       scope="col"
-                      className="zen-col-priority"
+                      className="zen-col-priority zen-sortable-header"
+                      tabIndex={0}
                       onClick={() => handleSort("itPriority")}
+                      onKeyDown={(e) => handleSortKeyDown(e, "itPriority")}
                       aria-sort={getSortAria("itPriority")}
                     >
                       IT Priority{renderSortIndicator("itPriority")}
                     </th>
                     <th
                       scope="col"
-                      className="zen-col-status"
+                      className="zen-col-status zen-sortable-header"
+                      tabIndex={0}
                       onClick={() => handleSort("status")}
+                      onKeyDown={(e) => handleSortKeyDown(e, "status")}
                       aria-sort={getSortAria("status")}
                     >
                       Status{renderSortIndicator("status")}
@@ -553,15 +605,12 @@ export function StaffTicketQueue() {
                   {tickets.map((t) => (
                     <tr
                       key={t.id}
-                      className="zen-clickable-row"
-                      onClick={() => navigate(`/staff/tickets/${t.id}`)}
                       data-testid={`queue-row-${t.id}`}
                     >
                       <td>
                         <Link
                           to={`/staff/tickets/${t.id}`}
                           className="fw-semibold text-decoration-none"
-                          onClick={(e) => e.stopPropagation()}
                         >
                           {t.ticketNumber}
                         </Link>
@@ -603,8 +652,7 @@ export function StaffTicketQueue() {
             {tickets.map((t) => (
               <div
                 key={t.id}
-                className="card shadow-sm border-0 zen-clickable-row"
-                onClick={() => navigate(`/staff/tickets/${t.id}`)}
+                className="card shadow-sm border-0"
                 data-testid={`queue-card-${t.id}`}
               >
                 <div className="card-body p-3">
@@ -612,7 +660,6 @@ export function StaffTicketQueue() {
                     <Link
                       to={`/staff/tickets/${t.id}`}
                       className="fw-bold text-decoration-none h6 mb-0"
-                      onClick={(e) => e.stopPropagation()}
                     >
                       {t.ticketNumber}
                     </Link>
@@ -656,7 +703,6 @@ export function StaffTicketQueue() {
                     <Link
                       to={`/staff/tickets/${t.id}`}
                       className="btn btn-sm btn-outline-primary"
-                      onClick={(e) => e.stopPropagation()}
                     >
                       View
                     </Link>

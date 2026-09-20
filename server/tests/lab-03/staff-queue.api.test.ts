@@ -630,4 +630,23 @@ describe("API-10 — IT Staff queries Ticket Queue with filters and pagination (
       expect(res.body.error.code).toBe("INVALID_QUERY_PARAMETER");
     });
   });
+
+  describe("GET /api/staff/assignees", () => {
+    it("returns list of active staff members", async () => {
+      const staff = await loginAs("michael.brown@toktickit.com");
+
+      const res = await request(app)
+        .get("/api/staff/assignees")
+        .set("Cookie", staff.cookie);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body[0]).toMatchObject({
+        id: expect.any(Number),
+        name: expect.any(String),
+        role: "IT_STAFF",
+      });
+    });
+  });
 });
