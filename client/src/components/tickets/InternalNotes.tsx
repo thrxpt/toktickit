@@ -5,6 +5,7 @@ import Badge from "../Badge";
 import StateBlock from "../StateBlock";
 import type { InternalNoteDto } from "../../types/ticket";
 import { formatDate } from "../../utils/date";
+import { getUserInitials } from "../../utils/user";
 
 interface InternalNotesProps {
   ticketId: number;
@@ -143,12 +144,7 @@ export function InternalNotes({
                 <div className="card-header bg-transparent py-2 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">
                   <div className="d-flex align-items-center gap-2">
                     <span className="zen-avatar" aria-hidden="true">
-                      {note.author.name
-                        .split(" ")
-                        .map((part) => part[0])
-                        .join("")
-                        .slice(0, 2)
-                        .toUpperCase()}
+                      {getUserInitials(note.author.name)}
                     </span>
                     <span className="fw-semibold text-body">
                       {note.author.name}

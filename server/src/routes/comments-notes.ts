@@ -7,22 +7,9 @@ import {
 import { formatZodErrors, sendError } from "../errors";
 import { requireAuth } from "../middleware/auth";
 import { prisma } from "../prisma";
+import { parseTicketId } from "../tickets/parse-ticket-id";
 
 export const commentsNotesRouter = express.Router();
-
-function parseTicketId(param: string | string[] | undefined): number | null {
-  if (typeof param !== "string") {
-    return null;
-  }
-  if (!/^[1-9]\d*$/.test(param)) {
-    return null;
-  }
-  const parsed = parseInt(param, 10);
-  if (!Number.isSafeInteger(parsed) || parsed > 2147483647) {
-    return null;
-  }
-  return parsed;
-}
 
 // GET /api/tickets/:id/comments (FR-07, FR-10, FR-14, BR-04, BR-26, BR-28, AC-14)
 commentsNotesRouter.get("/:id/comments", requireAuth, async (req: Request, res: Response) => {

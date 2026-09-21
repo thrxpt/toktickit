@@ -5,6 +5,7 @@ import Badge from "../Badge";
 import StateBlock from "../StateBlock";
 import type { CommentDto } from "../../types/ticket";
 import { formatDate } from "../../utils/date";
+import { getUserInitials } from "../../utils/user";
 
 interface PublicCommentsProps {
   ticketId: number;
@@ -120,12 +121,7 @@ export function PublicComments({
                 <div className="card-header bg-white py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
                   <div className="d-flex align-items-center gap-2">
                     <span className="zen-avatar" aria-hidden="true">
-                      {comment.author.name
-                        .split(" ")
-                        .map((part) => part[0])
-                        .join("")
-                        .slice(0, 2)
-                        .toUpperCase()}
+                      {getUserInitials(comment.author.name)}
                     </span>
                     <span className="fw-semibold text-body">
                       {comment.author.name}

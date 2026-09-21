@@ -424,7 +424,7 @@ textarea.form-control {
 .zen-notes-warning {
   background-color: var(--zen-warning-bg);
   border: 1px solid rgba(184, 134, 11, 0.35);
-  color: #92400e;
+  color: var(--zen-badge-medium-text);
 }
 
 .zen-note-card {
