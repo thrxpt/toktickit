@@ -428,6 +428,6 @@ textarea.form-control {
 }
 
 .zen-note-card {
-  background-color: #fffdf5;
+  background-color: var(--zen-warning-bg);
   border: 1px solid rgba(184, 134, 11, 0.25);
 }

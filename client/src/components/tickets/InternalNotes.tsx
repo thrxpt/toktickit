@@ -90,7 +90,8 @@ export function InternalNotes({
     }
   };
 
-  const isLengthValid = content.trim().length > 0 && content.length <= 2000;
+  const isLengthValid =
+    content.trim().length > 0 && content.trim().length <= 2000;
   const charCount = content.length;
 
   return (
@@ -100,14 +101,19 @@ export function InternalNotes({
         className="alert zen-notes-warning d-flex align-items-center mb-4 p-3 rounded"
         role="note"
       >
-        <span className="me-2 fs-5" aria-hidden="true">
-          🔒
-        </span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          fill="currentColor"
+          className="me-2 flex-shrink-0"
+          viewBox="0 0 16 16"
+          aria-hidden="true"
+        >
+          <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
+        </svg>
         <div>
-          <strong>Private IT Staff Notes — Strictly invisible to Requesters.</strong>
-          <div className="small text-muted mt-1">
-            Diagnostic details, part numbers, and internal triage discussions recorded here are hidden from customers.
-          </div>
+          <strong>Private IT Staff Notes — Strictly invisible to Requesters</strong>
         </div>
       </div>
 
@@ -127,9 +133,7 @@ export function InternalNotes({
         )}
 
         {!loading && !error && notes.length === 0 && (
-          <div className="text-center py-4 text-muted bg-light rounded border">
-            <p className="mb-0">No internal notes yet.</p>
-          </div>
+          <StateBlock variant="empty" message="No internal notes yet." />
         )}
 
         {!loading && !error && notes.length > 0 && (

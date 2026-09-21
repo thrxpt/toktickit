@@ -184,18 +184,21 @@ export function RequesterTicketDetail() {
           </p>
         </div>
         <div className="d-flex align-items-center gap-2">
-          {user &&
-            ticket.status !== "CLOSED" &&
-            ticket.status !== "CANCELLED" && (
-              <button
-                type="button"
-                className="btn btn-outline-success d-inline-flex align-items-center gap-2"
-                onClick={() => setIsConfirmOpen(true)}
-                disabled={ticket.resolvedByRequester || isResolving}
-              >
-                Problem Appears Resolved
-              </button>
-            )}
+          {user && (
+            <button
+              type="button"
+              className="btn btn-outline-success d-inline-flex align-items-center gap-2"
+              onClick={() => setIsConfirmOpen(true)}
+              disabled={
+                ticket.resolvedByRequester ||
+                ticket.status === "CLOSED" ||
+                ticket.status === "CANCELLED" ||
+                isResolving
+              }
+            >
+              Problem Appears Resolved
+            </button>
+          )}
           <Link
             to="/tickets"
             className="btn btn-outline-primary d-inline-flex align-items-center gap-2"

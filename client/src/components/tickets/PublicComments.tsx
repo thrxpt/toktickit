@@ -88,7 +88,8 @@ export function PublicComments({
     }
   };
 
-  const isLengthValid = content.trim().length > 0 && content.length <= 2000;
+  const isLengthValid =
+    content.trim().length > 0 && content.trim().length <= 2000;
   const charCount = content.length;
 
   return (
@@ -109,9 +110,7 @@ export function PublicComments({
         )}
 
         {!loading && !error && comments.length === 0 && (
-          <div className="text-center py-4 text-muted bg-light rounded border">
-            <p className="mb-0">No public comments yet.</p>
-          </div>
+          <StateBlock variant="empty" message="No public comments yet." />
         )}
 
         {!loading && !error && comments.length > 0 && (
@@ -138,7 +137,7 @@ export function PublicComments({
                   </span>
                 </div>
                 <div className="card-body py-3">
-                  <p className="mb-0 text-body" style={{ whiteSpace: "pre-wrap" }}>
+                  <p className="mb-0 text-body text-break zen-readonly-multiline border-0 bg-transparent p-0 min-vh-0">
                     {comment.content}
                   </p>
                 </div>

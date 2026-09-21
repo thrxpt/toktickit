@@ -1,3 +1,5 @@
+import type { UserRole } from "./auth";
+
 export type RequestedPriority = "LOW" | "MEDIUM" | "HIGH";
 
 export type ITPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
@@ -123,7 +125,7 @@ export interface TicketDetail {
 export interface CommentAuthor {
   id: number;
   name: string;
-  role: "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+  role: UserRole;
 }
 
 export interface CommentDto {
