@@ -96,7 +96,7 @@ async function createTicket(overrides: {
   });
 }
 
-describe("GET /api/staff/tickets/:id (FR-10, AC-10, BR-14, BR-15)", () => {
+describe("GET /api/staff/tickets/:id (FR-10, BR-14, BR-15)", () => {
   it("returns comprehensive ticket detail for authenticated IT Staff", async () => {
     const fixtures = await getFixtures();
     const staff = await loginAs("michael.brown@toktickit.com");
@@ -158,7 +158,7 @@ describe("GET /api/staff/tickets/:id (FR-10, AC-10, BR-14, BR-15)", () => {
     expect(res.body.ticketOwner).toBeNull();
   });
 
-  it("allows Administrator to view staff ticket detail", async () => {
+  it("rejects Administrator with 403 Forbidden (BR-14, ADR-0008)", async () => {
     const admin = await loginAs("admin@toktickit.com");
     const ticket = await createTicket();
 
@@ -166,8 +166,8 @@ describe("GET /api/staff/tickets/:id (FR-10, AC-10, BR-14, BR-15)", () => {
       .get(`/api/staff/tickets/${ticket.id}`)
       .set("Cookie", admin.cookie);
 
-    expect(res.status).toBe(200);
-    expect(res.body.id).toBe(ticket.id);
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
   });
 
   it("returns 404 for nonexistent ticket ID", async () => {
@@ -184,6 +184,17 @@ describe("GET /api/staff/tickets/:id (FR-10, AC-10, BR-14, BR-15)", () => {
     const staff = await loginAs("michael.brown@toktickit.com");
     const res = await request(app)
       .get("/api/staff/tickets/invalid-id")
+      .set("Cookie", staff.cookie);
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_FAILED");
+    expect(res.body.error.fields).toHaveProperty("id");
+  });
+
+  it("returns 400 for oversized ticket ID exceeding integer range (AC-21, BR-35)", async () => {
+    const staff = await loginAs("michael.brown@toktickit.com");
+    const res = await request(app)
+      .get("/api/staff/tickets/999999999999999999999999999")
       .set("Cookie", staff.cookie);
 
     expect(res.status).toBe(400);
@@ -386,6 +397,20 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
       .send({ ownerId: null });
 
     expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("rejects Administrator caller with 403 Forbidden (BR-14, ADR-0008)", async () => {
+    const admin = await loginAs("admin@toktickit.com");
+    const ticket = await createTicket();
+
+    const res = await request(app)
+      .patch(`/api/staff/tickets/${ticket.id}/owner`)
+      .set("Cookie", admin.cookie)
+      .send({ ownerId: admin.user.id });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
   });
 });
 
@@ -476,6 +501,20 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
       .send({ itPriority: "HIGH" });
 
     expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("rejects Administrator caller with 403 Forbidden (BR-14, ADR-0008)", async () => {
+    const admin = await loginAs("admin@toktickit.com");
+    const ticket = await createTicket();
+
+    const res = await request(app)
+      .patch(`/api/staff/tickets/${ticket.id}/priority`)
+      .set("Cookie", admin.cookie)
+      .send({ itPriority: "HIGH" });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
   });
 });
 
@@ -585,5 +624,19 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
       .send({ status: "IN_PROGRESS" });
 
     expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("rejects Administrator caller with 403 Forbidden (BR-14, ADR-0008)", async () => {
+    const admin = await loginAs("admin@toktickit.com");
+    const ticket = await createTicket({ status: "OPEN" });
+
+    const res = await request(app)
+      .patch(`/api/staff/tickets/${ticket.id}/status`)
+      .set("Cookie", admin.cookie)
+      .send({ status: "IN_PROGRESS" });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
   });
 });

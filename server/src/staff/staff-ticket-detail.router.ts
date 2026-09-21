@@ -9,9 +9,9 @@ import { isValidStatusTransition } from "../tickets/status-machine";
 
 export const staffTicketDetailRouter = express.Router();
 
-// Guarded by authentication and role check (IT_STAFF and ADMINISTRATOR per specification.md §8).
+// Guarded by authentication and role check (IT_STAFF only; Requesters and Administrators receive 403 Forbidden per BR-14 and ADR-0008).
 staffTicketDetailRouter.use(requireAuth);
-staffTicketDetailRouter.use(requireRole("IT_STAFF", "ADMINISTRATOR"));
+staffTicketDetailRouter.use(requireRole("IT_STAFF"));
 
 const ownerPatchSchema = z
   .object({
@@ -48,10 +48,14 @@ function parseTicketId(idParam: string | string[] | undefined): number | null {
   if (!result.success) {
     return null;
   }
-  return parseInt(result.data, 10);
+  const parsed = parseInt(result.data, 10);
+  if (!Number.isSafeInteger(parsed) || parsed > 2147483647) {
+    return null;
+  }
+  return parsed;
 }
 
-// GET /api/staff/tickets/:id (FR-10, AC-10, BR-14, BR-15)
+// GET /api/staff/tickets/:id (FR-10, BR-14, BR-15)
 staffTicketDetailRouter.get("/:id", async (req: Request, res: Response) => {
   const id = parseTicketId(req.params.id);
   if (id === null) {
