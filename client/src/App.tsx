@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import MyTickets from "./pages/MyTickets";
 import RequesterSelection from "./pages/RequesterSelection";
 import RequesterTicketDetail from "./pages/RequesterTicketDetail";
+import StaffTicketDetail from "./pages/staff/StaffTicketDetail";
 import StaffTicketQueue from "./pages/staff/StaffTicketQueue";
 import { RequirePasswordChange } from "./routes/RequirePasswordChange";
 import { RequireRole } from "./routes/RequireRole";
@@ -101,6 +102,21 @@ export function AppRoutes() {
           <RequireRole roles={["IT_STAFF"]}>
             <AppShell>
               <StaffTicketQueue />
+            </AppShell>
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/staff/tickets/:id"
+        element={
+          <RequireRole roles={["IT_STAFF"]}>
+            <AppShell
+              breadcrumbs={[
+                { label: "My Queue", to: "/staff/queue" },
+                { label: "Ticket Detail" },
+              ]}
+            >
+              <StaffTicketDetail />
             </AppShell>
           </RequireRole>
         }

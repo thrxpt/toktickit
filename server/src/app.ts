@@ -8,6 +8,7 @@ import { attachmentsRouter } from "./routes/attachments";
 import { authRouter } from "./routes/auth";
 import { ticketsRouter } from "./routes/tickets";
 import { staffQueueRouter } from "./staff/staff-queue.router";
+import { staffTicketDetailRouter } from "./staff/staff-ticket-detail.router";
 
 // The app is built here and started in index.ts, so Supertest can mount it
 // without binding a port.
@@ -84,6 +85,7 @@ app.use("/api/attachments", attachmentsRouter);
 
 // Staff routes (Lab 3)
 app.use("/api/staff/tickets", staffQueueRouter);
+app.use("/api/staff/tickets", staffTicketDetailRouter);
 app.get(
   "/api/staff/assignees",
   requireAuth,

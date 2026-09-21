@@ -44,8 +44,8 @@ that the server returns strict `401`, `403`, or `404` responses.
 | --- | --- | --- | --- | --- | --- |
 | UNIT-01 | BR-07 | Password complexity: compliant password | Validated successfully | `password-policy.unit.test.ts` | Passed |
 | UNIT-02 | BR-07 | Password complexity: missing uppercase, digit, or special character | Fails validation with specific field error | `password-policy.unit.test.ts` | Passed |
-| UNIT-03 | BR-22 | Ticket lifecycle: permitted transitions (`NEW`→`OPEN`, `OPEN`→`IN_PROGRESS`, etc.) | Transition accepted | `status-transitions.unit.test.ts` | Planned |
-| UNIT-04 | BR-22 | Ticket lifecycle: invalid transitions (`NEW`→`RESOLVED`, `CLOSED`→`OPEN`) | Rejected with `INVALID_STATUS_TRANSITION` | `status-transitions.unit.test.ts` | Planned |
+| UNIT-03 | BR-22 | Ticket lifecycle: permitted transitions (`NEW`→`OPEN`, `OPEN`→`IN_PROGRESS`, etc.) | Transition accepted | `status-transitions.unit.test.ts` | Passed |
+| UNIT-04 | BR-22 | Ticket lifecycle: invalid transitions (`NEW`→`RESOLVED`, `CLOSED`→`OPEN`) | Rejected with `INVALID_STATUS_TRANSITION` | `status-transitions.unit.test.ts` | Passed |
 | UNIT-05 | BR-27 | Comment and note text length bounds (1–2000 chars, whitespace trimming) | Empty/whitespace rejected; 1-2000 chars accepted | `comment-validation.unit.test.ts` | Planned |
 
 ### API Tests — `server/tests/lab-03/*.api.test.ts`
@@ -62,9 +62,9 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-08 | AC-08, BR-17 | Requester requesting Internal Notes endpoint | 403 Forbidden without note data | `authorization.api.test.ts` | Planned |
 | API-09 | AC-09, BR-24 | Requester indicates "Problem Appears Resolved" | 200 OK, `resolvedByRequester: true`, status unchanged | `authorization.api.test.ts` | Planned |
 | API-10 | AC-10, FR-09 | IT Staff queries Ticket Queue with filters and pagination | 200 OK, returns filtered tickets and pagination metadata | `staff-queue.api.test.ts` | Passed |
-| API-11 | AC-11, BR-23 | IT Staff claims unassigned ticket | 200 OK, sets `ticketOwnerId`, auto-advances `NEW` to `OPEN` | `staff-ticket-detail.api.test.ts` | Planned |
-| API-12 | AC-12, BR-20 | IT Staff updates IT Priority to `CRITICAL` | 200 OK, `itPriority` updated, `requestedPriority` untouched | `staff-ticket-detail.api.test.ts` | Planned |
-| API-13 | AC-13, BR-22 | IT Staff transitions status (`OPEN` → `IN_PROGRESS`) | 200 OK; invalid transition answers 400 Bad Request | `staff-ticket-detail.api.test.ts` | Planned |
+| API-11 | AC-11, BR-23 | IT Staff claims unassigned ticket | 200 OK, sets `ticketOwnerId`, auto-advances `NEW` to `OPEN` | `staff-ticket-detail.api.test.ts` | Passed |
+| API-12 | AC-12, BR-20 | IT Staff updates IT Priority to `CRITICAL` | 200 OK, `itPriority` updated, `requestedPriority` untouched | `staff-ticket-detail.api.test.ts` | Passed |
+| API-13 | AC-13, BR-22 | IT Staff transitions status (`OPEN` → `IN_PROGRESS`) | 200 OK; invalid transition answers 400 Bad Request | `staff-ticket-detail.api.test.ts` | Passed |
 | API-14 | AC-14, BR-04 | Post and get Public Comments on Ticket | 201 / 200; comment visible to Requester and Staff | `comments-notes.api.test.ts` | Planned |
 | API-15 | AC-15, BR-04 | Post and get Internal Notes on Ticket | 201 / 200; note visible to Staff and Admin only | `comments-notes.api.test.ts` | Planned |
 | API-16 | AC-08, BR-04 | Requester attempts to post Internal Note | 403 Forbidden | `comments-notes.api.test.ts` | Planned |
@@ -93,8 +93,8 @@ that the server returns strict `401`, `403`, or `404` responses.
 | UI-04 | AC-05, FR-04 | AppShell renders user name, role badge, and handles Logout | Displays name & badge; clicking Logout clears session and redirects | `AppShell.test.tsx` | Passed |
 | UI-05 | AC-09, FR-08 | Requester clicks "Problem Appears Resolved" | Shows confirm dialog, updates indication state, disables button | `RequesterTicketDetail.test.tsx` | Planned |
 | UI-06 | AC-10, FR-09 | IT Staff Queue renders table, search filter, and pagination | Renders columns, filters rows on search, paginates results | `StaffTicketQueue.test.tsx` | Passed |
-| UI-07 | AC-11, BR-23 | IT Staff clicks "Claim" on unassigned ticket | Calls owner endpoint and updates owner display | `StaffTicketDetail.test.tsx` | Planned |
-| UI-08 | AC-12, AC-13 | IT Staff modifies IT Priority and status dropdown | Sends PATCH requests and updates badge indicators | `StaffTicketDetail.test.tsx` | Planned |
+| UI-07 | AC-11, BR-23 | IT Staff clicks "Claim" on unassigned ticket | Calls owner endpoint and updates owner display | `StaffTicketDetail.test.tsx` | Passed |
+| UI-08 | AC-12, AC-13 | IT Staff modifies IT Priority and status dropdown | Sends PATCH requests and updates badge indicators | `StaffTicketDetail.test.tsx` | Passed |
 | UI-09 | AC-14, FR-07 | Public Comments thread displays comments and accepts new post | Appends new comment to list with author badge and timestamp | `PublicComments.test.tsx` | Planned |
 | UI-10 | AC-15, BR-04 | Internal Notes tab renders private warning and notes list | Displays amber security banner, lists private notes | `InternalNotes.test.tsx` | Planned |
 | UI-11 | AC-16, FR-15 | Admin User Management displays user list and search filter | Lists users with role and status badges; filters by name/email | `UserManagement.test.tsx` | Planned |

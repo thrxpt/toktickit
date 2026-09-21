@@ -321,10 +321,10 @@ Full JSON schemas, parameters, and error envelopes are detailed in [`api-spec.md
 | **Requester** | `POST /api/tickets/:id/resolve-indication` | Requester | Indicate problem appears resolved |
 | **Staff** | `GET /api/staff/tickets` | IT Staff | Paginated, filterable IT Staff Ticket Queue |
 | **Staff** | `GET /api/staff/assignees` | IT Staff | List active staff members for ticket assignment and filtering |
-| **Staff** | `GET /api/staff/tickets/:id` | IT Staff, Admin | Comprehensive ticket detail for staff operations |
-| **Staff** | `PATCH /api/staff/tickets/:id/owner` | IT Staff, Admin | Claim or reassign ticket owner |
-| **Staff** | `PATCH /api/staff/tickets/:id/priority` | IT Staff, Admin | Update IT Priority |
-| **Staff** | `PATCH /api/staff/tickets/:id/status` | IT Staff, Admin | Execute validated status transition |
+| **Staff** | `GET /api/staff/tickets/:id` | IT Staff | Comprehensive ticket detail for staff operations |
+| **Staff** | `PATCH /api/staff/tickets/:id/owner` | IT Staff | Claim or reassign ticket owner |
+| **Staff** | `PATCH /api/staff/tickets/:id/priority` | IT Staff | Update IT Priority |
+| **Staff** | `PATCH /api/staff/tickets/:id/status` | IT Staff | Execute validated status transition |
 | **Comments** | `GET /api/tickets/:id/comments` | Requester (owned), Staff, Admin | List public comments |
 | **Comments** | `POST /api/tickets/:id/comments` | Requester (owned), Staff, Admin | Post public comment |
 | **Notes** | `GET /api/tickets/:id/notes` | IT Staff, Admin | List internal notes (Requester receives 403) |

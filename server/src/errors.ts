@@ -33,7 +33,8 @@ export type ErrorCode =
   | "FORBIDDEN"
   | "DUPLICATE_EMAIL"
   | "CANNOT_DEACTIVATE_SELF"
-  | "CANNOT_DEACTIVATE_LAST_ADMIN";
+  | "CANNOT_DEACTIVATE_LAST_ADMIN"
+  | "INVALID_STATUS_TRANSITION";
 
 const failures = {
   DATABASE_UNAVAILABLE: {
@@ -120,6 +121,10 @@ const failures = {
   CANNOT_DEACTIVATE_LAST_ADMIN: {
     status: 400,
     message: "Cannot deactivate or demote the last active Administrator.",
+  },
+  INVALID_STATUS_TRANSITION: {
+    status: 400,
+    message: "Invalid status transition.",
   },
 } satisfies Record<ErrorCode, { status: number; message: string }>;
 
