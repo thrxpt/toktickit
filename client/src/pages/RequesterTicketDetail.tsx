@@ -4,6 +4,8 @@ import { Link, useParams } from "react-router-dom";
 import apiFetch from "../api/client";
 import AttachmentSection from "../components/AttachmentSection";
 import Badge from "../components/Badge";
+import ConfirmDialog from "../components/ConfirmDialog";
+import PublicComments from "../components/tickets/PublicComments";
 import ReadOnlyField from "../components/ReadOnlyField";
 import StateBlock from "../components/StateBlock";
 import { useAuth } from "../auth/AuthContext";
@@ -32,6 +34,10 @@ export function RequesterTicketDetail() {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState(false);
 
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isResolving, setIsResolving] = useState(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+
   const fetchTicket = useCallback(() => {
     if (!id || !activeRequester) {
       setLoading(false);
@@ -43,8 +49,11 @@ export function RequesterTicketDetail() {
     setError(false);
     setNotFound(false);
 
-    apiFetch(`/api/tickets/${id}`, { signal: controller.signal })
-      .then(async (res) => {
+    const run = async () => {
+      try {
+        const res = await apiFetch(`/api/tickets/${id}`, {
+          signal: controller.signal,
+        });
         if (res.status === 404) {
           setNotFound(true);
           setTicket(null);
@@ -55,8 +64,7 @@ export function RequesterTicketDetail() {
         }
         const data: TicketDetail = await res.json();
         setTicket(data);
-      })
-      .catch((err: unknown) => {
+      } catch (err: unknown) {
         if (
           controller.signal.aborted ||
           (err as Error)?.name === "AbortError"
@@ -65,10 +73,12 @@ export function RequesterTicketDetail() {
         }
         setError(true);
         setTicket(null);
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    void run();
 
     return () => {
       controller.abort();
@@ -136,6 +146,33 @@ export function RequesterTicketDetail() {
     );
   }
 
+  const handleConfirmResolution = async () => {
+    if (!ticket || isResolving) return;
+    setIsResolving(true);
+    setResolveError(null);
+    try {
+      const res = await apiFetch(`/api/tickets/${ticket.id}/resolve-indication`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(
+          errData?.error?.message || "Failed to submit resolution indication",
+        );
+      }
+      setTicket((prev) =>
+        prev ? { ...prev, resolvedByRequester: true } : prev,
+      );
+      setIsConfirmOpen(false);
+    } catch (err: unknown) {
+      setResolveError(
+        err instanceof Error ? err.message : "Unable to submit resolution",
+      );
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
   return (
     <div className="container zen-container py-4">
       {/* Page Header (ui-spec.md §5.4) */}
@@ -146,7 +183,19 @@ export function RequesterTicketDetail() {
             View support request details.
           </p>
         </div>
-        <div>
+        <div className="d-flex align-items-center gap-2">
+          {user &&
+            ticket.status !== "CLOSED" &&
+            ticket.status !== "CANCELLED" && (
+              <button
+                type="button"
+                className="btn btn-outline-success d-inline-flex align-items-center gap-2"
+                onClick={() => setIsConfirmOpen(true)}
+                disabled={ticket.resolvedByRequester || isResolving}
+              >
+                Problem Appears Resolved
+              </button>
+            )}
           <Link
             to="/tickets"
             className="btn btn-outline-primary d-inline-flex align-items-center gap-2"
@@ -168,6 +217,34 @@ export function RequesterTicketDetail() {
           </Link>
         </div>
       </div>
+
+      {resolveError && (
+        <div className="alert alert-danger alert-dismissible mb-4" role="alert">
+          {resolveError}
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => setResolveError(null)}
+          />
+        </div>
+      )}
+
+      {/* Requester Resolution Notice Banner (AC-09, BR-24, ui-spec §4.6) */}
+      {ticket.resolvedByRequester && (
+        <div
+          className="alert alert-success d-flex align-items-center mb-4"
+          role="status"
+        >
+          <span className="me-2 fs-5" aria-hidden="true">
+            ✓
+          </span>
+          <div>
+            You indicated this problem appears resolved. IT Staff will review
+            and formally close the ticket.
+          </div>
+        </div>
+      )}
 
       {/* Ticket Panel (AC-29, FR-10, ui-spec.md §5.4, §7) */}
       <div className="card">
@@ -275,6 +352,26 @@ export function RequesterTicketDetail() {
             };
           });
         }}
+      />
+
+      {/* Public Comments Section (FR-07, AC-14, ui-spec.md §4.6) */}
+      {user && (
+        <div className="mt-4">
+          <h2 className="h4 mb-3">Public Comments</h2>
+          <PublicComments ticketId={ticket.id} />
+        </div>
+      )}
+
+      {/* Confirmation Dialog for Problem Resolution */}
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        title="Confirm Problem Resolution"
+        message="Are you sure this problem appears resolved? IT Staff will review and formally close the ticket."
+        confirmLabel="Yes, Problem Resolved"
+        confirmVariant="primary"
+        confirmDisabled={isResolving}
+        onConfirm={handleConfirmResolution}
+        onCancel={() => setIsConfirmOpen(false)}
       />
     </div>
   );

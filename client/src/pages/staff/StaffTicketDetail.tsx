@@ -6,6 +6,8 @@ import { useAuth } from "../../auth/useAuth";
 import Badge from "../../components/Badge";
 import ReadOnlyField from "../../components/ReadOnlyField";
 import StateBlock from "../../components/StateBlock";
+import InternalNotes from "../../components/tickets/InternalNotes";
+import PublicComments from "../../components/tickets/PublicComments";
 import type {
   ITPriority,
   StaffTicketDetailDto,
@@ -560,30 +562,28 @@ export function StaffTicketDetail() {
             </div>
           )}
 
-          {/* Public Comments Tab (Placeholder for Issue 19) */}
+          {/* Public Comments Tab (Issue 19) */}
           {activeTab === "comments" && (
-            <div className="py-3 text-center text-muted">
-              <p className="mb-0">
-                Public Comments thread will be available in Issue 19.
-              </p>
-            </div>
+            <PublicComments
+              ticketId={ticket.id}
+              onCommentCountChange={(count) =>
+                setTicket((prev) =>
+                  prev ? { ...prev, publicCommentsCount: count } : prev,
+                )
+              }
+            />
           )}
 
-          {/* Internal Notes Tab (Placeholder for Issue 19) */}
+          {/* Internal Notes Tab (Issue 19) */}
           {activeTab === "notes" && (
-            <div>
-              <div className="alert alert-warning mb-3 d-flex align-items-center" role="note">
-                <span className="me-2">🔒</span>
-                <div>
-                  <strong>Private IT Staff Notes:</strong> Strictly invisible to Requesters.
-                </div>
-              </div>
-              <div className="py-3 text-center text-muted">
-                <p className="mb-0">
-                  Internal Notes discussion will be available in Issue 19.
-                </p>
-              </div>
-            </div>
+            <InternalNotes
+              ticketId={ticket.id}
+              onNoteCountChange={(count) =>
+                setTicket((prev) =>
+                  prev ? { ...prev, internalNotesCount: count } : prev,
+                )
+              }
+            />
           )}
         </div>
       </div>

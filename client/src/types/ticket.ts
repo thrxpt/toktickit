@@ -117,6 +117,27 @@ export interface TicketDetail {
     active: AttachmentDto[]
     removed: AttachmentDto[]
   }
+  resolvedByRequester?: boolean
+}
+
+export interface CommentAuthor {
+  id: number;
+  name: string;
+  role: "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+}
+
+export interface CommentDto {
+  id: number;
+  content: string;
+  createdAt: string;
+  author: CommentAuthor;
+}
+
+export interface InternalNoteDto {
+  id: number;
+  content: string;
+  createdAt: string;
+  author: CommentAuthor;
 }
 
 export interface StaffTicketDetailDto {

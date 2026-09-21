@@ -46,7 +46,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | UNIT-02 | BR-07 | Password complexity: missing uppercase, digit, or special character | Fails validation with specific field error | `password-policy.unit.test.ts` | Passed |
 | UNIT-03 | BR-22 | Ticket lifecycle: permitted transitions (`NEW`→`OPEN`, `OPEN`→`IN_PROGRESS`, etc.) | Transition accepted | `status-transitions.unit.test.ts` | Passed |
 | UNIT-04 | BR-22 | Ticket lifecycle: invalid transitions (`NEW`→`RESOLVED`, `CLOSED`→`OPEN`) | Rejected with `INVALID_STATUS_TRANSITION` | `status-transitions.unit.test.ts` | Passed |
-| UNIT-05 | BR-27 | Comment and note text length bounds (1–2000 chars, whitespace trimming) | Empty/whitespace rejected; 1-2000 chars accepted | `comment-validation.unit.test.ts` | Planned |
+| UNIT-05 | BR-27 | Comment and note text length bounds (1–2000 chars, whitespace trimming) | Empty/whitespace rejected; 1-2000 chars accepted | `comment-validation.unit.test.ts` | Passed |
 
 ### API Tests — `server/tests/lab-03/*.api.test.ts`
 
@@ -59,15 +59,15 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-05 | AC-05, BR-11 | Logout endpoint execution | 200 OK, clears session cookie; subsequent requests answer 401 | `auth.api.test.ts` | Passed |
 | API-06 | AC-06, BR-03 | Requester ticket creation derives owner from session | 201 Created; `requesterId` in body rejected | `authorization.api.test.ts` | Passed |
 | API-07 | AC-07, BR-16 | Requester fetching another user's Ticket | 404 Not Found (safe error, no enumeration) | `authorization.api.test.ts` | Passed |
-| API-08 | AC-08, BR-17 | Requester requesting Internal Notes endpoint | 403 Forbidden without note data | `authorization.api.test.ts` | Planned |
-| API-09 | AC-09, BR-24 | Requester indicates "Problem Appears Resolved" | 200 OK, `resolvedByRequester: true`, status unchanged | `authorization.api.test.ts` | Planned |
+| API-08 | AC-08, BR-17 | Requester requesting Internal Notes endpoint | 403 Forbidden without note data | `authorization.api.test.ts` | Passed |
+| API-09 | AC-09, BR-24 | Requester indicates "Problem Appears Resolved" | 200 OK, `resolvedByRequester: true`, status unchanged | `authorization.api.test.ts` | Passed |
 | API-10 | AC-10, FR-09 | IT Staff queries Ticket Queue with filters and pagination | 200 OK, returns filtered tickets and pagination metadata | `staff-queue.api.test.ts` | Passed |
 | API-11 | AC-11, BR-23 | IT Staff claims unassigned ticket | 200 OK, sets `ticketOwnerId`, auto-advances `NEW` to `OPEN` | `staff-ticket-detail.api.test.ts` | Passed |
 | API-12 | AC-12, BR-20 | IT Staff updates IT Priority to `CRITICAL` | 200 OK, `itPriority` updated, `requestedPriority` untouched | `staff-ticket-detail.api.test.ts` | Passed |
 | API-13 | AC-13, BR-22 | IT Staff transitions status (`OPEN` → `IN_PROGRESS`) | 200 OK; invalid transition answers 400 Bad Request | `staff-ticket-detail.api.test.ts` | Passed |
-| API-14 | AC-14, BR-04 | Post and get Public Comments on Ticket | 201 / 200; comment visible to Requester and Staff | `comments-notes.api.test.ts` | Planned |
-| API-15 | AC-15, BR-04 | Post and get Internal Notes on Ticket | 201 / 200; note visible to Staff and Admin only | `comments-notes.api.test.ts` | Planned |
-| API-16 | AC-08, BR-04 | Requester attempts to post Internal Note | 403 Forbidden | `comments-notes.api.test.ts` | Planned |
+| API-14 | AC-14, BR-04 | Post and get Public Comments on Ticket | 201 / 200; comment visible to Requester and Staff | `comments-notes.api.test.ts` | Passed |
+| API-15 | AC-15, BR-04 | Post and get Internal Notes on Ticket | 201 / 200; note visible to Staff and Admin only | `comments-notes.api.test.ts` | Passed |
+| API-16 | AC-08, BR-04 | Requester attempts to post Internal Note | 403 Forbidden | `comments-notes.api.test.ts` | Passed |
 | API-17 | BR-14 | IT Staff attempts to access Admin User Management | 403 Forbidden | `authorization.api.test.ts` | Planned |
 | API-18 | AC-16, FR-15 | Administrator retrieves user list with search and role filter | 200 OK, returns matching user profiles | `users-admin.api.test.ts` | Planned |
 | API-19 | AC-17, BR-31 | Administrator creates user with duplicate email | 409 Conflict with `DUPLICATE_EMAIL` error code | `users-admin.api.test.ts` | Planned |
@@ -91,12 +91,12 @@ that the server returns strict `401`, `403`, or `404` responses.
 | UI-02 | AC-02, BR-02 | User flagged with `mustChangePassword` forced to change screen | Redirects away from normal routes to `/change-password` | `ChangePassword.test.tsx` | Passed |
 | UI-03 | AC-03, BR-07 | Password change form checklist criteria validation | Validates length, case, digits, special chars in real-time | `ChangePassword.test.tsx` | Passed |
 | UI-04 | AC-05, FR-04 | AppShell renders user name, role badge, and handles Logout | Displays name & badge; clicking Logout clears session and redirects | `AppShell.test.tsx` | Passed |
-| UI-05 | AC-09, FR-08 | Requester clicks "Problem Appears Resolved" | Shows confirm dialog, updates indication state, disables button | `RequesterTicketDetail.test.tsx` | Planned |
+| UI-05 | AC-09, FR-08 | Requester clicks "Problem Appears Resolved" | Shows confirm dialog, updates indication state, disables button | `RequesterTicketDetail.test.tsx` | Passed |
 | UI-06 | AC-10, FR-09 | IT Staff Queue renders table, search filter, and pagination | Renders columns, filters rows on search, paginates results | `StaffTicketQueue.test.tsx` | Passed |
 | UI-07 | AC-11, BR-23 | IT Staff clicks "Claim" on unassigned ticket | Calls owner endpoint and updates owner display | `StaffTicketDetail.test.tsx` | Passed |
 | UI-08 | AC-12, AC-13 | IT Staff modifies IT Priority and status dropdown | Sends PATCH requests and updates badge indicators | `StaffTicketDetail.test.tsx` | Passed |
-| UI-09 | AC-14, FR-07 | Public Comments thread displays comments and accepts new post | Appends new comment to list with author badge and timestamp | `PublicComments.test.tsx` | Planned |
-| UI-10 | AC-15, BR-04 | Internal Notes tab renders private warning and notes list | Displays amber security banner, lists private notes | `InternalNotes.test.tsx` | Planned |
+| UI-09 | AC-14, FR-07 | Public Comments thread displays comments and accepts new post | Appends new comment to list with author badge and timestamp | `PublicComments.test.tsx` | Passed |
+| UI-10 | AC-15, BR-04 | Internal Notes tab renders private warning and notes list | Displays amber security banner, lists private notes | `InternalNotes.test.tsx` | Passed |
 | UI-11 | AC-16, FR-15 | Admin User Management displays user list and search filter | Lists users with role and status badges; filters by name/email | `UserManagement.test.tsx` | Planned |
 | UI-12 | AC-17, BR-31 | Admin user creation displays validation error on duplicate email | Form renders field-level duplicate email error | `UserManagement.test.tsx` | Planned |
 | UI-13 | AC-18, AC-19 | Admin edit user disables deactivation toggle on self & last admin | Switch disabled with tooltip explanation | `UserManagement.test.tsx` | Planned |
@@ -112,7 +112,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | STYLE-02 | ui-spec §3 | Role badges render correct semantic colors and text | Requester (green), Staff (blue), Admin (purple) | `badges.style.test.tsx` | Passed |
 | STYLE-03 | ui-spec §3 | Priority badges render correct semantic colors and text | Low, Medium, High, Critical distinct | `badges.style.test.tsx` | Passed |
 | STYLE-04 | ui-spec §3 | Status badges render correct semantic colors and text | 8 distinct status presentations verified | `badges.style.test.tsx` | Passed |
-| STYLE-05 | ui-spec §4 | Internal Notes tab renders amber warning callout styling | Amber callout surface and border verified | `notes.style.test.tsx` | Planned |
+| STYLE-05 | ui-spec §4 | Internal Notes tab renders amber warning callout styling | Amber callout surface and border verified | `notes.style.test.tsx` | Passed |
 
 ### Responsive Tests — `e2e/lab-03/responsive.spec.ts`
 
