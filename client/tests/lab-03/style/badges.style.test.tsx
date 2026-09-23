@@ -123,3 +123,19 @@ describe("STYLE-04 — Status badges render all 8 statuses with text and semanti
     }
   });
 });
+
+describe("STYLE-06 — Account status badges render Active and Inactive states (ui-spec §3)", () => {
+  it("renders Active account status badge with correct text and semantic class", () => {
+    render(<Badge value="ACTIVE" />);
+    const badge = screen.getByText("Active");
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass("zen-badge-user-active");
+  });
+
+  it("renders Inactive account status badge with correct text and semantic class", () => {
+    render(<Badge value="INACTIVE" />);
+    const badge = screen.getByText("Inactive");
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass("zen-badge-user-inactive");
+  });
+});

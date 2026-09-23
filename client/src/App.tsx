@@ -12,6 +12,7 @@ import RequesterSelection from "./pages/RequesterSelection";
 import RequesterTicketDetail from "./pages/RequesterTicketDetail";
 import StaffTicketDetail from "./pages/staff/StaffTicketDetail";
 import StaffTicketQueue from "./pages/staff/StaffTicketQueue";
+import UserManagement from "./pages/admin/UserManagement";
 import { RequirePasswordChange } from "./routes/RequirePasswordChange";
 import { RequireRole } from "./routes/RequireRole";
 
@@ -127,12 +128,7 @@ export function AppRoutes() {
         element={
           <RequireRole roles={["ADMINISTRATOR"]}>
             <AppShell>
-              <div className="container py-4">
-                <h2>User Management</h2>
-                <p className="text-muted">
-                  Administrator user management will be available in Issue 20.
-                </p>
-              </div>
+              <UserManagement />
             </AppShell>
           </RequireRole>
         }

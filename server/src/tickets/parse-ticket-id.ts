@@ -16,3 +16,5 @@ export function parseTicketId(
   }
   return parsed;
 }
+
+export const parsePositiveIntId = parseTicketId;
