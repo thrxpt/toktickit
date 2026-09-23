@@ -6,6 +6,7 @@ import { requireAuth, requireRole } from "./middleware/auth";
 import { prisma } from "./prisma";
 import { attachmentsRouter } from "./routes/attachments";
 import { authRouter } from "./routes/auth";
+import { commentsNotesRouter } from "./routes/comments-notes";
 import { ticketsRouter } from "./routes/tickets";
 import { staffQueueRouter } from "./staff/staff-queue.router";
 import { staffTicketDetailRouter } from "./staff/staff-ticket-detail.router";
@@ -78,6 +79,9 @@ app.get("/api/requesters", async (_req, res) => {
 
 // Authentication routes (Lab 3 foundation).
 app.use("/api/auth", authRouter);
+
+// Public Comments & Internal Notes (BR-04, AC-08, AC-14, AC-15).
+app.use("/api/tickets", commentsNotesRouter);
 
 // Ticket routes require requester context (BR-04, ADR-0003).
 app.use("/api/tickets", ticketsRouter);

@@ -287,6 +287,188 @@ describe("API-07 — Requester fetching another user's Ticket (AC-07, BR-16)", (
   });
 });
 
+describe("API-08 — Requester requesting Internal Notes endpoint (AC-08, BR-17)", () => {
+  it("returns 403 Forbidden without note data when requester attempts to read internal notes", async () => {
+    const requester = await loginAs("jennifer.anderson@example.ac.th");
+    const staff = await loginAs("michael.brown@toktickit.com");
+    const { category, relatedSystem } = await getActiveFixtures();
+
+    // Create a ticket as requester
+    const createRes = await request(app)
+      .post("/api/tickets")
+      .set("Cookie", requester.cookie)
+      .send({
+        summary: "Internal note confidentiality ticket",
+        description: "Testing that requester cannot read internal notes",
+        categoryId: category.id,
+        relatedSystemId: relatedSystem.id,
+        requestedPriority: "MEDIUM",
+      });
+    expect(createRes.status).toBe(201);
+    const ticketId = createRes.body.id;
+
+    // Staff creates an internal note in the database
+    await prisma.internalNote.create({
+      data: {
+        ticketId,
+        authorId: staff.user.id,
+        content: "Top-secret internal diagnostic note for staff only",
+      },
+    });
+
+    // Requester calls GET /api/tickets/:id/notes
+    const res = await request(app)
+      .get(`/api/tickets/${ticketId}/notes`)
+      .set("Cookie", requester.cookie);
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: expect.any(String),
+      },
+    });
+    // Ensure no note content was returned in body
+    expect(JSON.stringify(res.body)).not.toContain("Top-secret internal diagnostic note");
+  });
+});
+
+describe("API-09 — Requester indicates Problem Appears Resolved (AC-09, BR-24)", () => {
+  it("allows owning Requester to indicate problem resolved without changing ticket status", async () => {
+    const requester = await loginAs("jennifer.anderson@example.ac.th");
+    const { category, relatedSystem } = await getActiveFixtures();
+
+    const createRes = await request(app)
+      .post("/api/tickets")
+      .set("Cookie", requester.cookie)
+      .send({
+        summary: "Ticket to be resolved by requester",
+        description: "Checking that resolution indicator works without changing status",
+        categoryId: category.id,
+        relatedSystemId: relatedSystem.id,
+        requestedPriority: "LOW",
+      });
+    expect(createRes.status).toBe(201);
+    const ticketId = createRes.body.id;
+
+    // Advance ticket status to IN_PROGRESS directly in DB (simulating staff work)
+    await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { status: "IN_PROGRESS" },
+    });
+
+    // Requester posts to resolve-indication endpoint
+    const resolveRes = await request(app)
+      .post(`/api/tickets/${ticketId}/resolve-indication`)
+      .set("Cookie", requester.cookie);
+
+    expect(resolveRes.status).toBe(200);
+    expect(resolveRes.body).toEqual({
+      id: ticketId,
+      resolvedByRequester: true,
+      message: "Problem indicated as resolved. IT Staff will review and formally close the ticket.",
+    });
+
+    // Verify in database: resolvedByRequester is true, status remains IN_PROGRESS (BR-05, BR-24)
+    const ticketInDb = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+    expect(ticketInDb?.resolvedByRequester).toBe(true);
+    expect(ticketInDb?.status).toBe("IN_PROGRESS");
+  });
+
+  it("returns 404 when non-owning Requester attempts to indicate resolution", async () => {
+    const requesterA = await loginAs("jennifer.anderson@example.ac.th");
+    const requesterB = await loginAs("marcus.chen@example.ac.th");
+    const { category, relatedSystem } = await getActiveFixtures();
+
+    const createRes = await request(app)
+      .post("/api/tickets")
+      .set("Cookie", requesterA.cookie)
+      .send({
+        summary: "Requester A's ticket",
+        description: "Requester B should not be able to resolve this",
+        categoryId: category.id,
+        relatedSystemId: relatedSystem.id,
+        requestedPriority: "LOW",
+      });
+    const ticketId = createRes.body.id;
+
+    const resB = await request(app)
+      .post(`/api/tickets/${ticketId}/resolve-indication`)
+      .set("Cookie", requesterB.cookie);
+
+    expect(resB.status).toBe(404);
+    expect(resB.body).toEqual({
+      error: {
+        code: "TICKET_NOT_FOUND",
+        message: expect.any(String),
+      },
+    });
+  });
+
+  it("rejects resolution indication when ticket is CLOSED or CANCELLED (BR-24)", async () => {
+    const requester = await loginAs("jennifer.anderson@example.ac.th");
+    const { category, relatedSystem } = await getActiveFixtures();
+
+    const createRes = await request(app)
+      .post("/api/tickets")
+      .set("Cookie", requester.cookie)
+      .send({
+        summary: "Closed ticket",
+        description: "Cannot flag resolution on closed ticket",
+        categoryId: category.id,
+        relatedSystemId: relatedSystem.id,
+        requestedPriority: "LOW",
+      });
+    const ticketId = createRes.body.id;
+
+    // Set ticket to CLOSED in DB
+    await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { status: "CLOSED" },
+    });
+
+    const closedRes = await request(app)
+      .post(`/api/tickets/${ticketId}/resolve-indication`)
+      .set("Cookie", requester.cookie);
+
+    expect(closedRes.status).toBe(400);
+    expect(closedRes.body.error.code).toBe("VALIDATION_FAILED");
+  });
+
+  it("rejects non-Requester (IT Staff, Admin) with 403 FORBIDDEN", async () => {
+    const requester = await loginAs("jennifer.anderson@example.ac.th");
+    const staff = await loginAs("michael.brown@toktickit.com");
+    const admin = await loginAs("admin@toktickit.com");
+    const { category, relatedSystem } = await getActiveFixtures();
+
+    const createRes = await request(app)
+      .post("/api/tickets")
+      .set("Cookie", requester.cookie)
+      .send({
+        summary: "Staff cannot indicate requester resolution",
+        description: "Role segregation check",
+        categoryId: category.id,
+        relatedSystemId: relatedSystem.id,
+        requestedPriority: "LOW",
+      });
+    const ticketId = createRes.body.id;
+
+    const staffRes = await request(app)
+      .post(`/api/tickets/${ticketId}/resolve-indication`)
+      .set("Cookie", staff.cookie);
+    expect(staffRes.status).toBe(403);
+    expect(staffRes.body.error.code).toBe("FORBIDDEN");
+
+    const adminRes = await request(app)
+      .post(`/api/tickets/${ticketId}/resolve-indication`)
+      .set("Cookie", admin.cookie);
+    expect(adminRes.status).toBe(403);
+    expect(adminRes.body.error.code).toBe("FORBIDDEN");
+  });
+});
+
 describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-20, ADR-0008)", () => {
   it("rejects IT Staff and Administrator accessing requester endpoints with 403 FORBIDDEN", async () => {
     const requester = await loginAs("jennifer.anderson@example.ac.th");

@@ -5,6 +5,7 @@ import { formatZodErrors, sendError } from "../errors";
 import { requireAuth, requireRole } from "../middleware/auth";
 import { prisma } from "../prisma";
 import { serializeActiveAttachment } from "../tickets/attachment-serializer";
+import { parseTicketId } from "../tickets/parse-ticket-id";
 import { isValidStatusTransition } from "../tickets/status-machine";
 
 export const staffTicketDetailRouter = express.Router();
@@ -39,21 +40,6 @@ const statusPatchSchema = z
     ]),
   })
   .strict();
-
-function parseTicketId(idParam: string | string[] | undefined): number | null {
-  if (typeof idParam !== "string") {
-    return null;
-  }
-  const result = z.string().regex(/^[1-9]\d*$/).safeParse(idParam);
-  if (!result.success) {
-    return null;
-  }
-  const parsed = parseInt(result.data, 10);
-  if (!Number.isSafeInteger(parsed) || parsed > 2147483647) {
-    return null;
-  }
-  return parsed;
-}
 
 // GET /api/staff/tickets/:id (FR-10, BR-14, BR-15)
 staffTicketDetailRouter.get("/:id", async (req: Request, res: Response) => {

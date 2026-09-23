@@ -1,3 +1,5 @@
+import type { UserRole } from "./auth";
+
 export type RequestedPriority = "LOW" | "MEDIUM" | "HIGH";
 
 export type ITPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
@@ -117,6 +119,27 @@ export interface TicketDetail {
     active: AttachmentDto[]
     removed: AttachmentDto[]
   }
+  resolvedByRequester?: boolean
+}
+
+export interface CommentAuthor {
+  id: number;
+  name: string;
+  role: UserRole;
+}
+
+export interface CommentDto {
+  id: number;
+  content: string;
+  createdAt: string;
+  author: CommentAuthor;
+}
+
+export interface InternalNoteDto {
+  id: number;
+  content: string;
+  createdAt: string;
+  author: CommentAuthor;
 }
 
 export interface StaffTicketDetailDto {
