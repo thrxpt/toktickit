@@ -119,6 +119,20 @@ describe("UI-10 — Internal Notes tab renders private warning and notes list (A
 
     // Empty -> disabled
     expect(submitBtn).toBeDisabled();
+    expect(screen.getByText("0 / 2,000 characters")).toBeInTheDocument();
+
+    // Exceeding 2,000 characters -> disabled with inline validation error and aria-invalid
+    fireEvent.change(textarea, { target: { value: "x".repeat(2001) } });
+    expect(submitBtn).toBeDisabled();
+    expect(screen.getByText("2,001 / 2,000 characters")).toBeInTheDocument();
+    expect(textarea).toHaveAttribute("aria-invalid", "true");
+    expect(textarea).toHaveAttribute(
+      "aria-describedby",
+      expect.stringContaining("internal-note-error"),
+    );
+    expect(
+      screen.getByText(/internal note cannot exceed 2,000 characters/i),
+    ).toBeInTheDocument();
 
     // Type new note
     fireEvent.change(textarea, {

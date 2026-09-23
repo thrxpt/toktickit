@@ -130,6 +130,51 @@ describe("API-14 — Post and get Public Comments on Ticket (AC-14, BR-04)", () 
     expect(listAdminRes.body).toHaveLength(3);
   });
 
+  it("preserves stable chronological order using id as tie-break when createdAt timestamps match", async () => {
+    const requester = await loginAs("jennifer.anderson@example.ac.th");
+    const { category, relatedSystem } = await getActiveFixtures();
+
+    const createRes = await request(app)
+      .post("/api/tickets")
+      .set("Cookie", requester.cookie)
+      .send({
+        summary: "Tie-break sorting test ticket",
+        description: "Checking secondary sort on id",
+        categoryId: category.id,
+        relatedSystemId: relatedSystem.id,
+        requestedPriority: "LOW",
+      });
+    const ticketId = createRes.body.id;
+
+    const fixedTime = new Date("2026-09-10T12:00:00.000Z");
+    await prisma.comment.create({
+      data: {
+        ticketId,
+        authorId: requester.user.id,
+        content: "First created comment",
+        createdAt: fixedTime,
+      },
+    });
+    await prisma.comment.create({
+      data: {
+        ticketId,
+        authorId: requester.user.id,
+        content: "Second created comment",
+        createdAt: fixedTime,
+      },
+    });
+
+    const res = await request(app)
+      .get(`/api/tickets/${ticketId}/comments`)
+      .set("Cookie", requester.cookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(2);
+    expect(res.body[0].content).toBe("First created comment");
+    expect(res.body[1].content).toBe("Second created comment");
+    expect(res.body[0].id).toBeLessThan(res.body[1].id);
+  });
+
   it("returns 404 when non-owning Requester attempts to read or post public comments (ADR-0005)", async () => {
     const requesterA = await loginAs("jennifer.anderson@example.ac.th");
     const requesterB = await loginAs("marcus.chen@example.ac.th");
@@ -290,6 +335,52 @@ describe("API-15 — Post and get Internal Notes on Ticket (AC-15, BR-04)", () =
 
     expect(listAdminRes.status).toBe(200);
     expect(listAdminRes.body).toHaveLength(2);
+  });
+
+  it("preserves stable chronological order using id as tie-break when createdAt timestamps match", async () => {
+    const requester = await loginAs("jennifer.anderson@example.ac.th");
+    const staff = await loginAs("michael.brown@toktickit.com");
+    const { category, relatedSystem } = await getActiveFixtures();
+
+    const createRes = await request(app)
+      .post("/api/tickets")
+      .set("Cookie", requester.cookie)
+      .send({
+        summary: "Internal note tie break test",
+        description: "Testing notes secondary sort",
+        categoryId: category.id,
+        relatedSystemId: relatedSystem.id,
+        requestedPriority: "LOW",
+      });
+    const ticketId = createRes.body.id;
+
+    const fixedTime = new Date("2026-09-10T12:00:00.000Z");
+    await prisma.internalNote.create({
+      data: {
+        ticketId,
+        authorId: staff.user.id,
+        content: "First created note",
+        createdAt: fixedTime,
+      },
+    });
+    await prisma.internalNote.create({
+      data: {
+        ticketId,
+        authorId: staff.user.id,
+        content: "Second created note",
+        createdAt: fixedTime,
+      },
+    });
+
+    const res = await request(app)
+      .get(`/api/tickets/${ticketId}/notes`)
+      .set("Cookie", staff.cookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(2);
+    expect(res.body[0].content).toBe("First created note");
+    expect(res.body[1].content).toBe("Second created note");
+    expect(res.body[0].id).toBeLessThan(res.body[1].id);
   });
 
   it("rejects empty, whitespace-only, and >2000 character notes with 400 VALIDATION_FAILED (BR-27)", async () => {

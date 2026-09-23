@@ -98,10 +98,18 @@ describe("UI-09 — Public Comments thread displays comments and accepts new pos
     expect(submitBtn).toBeEnabled();
     expect(screen.getByText("13 / 2,000 characters")).toBeInTheDocument();
 
-    // Exceeding 2,000 characters -> button disabled
+    // Exceeding 2,000 characters -> button disabled, aria-invalid and inline error shown
     fireEvent.change(textarea, { target: { value: "x".repeat(2001) } });
     expect(submitBtn).toBeDisabled();
     expect(screen.getByText("2,001 / 2,000 characters")).toBeInTheDocument();
+    expect(textarea).toHaveAttribute("aria-invalid", "true");
+    expect(textarea).toHaveAttribute(
+      "aria-describedby",
+      expect.stringContaining("public-comment-error"),
+    );
+    expect(
+      screen.getByText(/comment cannot exceed 2,000 characters/i),
+    ).toBeInTheDocument();
   });
 
   it("submits a new comment and appends it to the thread", async () => {

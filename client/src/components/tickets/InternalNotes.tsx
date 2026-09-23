@@ -185,15 +185,27 @@ export function InternalNotes({
               </label>
               <textarea
                 id="internal-note-input"
-                className="form-control"
+                className={`form-control ${charCount > 2000 ? "is-invalid" : ""}`.trim()}
                 rows={3}
                 placeholder="Write a private operational note..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 disabled={submitting}
+                aria-invalid={charCount > 2000 ? "true" : undefined}
+                aria-describedby={
+                  charCount > 2000
+                    ? "internal-note-error internal-note-counter"
+                    : "internal-note-counter"
+                }
               />
+              {charCount > 2000 && (
+                <div id="internal-note-error" className="invalid-feedback d-block">
+                  Internal note cannot exceed 2,000 characters.
+                </div>
+              )}
               <div className="d-flex justify-content-between align-items-center mt-1">
                 <small
+                  id="internal-note-counter"
                   className={
                     charCount > 2000 ? "text-danger fw-bold" : "text-muted"
                   }

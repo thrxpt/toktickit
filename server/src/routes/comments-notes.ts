@@ -44,7 +44,7 @@ commentsNotesRouter.get("/:id/comments", requireAuth, async (req: Request, res: 
 
     const comments = await prisma.comment.findMany({
       where: { ticketId },
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       select: {
         id: true,
         content: true,
@@ -181,7 +181,7 @@ commentsNotesRouter.get("/:id/notes", requireAuth, async (req: Request, res: Res
 
     const notes = await prisma.internalNote.findMany({
       where: { ticketId },
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       select: {
         id: true,
         content: true,

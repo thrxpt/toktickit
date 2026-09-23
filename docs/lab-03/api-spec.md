@@ -333,6 +333,20 @@ Allows the owning Requester to indicate that the problem appears resolved (BR-05
 }
 ```
 
+- **400 Bad Request**: Ticket is in `CLOSED` or `CANCELLED` status (BR-24).
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "message": "Validation failed",
+    "details": {
+      "status": "Cannot indicate resolution on a closed or cancelled ticket."
+    }
+  }
+}
+```
+
 - **404 Not Found**: If ticket does not exist or caller is not owner.
 
 ---

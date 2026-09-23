@@ -423,11 +423,11 @@ textarea.form-control {
 /* Internal Notes Warning & Cards (ui-spec.md §4.5, STYLE-05) */
 .zen-notes-warning {
   background-color: var(--zen-warning-bg);
-  border: 1px solid rgba(184, 134, 11, 0.35);
+  border: 1px solid color-mix(in srgb, var(--zen-warning) 35%, transparent);
   color: var(--zen-badge-medium-text);
 }
 
 .zen-note-card {
   background-color: var(--zen-warning-bg);
-  border: 1px solid rgba(184, 134, 11, 0.25);
+  border: 1px solid color-mix(in srgb, var(--zen-warning) 25%, transparent);
 }
