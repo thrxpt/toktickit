@@ -58,6 +58,13 @@ export function UserManagement() {
 
       const data = (await res.json()) as AdminUserData[];
       setUsers(data);
+
+      // If unfiltered query, keep activeAdminCount synchronized with the returned list
+      if (!searchQuery.trim() && !roleQuery) {
+        setActiveAdminCount(
+          data.filter((u) => u.role === "ADMINISTRATOR" && u.isActive).length,
+        );
+      }
     } catch {
       setError(true);
     } finally {

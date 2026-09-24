@@ -334,10 +334,10 @@ export function UserEditDrawer({
     }
   };
 
-  const deactivateTooltip = isSelf
-    ? "You cannot deactivate your own account."
-    : isSoleActiveAdmin
-      ? "Cannot deactivate or reassign the last active Administrator."
+  const deactivateTooltip = isSoleActiveAdmin
+    ? "Cannot deactivate or reassign the last active Administrator."
+    : isSelf
+      ? "You cannot deactivate your own account."
       : undefined;
 
   const roleTooltip = isSoleActiveAdmin
@@ -359,41 +359,46 @@ export function UserEditDrawer({
         aria-labelledby="drawer-title"
         data-testid="user-edit-drawer"
       >
-        {/* Header */}
-        <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-          <h2 id="drawer-title" className="h4 mb-0">
-            {isEditMode ? "Edit User" : "Create User"}
-          </h2>
-          <button
-            type="button"
-            className="btn-close"
-            aria-label="Close"
-            onClick={onClose}
-            data-testid="drawer-close-btn"
-          />
-        </div>
-
-        {generalError && (
-          <div
-            className="alert alert-danger py-2 mb-3"
-            role="alert"
-            data-testid="drawer-general-error"
-          >
-            {generalError}
+        <div
+          className="d-flex flex-column flex-grow-1"
+          aria-hidden={showResetModal ? "true" : undefined}
+          inert={showResetModal || undefined}
+        >
+          {/* Header */}
+          <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <h2 id="drawer-title" className="h4 mb-0">
+              {isEditMode ? "Edit User" : "Create User"}
+            </h2>
+            <button
+              type="button"
+              className="btn-close"
+              aria-label="Close"
+              onClick={onClose}
+              data-testid="drawer-close-btn"
+            />
           </div>
-        )}
 
-        {resetSuccessMessage && (
-          <div
-            className="alert alert-success py-2 mb-3"
-            role="alert"
-            data-testid="drawer-reset-success"
-          >
-            {resetSuccessMessage}
-          </div>
-        )}
+          {generalError && (
+            <div
+              className="alert alert-danger py-2 mb-3"
+              role="alert"
+              data-testid="drawer-general-error"
+            >
+              {generalError}
+            </div>
+          )}
 
-        <form onSubmit={handleSave} className="flex-grow-1 d-flex flex-column">
+          {resetSuccessMessage && (
+            <div
+              className="alert alert-success py-2 mb-3"
+              role="alert"
+              data-testid="drawer-reset-success"
+            >
+              {resetSuccessMessage}
+            </div>
+          )}
+
+          <form onSubmit={handleSave} className="flex-grow-1 d-flex flex-column">
           <div className="flex-grow-1">
             {/* Full Name */}
             <FormField
@@ -601,17 +606,18 @@ export function UserEditDrawer({
               </div>
             )}
 
-            <button
-              type="button"
-              className="btn btn-outline-secondary w-100"
-              onClick={onClose}
-              disabled={submitting}
-              data-testid="btn-cancel-drawer"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+              <button
+                type="button"
+                className="btn btn-outline-secondary w-100"
+                onClick={onClose}
+                disabled={submitting}
+                data-testid="btn-cancel-drawer"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
 
         {/* Modal Dialog for Reset Password in Edit mode (UI-14, AC-20) */}
         {showResetModal && (

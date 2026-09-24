@@ -281,13 +281,26 @@ describe("UI-13 — Admin edit user disables deactivation toggle on self & last 
     vi.restoreAllMocks();
   });
 
-  it("disables active toggle and deactivate button on self with tooltip explanation", async () => {
+  it("disables active toggle and deactivate button on self with tooltip explanation when multiple active admins exist", async () => {
+    const usersWithMultipleAdmins = [
+      ...mockUsers,
+      {
+        id: 11,
+        name: "Second Administrator",
+        email: "second.admin@toktickit.com",
+        role: "ADMINISTRATOR" as const,
+        isActive: true,
+        mustChangePassword: false,
+        createdAt: "2026-09-05T00:00:00.000Z",
+      },
+    ];
+
     globalThis.fetch = vi.fn().mockImplementation((input: string | URL | Request) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url.includes("/api/admin/users")) {
         return Promise.resolve({
           ok: true,
-          json: async () => mockUsers,
+          json: async () => usersWithMultipleAdmins,
         } as Response);
       }
       return Promise.resolve({ ok: true, json: async () => [] } as Response);

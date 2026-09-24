@@ -47,6 +47,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | UNIT-03 | BR-22 | Ticket lifecycle: permitted transitions (`NEW`→`OPEN`, `OPEN`→`IN_PROGRESS`, etc.) | Transition accepted | `status-transitions.unit.test.ts` | Passed |
 | UNIT-04 | BR-22 | Ticket lifecycle: invalid transitions (`NEW`→`RESOLVED`, `CLOSED`→`OPEN`) | Rejected with `INVALID_STATUS_TRANSITION` | `status-transitions.unit.test.ts` | Passed |
 | UNIT-05 | BR-27 | Comment and note text length bounds (1–2000 chars, whitespace trimming) | Empty/whitespace rejected; 1-2000 chars accepted | `comment-validation.unit.test.ts` | Passed |
+| UNIT-06 | AC-16, AC-17, BR-31, BR-33 | User administration query, create, patch, and password reset validation | Valid payloads accepted, invalid bounds rejected | `users-admin-validation.unit.test.ts` | Passed |
 
 ### API Tests — `server/tests/lab-03/*.api.test.ts`
 
@@ -113,6 +114,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | STYLE-03 | ui-spec §3 | Priority badges render correct semantic colors and text | Low, Medium, High, Critical distinct | `badges.style.test.tsx` | Passed |
 | STYLE-04 | ui-spec §3 | Status badges render correct semantic colors and text | 8 distinct status presentations verified | `badges.style.test.tsx` | Passed |
 | STYLE-05 | ui-spec §4 | Internal Notes tab renders amber warning callout styling | Amber callout surface and border verified | `notes.style.test.tsx` | Passed |
+| STYLE-06 | ui-spec §3 | Account status badges render Active and Inactive states | Soft green Active and soft red Inactive verified | `badges.style.test.tsx` | Passed |
 
 ### Responsive Tests — `e2e/lab-03/responsive.spec.ts`
 
@@ -153,11 +155,11 @@ that the server returns strict `401`, `403`, or `404` responses.
 | **AC-13** (IT Staff transitions ticket status) | `API-13`, `UNIT-03`, `UNIT-04`, `UI-08` | Unit + API + UI |
 | **AC-14** (Public Comments discussion) | `API-14`, `UI-09`, `E2E-03` | API + UI + E2E |
 | **AC-15** (Internal Notes discussion) | `API-15`, `UI-10`, `E2E-03` | API + UI + E2E |
-| **AC-16** (Admin lists and searches users) | `API-18`, `UI-11`, `E2E-04` | API + UI + E2E |
-| **AC-17** (Admin duplicate email conflict) | `API-19`, `UI-12` | API + UI |
+| **AC-16** (Admin lists and searches users) | `API-18`, `UI-11`, `UNIT-06`, `E2E-04` | Unit + API + UI + E2E |
+| **AC-17** (Admin duplicate email conflict) | `API-19`, `UI-12`, `UNIT-06` | Unit + API + UI |
 | **AC-18** (Admin cannot deactivate self) | `API-20`, `UI-13`, `E2E-04` | API + UI + E2E |
 | **AC-19** (Cannot deactivate sole active admin) | `API-21`, `UI-13` | API + UI |
-| **AC-20** (Admin resets initial password) | `API-22`, `UI-14`, `E2E-04` | API + UI + E2E |
+| **AC-20** (Admin resets initial password) | `API-22`, `UI-14`, `UNIT-06`, `E2E-04` | Unit + API + UI + E2E |
 | **AC-21** (Structured validation errors) | `API-23` | API |
 
 ---

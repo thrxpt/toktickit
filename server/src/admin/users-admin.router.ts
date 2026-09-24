@@ -2,7 +2,7 @@ import express, { type Request, type Response } from "express";
 
 import { hashPassword } from "../auth/password";
 import { formatZodErrors, sendError } from "../errors";
-import type { Prisma } from "../generated/prisma/client";
+import { Prisma } from "../generated/prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
 import { prisma } from "../prisma";
 import { parsePositiveIntId } from "../utils/parse-id";
@@ -133,7 +133,16 @@ usersAdminRouter.post("/", async (req: Request, res: Response) => {
     res.status(201).json({
       user: createdUser,
     });
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      sendError(res, "DUPLICATE_EMAIL", {
+        email: "A user with this email address already exists.",
+      });
+      return;
+    }
     sendError(res, "DATABASE_UNAVAILABLE");
   }
 });
@@ -236,7 +245,16 @@ usersAdminRouter.patch("/:id", async (req: Request, res: Response) => {
     res.status(200).json({
       user: updatedUser,
     });
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      sendError(res, "DUPLICATE_EMAIL", {
+        email: "A user with this email address already exists.",
+      });
+      return;
+    }
     sendError(res, "DATABASE_UNAVAILABLE");
   }
 });

@@ -7,7 +7,7 @@ import {
   resetPasswordSchema,
 } from "../../src/admin/users-admin.schema";
 
-describe("Admin User Validation Schemas (UNIT tests)", () => {
+describe("UNIT-06 — User administration validation schemas (AC-16, AC-17, BR-13, BR-31, BR-33, FR-16, FR-17, FR-18)", () => {
   describe("adminUserQuerySchema (AC-16, FR-15)", () => {
     it("accepts empty query parameters", () => {
       const result = adminUserQuerySchema.safeParse({});
