@@ -279,6 +279,27 @@ describe("API-20 — Administrator attempts to deactivate own account (AC-18, BR
 });
 
 describe("API-21 — Administrator attempts to deactivate sole active Admin (AC-19, BR-30)", () => {
+  it("rejects deactivating sole active admin with 400 CANNOT_DEACTIVATE_LAST_ADMIN (AC-19, BR-30)", async () => {
+    const admin = await loginAs("admin@toktickit.com");
+
+    // In the default seed, admin@toktickit.com is the sole active admin
+    const activeAdminCount = await prisma.user.count({
+      where: { role: "ADMINISTRATOR", isActive: true },
+    });
+    expect(activeAdminCount).toBe(1);
+
+    const deactRes = await request(app)
+      .patch(`/api/admin/users/${admin.user.id}`)
+      .set("Cookie", admin.cookie)
+      .send({ isActive: false });
+
+    expect(deactRes.status).toBe(400);
+    expect(deactRes.body.error).toMatchObject({
+      code: "CANNOT_DEACTIVATE_LAST_ADMIN",
+      message: "Cannot deactivate or demote the last active Administrator.",
+    });
+  });
+
   it("rejects changing role of sole active admin with 400 CANNOT_DEACTIVATE_LAST_ADMIN", async () => {
     const admin = await loginAs("admin@toktickit.com");
 

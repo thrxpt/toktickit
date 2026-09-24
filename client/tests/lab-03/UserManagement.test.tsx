@@ -430,4 +430,42 @@ describe("UI-14 — Admin resets initial password from edit drawer (AC-20, BR-33
       ).toBeInTheDocument();
     });
   });
+
+  it("restores focus to trigger button when reset password modal is cancelled", async () => {
+    globalThis.fetch = vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/admin/users")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockUsers,
+        } as Response);
+      }
+      return Promise.resolve({ ok: true, json: async () => [] } as Response);
+    });
+
+    render(
+      <MemoryRouter>
+        <UserManagement />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("btn-edit-user-1")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("btn-edit-user-1"));
+
+    const openResetBtn = screen.getByTestId("btn-open-reset-password");
+    fireEvent.click(openResetBtn);
+
+    expect(screen.getByRole("heading", { name: "Reset Initial Password" })).toBeInTheDocument();
+
+    const cancelBtn = screen.getByTestId("btn-cancel-reset-modal");
+    fireEvent.click(cancelBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("reset-password-modal")).not.toBeInTheDocument();
+      expect(document.activeElement).toBe(openResetBtn);
+    });
+  });
 });

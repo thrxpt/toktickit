@@ -22,6 +22,16 @@ export interface UserEditDrawerProps {
   onSaved: (savedUser: AdminUserData) => void;
 }
 
+function validateInitialPassword(password: string): string | null {
+  if (!password) {
+    return "Initial password is required.";
+  }
+  if (password.length < 8) {
+    return "Initial password must be at least 8 characters long.";
+  }
+  return null;
+}
+
 export function UserEditDrawer({
   isOpen,
   user,
@@ -65,6 +75,7 @@ export function UserEditDrawer({
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const resetModalRef = useRef<HTMLDivElement | null>(null);
   const initialFocusRef = useRef<HTMLInputElement | null>(null);
+  const openResetBtnRef = useRef<HTMLButtonElement | null>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
   // Initialize or reset form state when user changes or drawer opens
@@ -110,6 +121,15 @@ export function UserEditDrawer({
     return () => clearTimeout(timer);
   }, [isOpen, user]);
 
+  const handleCloseResetModal = () => {
+    setShowResetModal(false);
+    setResetPasswordInput("");
+    setResetPasswordError(null);
+    setTimeout(() => {
+      openResetBtnRef.current?.focus();
+    }, 50);
+  };
+
   // Trap focus and escape key (ui-spec.md §6)
   useEffect(() => {
     if (!isOpen) return;
@@ -117,7 +137,7 @@ export function UserEditDrawer({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (showResetModal) {
-          setShowResetModal(false);
+          handleCloseResetModal();
         } else {
           onClose();
         }
@@ -177,11 +197,9 @@ export function UserEditDrawer({
     }
 
     if (!isEditMode) {
-      if (!initialPassword) {
-        errors.initialPassword = "Initial password is required.";
-      } else if (initialPassword.length < 8) {
-        errors.initialPassword =
-          "Initial password must be at least 8 characters long.";
+      const passErr = validateInitialPassword(initialPassword);
+      if (passErr) {
+        errors.initialPassword = passErr;
       }
     }
 
@@ -281,14 +299,9 @@ export function UserEditDrawer({
     e.preventDefault();
     if (!user) return;
 
-    if (!resetPasswordInput) {
-      setResetPasswordError("Initial password is required.");
-      return;
-    }
-    if (resetPasswordInput.length < 8) {
-      setResetPasswordError(
-        "Initial password must be at least 8 characters long.",
-      );
+    const passErr = validateInitialPassword(resetPasswordInput);
+    if (passErr) {
+      setResetPasswordError(passErr);
       return;
     }
 
@@ -313,8 +326,7 @@ export function UserEditDrawer({
         data.message ??
           "Initial password updated. User will be required to change password at next login.",
       );
-      setShowResetModal(false);
-      setResetPasswordInput("");
+      handleCloseResetModal();
     } catch {
       setResetPasswordError("Network error. Please try again.");
     } finally {
@@ -323,13 +335,13 @@ export function UserEditDrawer({
   };
 
   const deactivateTooltip = isSelf
-    ? "You cannot deactivate your own account"
+    ? "You cannot deactivate your own account."
     : isSoleActiveAdmin
-      ? "Cannot deactivate or reassign the last active Administrator"
+      ? "Cannot deactivate or reassign the last active Administrator."
       : undefined;
 
   const roleTooltip = isSoleActiveAdmin
-    ? "Cannot deactivate or reassign the last active Administrator"
+    ? "Cannot deactivate or reassign the last active Administrator."
     : undefined;
 
   return (
@@ -439,6 +451,7 @@ export function UserEditDrawer({
                   )
                 }
                 disabled={submitting || isSoleActiveAdmin}
+                aria-invalid={Boolean(fieldErrors.role)}
                 aria-describedby={
                   fieldErrors.role
                     ? "userRole-error"
@@ -545,6 +558,7 @@ export function UserEditDrawer({
                     </p>
                   </div>
                   <button
+                    ref={openResetBtnRef}
                     type="button"
                     className="btn btn-outline-secondary btn-sm"
                     onClick={() => setShowResetModal(true)}
@@ -620,7 +634,7 @@ export function UserEditDrawer({
                     type="button"
                     className="btn-close"
                     aria-label="Close"
-                    onClick={() => setShowResetModal(false)}
+                    onClick={handleCloseResetModal}
                     data-testid="btn-close-reset-modal"
                   />
                 </div>
@@ -631,16 +645,6 @@ export function UserEditDrawer({
                       <strong>{user?.name}</strong>. The user will be required
                       to set a new password upon their next sign-in.
                     </p>
-
-                    {resetPasswordError && (
-                      <div
-                        className="alert alert-danger py-2 mb-3 small"
-                        role="alert"
-                        data-testid="reset-password-error"
-                      >
-                        {resetPasswordError}
-                      </div>
-                    )}
 
                     <div className="mb-3">
                       <label
@@ -657,13 +661,31 @@ export function UserEditDrawer({
                           resetPasswordError ? "is-invalid" : ""
                         }`}
                         value={resetPasswordInput}
-                        onChange={(e) => setResetPasswordInput(e.target.value)}
+                        onChange={(e) => {
+                          setResetPasswordInput(e.target.value);
+                          if (resetPasswordError) setResetPasswordError(null);
+                        }}
                         placeholder="Minimum 8 characters"
                         disabled={resetSubmitting}
                         autoFocus
+                        aria-invalid={Boolean(resetPasswordError)}
+                        aria-describedby={
+                          resetPasswordError
+                            ? "newInitialPassword-error newInitialPassword-help"
+                            : "newInitialPassword-help"
+                        }
                         data-testid="input-new-initial-password"
                       />
-                      <div className="form-text">
+                      {resetPasswordError && (
+                        <div
+                          id="newInitialPassword-error"
+                          className="invalid-feedback d-block"
+                          data-testid="reset-password-error"
+                        >
+                          {resetPasswordError}
+                        </div>
+                      )}
+                      <div id="newInitialPassword-help" className="form-text">
                         Minimum 8 characters required.
                       </div>
                     </div>
@@ -672,7 +694,7 @@ export function UserEditDrawer({
                     <button
                       type="button"
                       className="btn btn-secondary"
-                      onClick={() => setShowResetModal(false)}
+                      onClick={handleCloseResetModal}
                       disabled={resetSubmitting}
                       data-testid="btn-cancel-reset-modal"
                     >

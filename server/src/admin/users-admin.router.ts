@@ -5,7 +5,7 @@ import { formatZodErrors, sendError } from "../errors";
 import type { Prisma } from "../generated/prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth";
 import { prisma } from "../prisma";
-import { parsePositiveIntId } from "../tickets/parse-ticket-id";
+import { parsePositiveIntId } from "../utils/parse-id";
 import {
   adminUserQuerySchema,
   createAdminUserSchema,
@@ -176,12 +176,6 @@ usersAdminRouter.patch("/:id", async (req: Request, res: Response) => {
       return;
     }
 
-    // BR-29, AC-18, API-20: Administrator cannot deactivate own account
-    if (targetUser.id === req.user?.id && isActive === false) {
-      sendError(res, "CANNOT_DEACTIVATE_SELF");
-      return;
-    }
-
     // BR-30, AC-19, API-21: Cannot deactivate or demote the last active Administrator
     if (
       targetUser.role === "ADMINISTRATOR" &&
@@ -195,6 +189,12 @@ usersAdminRouter.patch("/:id", async (req: Request, res: Response) => {
         sendError(res, "CANNOT_DEACTIVATE_LAST_ADMIN");
         return;
       }
+    }
+
+    // BR-29, AC-18, API-20: Administrator cannot deactivate own account
+    if (targetUser.id === req.user?.id && isActive === false) {
+      sendError(res, "CANNOT_DEACTIVATE_SELF");
+      return;
     }
 
     // BR-31: Unique email check if email is modified

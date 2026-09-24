@@ -16,8 +16,17 @@ export function UserManagement() {
   const [error, setError] = useState(false);
 
   // Filters
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("");
+
+  // Debounce search input to prevent rapid UI flashes (ui-spec.md §4.7)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // Drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -75,10 +84,10 @@ export function UserManagement() {
     refreshAdminCount();
   }, [refreshAdminCount]);
 
-  // Fetch users when filters change
+  // Fetch users when debounced search or role filter changes
   useEffect(() => {
-    fetchUsers(search, roleFilter);
-  }, [search, roleFilter, fetchUsers]);
+    fetchUsers(debouncedSearch, roleFilter);
+  }, [debouncedSearch, roleFilter, fetchUsers]);
 
   const handleOpenCreate = () => {
     setSelectedUser(null);
@@ -99,16 +108,17 @@ export function UserManagement() {
         : "User created successfully.",
     );
     // Refresh user list and admin count
-    fetchUsers(search, roleFilter);
+    fetchUsers(debouncedSearch, roleFilter);
     refreshAdminCount();
   };
 
   const handleClearFilters = () => {
-    setSearch("");
+    setSearchInput("");
+    setDebouncedSearch("");
     setRoleFilter("");
   };
 
-  const hasActiveFilters = Boolean(search.trim() || roleFilter);
+  const hasActiveFilters = Boolean(searchInput.trim() || roleFilter);
 
   return (
     <div className="container py-4" data-testid="user-management-page">
@@ -159,7 +169,10 @@ export function UserManagement() {
                 Search users by name or email
               </label>
               <div className="input-group">
-                <span className="input-group-text bg-white text-muted">
+                <span
+                  className="input-group-text bg-white text-muted"
+                  aria-hidden="true"
+                >
                   🔍
                 </span>
                 <input
@@ -167,8 +180,8 @@ export function UserManagement() {
                   type="text"
                   className="form-control"
                   placeholder="Search users by name or email..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   data-testid="input-search-users"
                 />
               </div>
@@ -221,7 +234,7 @@ export function UserManagement() {
           variant="error"
           title="Unable to load users"
           message="Failed to connect to the user management directory."
-          onRetry={() => fetchUsers(search, roleFilter)}
+          onRetry={() => fetchUsers(debouncedSearch, roleFilter)}
         />
       ) : users.length === 0 ? (
         hasActiveFilters ? (
