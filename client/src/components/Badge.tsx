@@ -13,7 +13,9 @@ export type BadgeValue =
   | "CANCELLED"
   | "REQUESTER"
   | "IT_STAFF"
-  | "ADMINISTRATOR";
+  | "ADMINISTRATOR"
+  | "ACTIVE"
+  | "INACTIVE";
 
 export interface BadgeProps {
   value: BadgeValue;
@@ -47,6 +49,10 @@ const BADGE_MAP: Record<BadgeValue, { label: string; className: string }> = {
   REQUESTER: { label: "Requester", className: "zen-badge-role-requester" },
   IT_STAFF: { label: "IT Staff", className: "zen-badge-role-staff" },
   ADMINISTRATOR: { label: "Administrator", className: "zen-badge-role-admin" },
+
+  // Account Statuses
+  ACTIVE: { label: "Active", className: "zen-badge-user-active" },
+  INACTIVE: { label: "Inactive", className: "zen-badge-user-inactive" },
 };
 
 export function Badge({ value, className = "" }: BadgeProps) {

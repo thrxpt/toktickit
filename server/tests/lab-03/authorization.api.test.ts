@@ -669,6 +669,48 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
     expect(adminAssigneesRes.body.error.code).toBe("FORBIDDEN");
   });
 
+  it("API-17 — IT Staff and Requester attempts to access Admin User Management routes rejected with 403 FORBIDDEN (BR-14, BR-15, ADR-0008)", async () => {
+    const itStaff = await loginAs("michael.brown@toktickit.com");
+    const requester = await loginAs("jennifer.anderson@example.ac.th");
+
+    // IT Staff GET /api/admin/users -> 403
+    const staffGetRes = await request(app)
+      .get("/api/admin/users")
+      .set("Cookie", itStaff.cookie);
+    expect(staffGetRes.status).toBe(403);
+    expect(staffGetRes.body).toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: expect.any(String),
+      },
+    });
+
+    // IT Staff POST /api/admin/users -> 403
+    const staffPostRes = await request(app)
+      .post("/api/admin/users")
+      .set("Cookie", itStaff.cookie)
+      .send({
+        name: "Test User",
+        email: "test@example.com",
+        role: "REQUESTER",
+        initialPassword: "Password123!",
+      });
+    expect(staffPostRes.status).toBe(403);
+    expect(staffPostRes.body.error.code).toBe("FORBIDDEN");
+
+    // Requester GET /api/admin/users -> 403
+    const reqGetRes = await request(app)
+      .get("/api/admin/users")
+      .set("Cookie", requester.cookie);
+    expect(reqGetRes.status).toBe(403);
+    expect(reqGetRes.body.error.code).toBe("FORBIDDEN");
+
+    // Unauthenticated GET /api/admin/users -> 401
+    const anonRes = await request(app).get("/api/admin/users");
+    expect(anonRes.status).toBe(401);
+    expect(anonRes.body.error.code).toBe("UNAUTHENTICATED");
+  });
+
   it("allows status query filtering with valid statuses beyond NEW (W6)", async () => {
     const requester = await loginAs("jennifer.anderson@example.ac.th");
     const res = await request(app)

@@ -353,6 +353,19 @@ textarea.form-control {
   border: 1px solid var(--zen-admin-border);
 }
 
+/* Account Status Badges (ui-spec.md §3) */
+.zen-badge-user-active {
+  background-color: var(--zen-pale);
+  color: var(--zen-primary);
+  border: 1px solid var(--zen-border);
+}
+
+.zen-badge-user-inactive {
+  background-color: var(--zen-danger-bg);
+  color: var(--zen-danger);
+  border: 1px solid rgba(176, 42, 42, 0.2);
+}
+
 /* User Avatar Initials (ui-spec.md §4.3) */
 .zen-avatar {
   display: inline-flex;
@@ -380,6 +393,60 @@ textarea.form-control {
 
 .zen-col-ticket-no {
   width: 160px;
+}
+
+/* Administrator User Management Drawer (ui-spec.md §4.7, §5) */
+.zen-admin-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 480px;
+  max-width: 100vw;
+  background-color: var(--zen-surface);
+  border-left: 1px solid var(--zen-border);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+@media (max-width: 767.98px) {
+  .zen-admin-drawer {
+    width: 100vw;
+    left: 0;
+    right: 0;
+    border-left: none;
+    box-shadow: none;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .zen-admin-drawer {
+    width: 440px;
+  }
+}
+
+/* Active / Inactive switch styling (ui-spec.md §4.7) */
+.zen-user-switch .form-check-input:checked {
+  background-color: var(--zen-primary);
+  border-color: var(--zen-primary);
+}
+
+.zen-user-switch .form-check-input:not(:checked) {
+  background-color: var(--zen-danger-bg);
+  border-color: var(--zen-danger);
+}
+
+.zen-admin-drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
 }
 
 .zen-col-date {

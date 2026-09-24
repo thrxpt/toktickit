@@ -32,6 +32,7 @@ export type ErrorCode =
   | "PASSWORD_CHANGE_REQUIRED"
   | "FORBIDDEN"
   | "DUPLICATE_EMAIL"
+  | "USER_NOT_FOUND"
   | "CANNOT_DEACTIVATE_SELF"
   | "CANNOT_DEACTIVATE_LAST_ADMIN"
   | "INVALID_STATUS_TRANSITION";
@@ -113,6 +114,10 @@ const failures = {
   DUPLICATE_EMAIL: {
     status: 409,
     message: "A user with this email address already exists.",
+  },
+  USER_NOT_FOUND: {
+    status: 404,
+    message: "User not found",
   },
   CANNOT_DEACTIVATE_SELF: {
     status: 400,

@@ -47,6 +47,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | UNIT-03 | BR-22 | Ticket lifecycle: permitted transitions (`NEW`→`OPEN`, `OPEN`→`IN_PROGRESS`, etc.) | Transition accepted | `status-transitions.unit.test.ts` | Passed |
 | UNIT-04 | BR-22 | Ticket lifecycle: invalid transitions (`NEW`→`RESOLVED`, `CLOSED`→`OPEN`) | Rejected with `INVALID_STATUS_TRANSITION` | `status-transitions.unit.test.ts` | Passed |
 | UNIT-05 | BR-27 | Comment and note text length bounds (1–2000 chars, whitespace trimming) | Empty/whitespace rejected; 1-2000 chars accepted | `comment-validation.unit.test.ts` | Passed |
+| UNIT-06 | AC-16, AC-17, BR-31, BR-33 | User administration query, create, patch, and password reset validation | Valid payloads accepted, invalid bounds rejected | `users-admin-validation.unit.test.ts` | Passed |
 
 ### API Tests — `server/tests/lab-03/*.api.test.ts`
 
@@ -68,12 +69,12 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-14 | AC-14, BR-04 | Post and get Public Comments on Ticket | 201 / 200; comment visible to Requester and Staff | `comments-notes.api.test.ts` | Passed |
 | API-15 | AC-15, BR-04 | Post and get Internal Notes on Ticket | 201 / 200; note visible to Staff and Admin only | `comments-notes.api.test.ts` | Passed |
 | API-16 | AC-08, BR-04 | Requester attempts to post Internal Note | 403 Forbidden | `comments-notes.api.test.ts` | Passed |
-| API-17 | BR-14 | IT Staff attempts to access Admin User Management | 403 Forbidden | `authorization.api.test.ts` | Planned |
-| API-18 | AC-16, FR-15 | Administrator retrieves user list with search and role filter | 200 OK, returns matching user profiles | `users-admin.api.test.ts` | Planned |
-| API-19 | AC-17, BR-31 | Administrator creates user with duplicate email | 409 Conflict with `DUPLICATE_EMAIL` error code | `users-admin.api.test.ts` | Planned |
-| API-20 | AC-18, BR-29 | Administrator attempts to deactivate own account | 400 Bad Request with `CANNOT_DEACTIVATE_SELF` | `users-admin.api.test.ts` | Planned |
-| API-21 | AC-19, BR-30 | Administrator attempts to deactivate sole active Admin | 400 Bad Request with `CANNOT_DEACTIVATE_LAST_ADMIN` | `users-admin.api.test.ts` | Planned |
-| API-22 | AC-20, BR-33 | Administrator resets initial password for a user | 200 OK, updates hash, sets `mustChangePassword: true` | `users-admin.api.test.ts` | Planned |
+| API-17 | BR-14 | IT Staff attempts to access Admin User Management | 403 Forbidden | `authorization.api.test.ts` | Passed |
+| API-18 | AC-16, FR-15 | Administrator retrieves user list with search and role filter | 200 OK, returns matching user profiles | `users-admin.api.test.ts` | Passed |
+| API-19 | AC-17, BR-31 | Administrator creates user with duplicate email | 409 Conflict with `DUPLICATE_EMAIL` error code | `users-admin.api.test.ts` | Passed |
+| API-20 | AC-18, BR-29 | Administrator attempts to deactivate own account | 400 Bad Request with `CANNOT_DEACTIVATE_SELF` | `users-admin.api.test.ts` | Passed |
+| API-21 | AC-19, BR-30 | Administrator attempts to deactivate sole active Admin | 400 Bad Request with `CANNOT_DEACTIVATE_LAST_ADMIN` | `users-admin.api.test.ts` | Passed |
+| API-22 | AC-20, BR-33 | Administrator resets initial password for a user | 200 OK, updates hash, sets `mustChangePassword: true` | `users-admin.api.test.ts` | Passed |
 | API-23 | AC-21, BR-35 | Error envelopes conform to standard schema | Standardized `{ error: { code, message, fields? } }` | `auth.api.test.ts` | Passed |
 | API-24 | BR-36 | Re-running database seed idempotency check | Seed runs twice without duplicate rows or errors | `users-admin.api.test.ts` | Passed |
 | API-25 | AC-01, BR-09 | Login with incorrect password | 401 Unauthorized with generic safe error | `auth.api.test.ts` | Passed |
@@ -97,10 +98,10 @@ that the server returns strict `401`, `403`, or `404` responses.
 | UI-08 | AC-12, AC-13 | IT Staff modifies IT Priority and status dropdown | Sends PATCH requests and updates badge indicators | `StaffTicketDetail.test.tsx` | Passed |
 | UI-09 | AC-14, FR-07 | Public Comments thread displays comments and accepts new post | Appends new comment to list with author badge and timestamp | `PublicComments.test.tsx` | Passed |
 | UI-10 | AC-15, BR-04 | Internal Notes tab renders private warning and notes list | Displays amber security banner, lists private notes | `InternalNotes.test.tsx` | Passed |
-| UI-11 | AC-16, FR-15 | Admin User Management displays user list and search filter | Lists users with role and status badges; filters by name/email | `UserManagement.test.tsx` | Planned |
-| UI-12 | AC-17, BR-31 | Admin user creation displays validation error on duplicate email | Form renders field-level duplicate email error | `UserManagement.test.tsx` | Planned |
-| UI-13 | AC-18, AC-19 | Admin edit user disables deactivation toggle on self & last admin | Switch disabled with tooltip explanation | `UserManagement.test.tsx` | Planned |
-| UI-14 | AC-20, BR-33 | Admin resets initial password from edit drawer | Opens modal, captures password, displays success feedback | `UserManagement.test.tsx` | Planned |
+| UI-11 | AC-16, FR-15 | Admin User Management displays user list and search filter | Lists users with role and status badges; filters by name/email | `UserManagement.test.tsx` | Passed |
+| UI-12 | AC-17, BR-31 | Admin user creation displays validation error on duplicate email | Form renders field-level duplicate email error | `UserManagement.test.tsx` | Passed |
+| UI-13 | AC-18, AC-19 | Admin edit user disables deactivation toggle on self & last admin | Switch disabled with tooltip explanation | `UserManagement.test.tsx` | Passed |
+| UI-14 | AC-20, BR-33 | Admin resets initial password from edit drawer | Opens modal, captures password, displays success feedback | `UserManagement.test.tsx` | Passed |
 | UI-15 | FR-20 | Role-based navigation hides unauthorized links | Requesters see no Queue or Admin; Staff see Queue only; Admin sees Users | `AppShell.test.tsx` | Passed |
 | UI-16 | FR-02, FR-06, BR-02, AC-02, AC-03 | Full App route guarding, role redirection, and logout state clearing | Unauthenticated redirected to `/login`, `mustChangePassword` to `/change-password`, logout purges state | `AppRoutes.test.tsx` | Passed |
 
@@ -113,6 +114,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | STYLE-03 | ui-spec §3 | Priority badges render correct semantic colors and text | Low, Medium, High, Critical distinct | `badges.style.test.tsx` | Passed |
 | STYLE-04 | ui-spec §3 | Status badges render correct semantic colors and text | 8 distinct status presentations verified | `badges.style.test.tsx` | Passed |
 | STYLE-05 | ui-spec §4 | Internal Notes tab renders amber warning callout styling | Amber callout surface and border verified | `notes.style.test.tsx` | Passed |
+| STYLE-06 | ui-spec §3 | Account status badges render Active and Inactive states | Soft green Active and soft red Inactive verified | `badges.style.test.tsx` | Passed |
 
 ### Responsive Tests — `e2e/lab-03/responsive.spec.ts`
 
@@ -153,11 +155,11 @@ that the server returns strict `401`, `403`, or `404` responses.
 | **AC-13** (IT Staff transitions ticket status) | `API-13`, `UNIT-03`, `UNIT-04`, `UI-08` | Unit + API + UI |
 | **AC-14** (Public Comments discussion) | `API-14`, `UI-09`, `E2E-03` | API + UI + E2E |
 | **AC-15** (Internal Notes discussion) | `API-15`, `UI-10`, `E2E-03` | API + UI + E2E |
-| **AC-16** (Admin lists and searches users) | `API-18`, `UI-11`, `E2E-04` | API + UI + E2E |
-| **AC-17** (Admin duplicate email conflict) | `API-19`, `UI-12` | API + UI |
+| **AC-16** (Admin lists and searches users) | `API-18`, `UI-11`, `UNIT-06`, `E2E-04` | Unit + API + UI + E2E |
+| **AC-17** (Admin duplicate email conflict) | `API-19`, `UI-12`, `UNIT-06` | Unit + API + UI |
 | **AC-18** (Admin cannot deactivate self) | `API-20`, `UI-13`, `E2E-04` | API + UI + E2E |
 | **AC-19** (Cannot deactivate sole active admin) | `API-21`, `UI-13` | API + UI |
-| **AC-20** (Admin resets initial password) | `API-22`, `UI-14`, `E2E-04` | API + UI + E2E |
+| **AC-20** (Admin resets initial password) | `API-22`, `UI-14`, `UNIT-06`, `E2E-04` | Unit + API + UI + E2E |
 | **AC-21** (Structured validation errors) | `API-23` | API |
 
 ---

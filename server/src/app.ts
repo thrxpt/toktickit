@@ -8,6 +8,7 @@ import { attachmentsRouter } from "./routes/attachments";
 import { authRouter } from "./routes/auth";
 import { commentsNotesRouter } from "./routes/comments-notes";
 import { ticketsRouter } from "./routes/tickets";
+import { usersAdminRouter } from "./admin/users-admin.router";
 import { staffQueueRouter } from "./staff/staff-queue.router";
 import { staffTicketDetailRouter } from "./staff/staff-ticket-detail.router";
 
@@ -90,6 +91,9 @@ app.use("/api/attachments", attachmentsRouter);
 // Staff routes (Lab 3)
 app.use("/api/staff/tickets", staffQueueRouter);
 app.use("/api/staff/tickets", staffTicketDetailRouter);
+
+// Administrator User Management (Lab 3)
+app.use("/api/admin/users", usersAdminRouter);
 app.get(
   "/api/staff/assignees",
   requireAuth,
