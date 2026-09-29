@@ -8,6 +8,14 @@ async function loginAsStaff(page: Page): Promise<void> {
   await page.waitForURL("**/staff/queue");
 }
 
+async function loginAsAdmin(page: Page): Promise<void> {
+  await page.goto("/login");
+  await page.fill('input[type="email"]', "admin@toktickit.com");
+  await page.fill('input[type="password"]', "Password123!");
+  await page.click('button[type="submit"]:has-text("Sign In")');
+  await page.waitForURL("**/admin/users");
+}
+
 async function assertNoHorizontalScroll(page: Page): Promise<void> {
   const { scrollWidth, clientWidth } = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
@@ -89,5 +97,34 @@ test.describe("Responsive Layout and Viewports — IT Staff Ticket Queue (ui-spe
     if (box) {
       expect(box.height).toBeGreaterThanOrEqual(44);
     }
+  });
+
+  test("RESP-04 — Mobile viewport (390px) renders Admin User Management and Drawer cleanly without overflow", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginAsAdmin(page);
+
+    await page.goto("/admin/users");
+    await expect(page.locator('h1:has-text("User Management")')).toBeVisible();
+    await assertNoHorizontalScroll(page);
+
+    // Verify touch target min-height on mobile create button
+    const createBtn = page.locator('button:has-text("Create User")');
+    await expect(createBtn).toBeVisible();
+    const box = await createBtn.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+
+    // Open Create User drawer
+    await createBtn.click();
+    await expect(page.locator("#userName")).toBeVisible();
+    await assertNoHorizontalScroll(page);
+
+    // Close drawer
+    await page.click('button:has-text("Cancel")');
+    await expect(page.locator("#userName")).not.toBeVisible();
   });
 });

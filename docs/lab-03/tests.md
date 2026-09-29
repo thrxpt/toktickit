@@ -123,16 +123,16 @@ that the server returns strict `401`, `403`, or `404` responses.
 | RESP-01 | Desktop (1280px) | Full multi-column tables, queue, and side panels | Clean spacing, no clipping, no overflow | Passed |
 | RESP-02 | Tablet (768px) | Condensed tables, 2-column forms, drawer overlays | Elements adapt cleanly without horizontal scroll | Passed |
 | RESP-03 | Mobile (390px) | Queue transforms to cards; full-width action buttons | Touch targets ≥44px, zero horizontal overflow | Passed |
-| RESP-04 | Mobile (390px) | Admin User Management responsive layout | User list and drawer fit viewport cleanly | Planned |
+| RESP-04 | Mobile (390px) | Admin User Management responsive layout | User list and drawer fit viewport cleanly | Passed |
 
 ### End-to-End Tests — `e2e/lab-03/*.spec.ts`
 
 | Test ID | AC Trace | User Journey | Automated Test File | Final |
 | --- | --- | --- | --- | --- |
-| E2E-01 | AC-01, AC-05 | Complete login, role shell display, and logout flow | `authentication.spec.ts` | Planned |
-| E2E-02 | AC-02, AC-03 | Mandatory first-login password change and app entry | `authentication.spec.ts` | Planned |
-| E2E-03 | AC-10, AC-11, AC-14, AC-15 | Staff workflow: queue, claim ticket, update priority/status, add comment and note | `staff-ticket-flow.spec.ts` | Planned |
-| E2E-04 | AC-16, AC-17, AC-18, AC-20 | Admin workflow: create user, search, edit, reset password, prevent self-deactivation | `user-administration.spec.ts` | Planned |
+| E2E-01 | AC-01, AC-05 | Complete login, role shell display, and logout flow | `authentication.spec.ts` | Passed |
+| E2E-02 | AC-02, AC-03 | Mandatory first-login password change and app entry | `authentication.spec.ts` | Passed |
+| E2E-03 | AC-10, AC-11, AC-14, AC-15 | Staff workflow: queue, claim ticket, update priority/status, add comment and note | `staff-ticket-flow.spec.ts` | Passed |
+| E2E-04 | AC-16, AC-17, AC-18, AC-20 | Admin workflow: create user, search, edit, reset password, prevent self-deactivation | `user-administration.spec.ts` | Passed |
 
 ---
 
