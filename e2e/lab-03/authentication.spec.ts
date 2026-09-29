@@ -15,7 +15,13 @@ test.describe("Authentication and Password Lifecycle (AC-01 to AC-05)", () => {
       "artifacts/lab-03/screenshots/authentication/login-desktop.png",
     );
 
-    // 2. Viewport mobile (390px) capture
+    // 2. Viewport tablet (768px) and mobile (390px) capture
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await captureScreenshot(
+      page,
+      "artifacts/lab-03/screenshots/authentication/login-tablet.png",
+    );
+
     await page.setViewportSize({ width: 390, height: 844 });
     await captureScreenshot(
       page,
@@ -40,6 +46,10 @@ test.describe("Authentication and Password Lifecycle (AC-01 to AC-05)", () => {
     await expect(page.locator(".alert-danger")).toBeVisible();
     await expect(page.locator(".alert-danger")).toContainText(
       "Account is deactivated",
+    );
+    await captureScreenshot(
+      page,
+      "artifacts/lab-03/screenshots/authentication/login-inactive-alert.png",
     );
     expect(page.url()).toContain("/login");
 
@@ -91,6 +101,20 @@ test.describe("Authentication and Password Lifecycle (AC-01 to AC-05)", () => {
       page,
       "artifacts/lab-03/screenshots/authentication/change-password-desktop.png",
     );
+
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await captureScreenshot(
+      page,
+      "artifacts/lab-03/screenshots/authentication/change-password-tablet.png",
+    );
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await captureScreenshot(
+      page,
+      "artifacts/lab-03/screenshots/authentication/change-password-mobile.png",
+    );
+
+    await page.setViewportSize({ width: 1280, height: 800 });
 
     // 2. Direct route bypass attempt blocked (BR-02)
     await page.goto("/tickets");

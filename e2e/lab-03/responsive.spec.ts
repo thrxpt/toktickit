@@ -1,18 +1,14 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { login, TEST_USERS } from "./helpers";
+
 async function loginAsStaff(page: Page): Promise<void> {
-  await page.goto("/login");
-  await page.fill('input[type="email"]', "michael.brown@toktickit.com");
-  await page.fill('input[type="password"]', "Password123!");
-  await page.click('button[type="submit"]:has-text("Sign In")');
+  await login(page, TEST_USERS.staff.email, TEST_USERS.staff.password);
   await page.waitForURL("**/staff/queue");
 }
 
 async function loginAsAdmin(page: Page): Promise<void> {
-  await page.goto("/login");
-  await page.fill('input[type="email"]', "admin@toktickit.com");
-  await page.fill('input[type="password"]', "Password123!");
-  await page.click('button[type="submit"]:has-text("Sign In")');
+  await login(page, TEST_USERS.admin.email, TEST_USERS.admin.password);
   await page.waitForURL("**/admin/users");
 }
 
@@ -24,7 +20,7 @@ async function assertNoHorizontalScroll(page: Page): Promise<void> {
   expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
 }
 
-test.describe("Responsive Layout and Viewports — IT Staff Ticket Queue (ui-spec §5)", () => {
+test.describe("Responsive Layout and Viewports (ui-spec §5)", () => {
   test("RESP-01 — Desktop viewport (1280px) renders full multi-column table without clipping", async ({
     page,
   }) => {
@@ -89,13 +85,14 @@ test.describe("Responsive Layout and Viewports — IT Staff Ticket Queue (ui-spe
     const desktopTable = page.locator('table[aria-label="IT Staff Ticket Queue"]');
     await expect(desktopTable).not.toBeVisible();
 
-    // Verify touch target min-height on mobile buttons
+    // Verify touch target dimensions on mobile buttons (>= 44px)
     const filterBtn = page.locator('button:has-text("Filters")');
     await expect(filterBtn).toBeVisible();
     const box = await filterBtn.boundingBox();
     expect(box).not.toBeNull();
     if (box) {
       expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.width).toBeGreaterThanOrEqual(44);
     }
   });
 
@@ -109,13 +106,14 @@ test.describe("Responsive Layout and Viewports — IT Staff Ticket Queue (ui-spe
     await expect(page.locator('h1:has-text("User Management")')).toBeVisible();
     await assertNoHorizontalScroll(page);
 
-    // Verify touch target min-height on mobile create button
+    // Verify touch target dimensions on mobile create button (>= 44px)
     const createBtn = page.locator('button:has-text("Create User")');
     await expect(createBtn).toBeVisible();
     const box = await createBtn.boundingBox();
     expect(box).not.toBeNull();
     if (box) {
       expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.width).toBeGreaterThanOrEqual(44);
     }
 
     // Open Create User drawer

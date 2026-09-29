@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { captureScreenshot, login, logout, TEST_USERS } from "./helpers";
 
 test.describe("IT Staff Ticket Queue and Operational Flow (AC-10 to AC-15)", () => {
-  test("E2E-03 — Staff workflow: queue, claim ticket, update priority/status, add comment and note", async ({
+  test("E2E-03 — Staff workflow: queue, claim ticket, update priority/status, add comment and note (AC-10, AC-11, AC-12, AC-13, AC-14, AC-15)", async ({
     page,
   }) => {
     const timestamp = Date.now();
@@ -81,6 +81,12 @@ test.describe("IT Staff Ticket Queue and Operational Flow (AC-10 to AC-15)", () 
 
     const ticketRow = page.locator(`tr:has-text("${ticketNumber}")`);
     await expect(ticketRow).toBeVisible();
+
+    // Capture Search Results screenshot
+    await captureScreenshot(
+      page,
+      "artifacts/lab-03/screenshots/staff-queue/queue-search-results.png",
+    );
 
     // 4. Open Ticket Detail (FR-10)
     await page.locator(`table a:has-text("${ticketNumber}")`).click();

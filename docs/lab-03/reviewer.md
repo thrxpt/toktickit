@@ -15,7 +15,6 @@
 | [#44](https://github.com/thrxpt/toktickit/pull/44) | feature/19-comments-and-notes | Approved |
 | [#45](https://github.com/thrxpt/toktickit/pull/45) | feature/20-admin-user-management | Approved |
 | [#46](https://github.com/thrxpt/toktickit/pull/46) | feature/21-e2e-visual-release | Approved |
-| [#47](https://github.com/thrxpt/toktickit/pull/47) | lab3-staging → main | Approved |
 
 ---
 

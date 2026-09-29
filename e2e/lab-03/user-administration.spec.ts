@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { captureScreenshot, login, logout, TEST_USERS } from "./helpers";
 
 test.describe("Administrator User Management and Safety Rules (AC-16 to AC-20)", () => {
-  test("E2E-04 — Admin workflow: create user, search, edit, reset password, prevent self-deactivation", async ({
+  test("E2E-04 — Admin workflow: create user, search, edit, reset password, prevent self-deactivation (AC-16, AC-17, AC-18, AC-19, AC-20)", async ({
     page,
   }) => {
     const timestamp = Date.now();

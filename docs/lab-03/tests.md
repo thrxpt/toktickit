@@ -109,7 +109,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 
 | Test ID | AC / BR | What It Tests | Expected Result | Automated Test File | Final |
 | --- | --- | --- | --- | --- | --- |
-| STYLE-01 | ui-spec §1 | Zen Green color tokens and absence of external hex codes | Clean token application; no arbitrary inline hex | `theme.style.test.tsx` | Planned |
+| STYLE-01 | ui-spec §1 | Zen Green color tokens and absence of external hex codes | Clean token application; no arbitrary inline hex | `theme.style.test.tsx` | Passed |
 | STYLE-02 | ui-spec §3 | Role badges render correct semantic colors and text | Requester (green), Staff (blue), Admin (purple) | `badges.style.test.tsx` | Passed |
 | STYLE-03 | ui-spec §3 | Priority badges render correct semantic colors and text | Low, Medium, High, Critical distinct | `badges.style.test.tsx` | Passed |
 | STYLE-04 | ui-spec §3 | Status badges render correct semantic colors and text | 8 distinct status presentations verified | `badges.style.test.tsx` | Passed |
@@ -129,10 +129,10 @@ that the server returns strict `401`, `403`, or `404` responses.
 
 | Test ID | AC Trace | User Journey | Automated Test File | Final |
 | --- | --- | --- | --- | --- |
-| E2E-01 | AC-01, AC-05 | Complete login, role shell display, and logout flow | `authentication.spec.ts` | Passed |
+| E2E-01 | AC-01, AC-04, AC-05 | Complete login, role shell display, and logout flow | `authentication.spec.ts` | Passed |
 | E2E-02 | AC-02, AC-03 | Mandatory first-login password change and app entry | `authentication.spec.ts` | Passed |
-| E2E-03 | AC-10, AC-11, AC-14, AC-15 | Staff workflow: queue, claim ticket, update priority/status, add comment and note | `staff-ticket-flow.spec.ts` | Passed |
-| E2E-04 | AC-16, AC-17, AC-18, AC-20 | Admin workflow: create user, search, edit, reset password, prevent self-deactivation | `user-administration.spec.ts` | Passed |
+| E2E-03 | AC-10, AC-11, AC-12, AC-13, AC-14, AC-15 | Staff workflow: queue, claim ticket, update priority/status, add comment and note | `staff-ticket-flow.spec.ts` | Passed |
+| E2E-04 | AC-16, AC-17, AC-18, AC-19, AC-20 | Admin workflow: create user, search, edit, reset password, prevent self-deactivation | `user-administration.spec.ts` | Passed |
 
 ---
 
@@ -143,7 +143,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | **AC-01** (Valid login) | `API-01`, `API-25`, `UI-01`, `E2E-01` | API + UI + E2E |
 | **AC-02** (Must change password gate) | `API-03`, `UI-02`, `UI-16`, `E2E-02` | API + UI + E2E |
 | **AC-03** (Change password execution) | `API-04`, `UI-03`, `UI-16`, `E2E-02` | API + UI + E2E |
-| **AC-04** (Inactive account login failure) | `API-02`, `UI-01` | API + UI |
+| **AC-04** (Inactive account login failure) | `API-02`, `UI-01`, `E2E-01` | API + UI + E2E |
 | **AC-05** (Logout session invalidation) | `API-05`, `UI-04`, `UI-16`, `E2E-01` | API + UI + E2E |
 | **AC-06** (Requester session ownership) | `API-06`, `API-26`, `API-28`, `UI-16` | API + UI |
 | **AC-07** (Requester cross-owner access 404) | `API-07` | API |
@@ -151,14 +151,14 @@ that the server returns strict `401`, `403`, or `404` responses.
 | **AC-09** (Requester resolution indication) | `API-09`, `UI-05` | API + UI |
 | **AC-10** (IT Staff Queue query/filter) | `API-10`, `UI-06`, `E2E-03` | API + UI + E2E |
 | **AC-11** (IT Staff claims unassigned ticket) | `API-11`, `UI-07`, `E2E-03` | API + UI + E2E |
-| **AC-12** (IT Staff updates IT Priority) | `API-12`, `UI-08` | API + UI |
-| **AC-13** (IT Staff transitions ticket status) | `API-13`, `UNIT-03`, `UNIT-04`, `UI-08` | Unit + API + UI |
+| **AC-12** (IT Staff updates IT Priority) | `API-12`, `UI-08`, `E2E-03` | API + UI + E2E |
+| **AC-13** (IT Staff transitions ticket status) | `API-13`, `UNIT-03`, `UNIT-04`, `UI-08`, `E2E-03` | Unit + API + UI + E2E |
 | **AC-14** (Public Comments discussion) | `API-14`, `UI-09`, `E2E-03` | API + UI + E2E |
 | **AC-15** (Internal Notes discussion) | `API-15`, `UI-10`, `E2E-03` | API + UI + E2E |
 | **AC-16** (Admin lists and searches users) | `API-18`, `UI-11`, `UNIT-06`, `E2E-04` | Unit + API + UI + E2E |
 | **AC-17** (Admin duplicate email conflict) | `API-19`, `UI-12`, `UNIT-06` | Unit + API + UI |
 | **AC-18** (Admin cannot deactivate self) | `API-20`, `UI-13`, `E2E-04` | API + UI + E2E |
-| **AC-19** (Cannot deactivate sole active admin) | `API-21`, `UI-13` | API + UI |
+| **AC-19** (Cannot deactivate sole active admin) | `API-21`, `UI-13`, `E2E-04` | API + UI + E2E |
 | **AC-20** (Admin resets initial password) | `API-22`, `UI-14`, `UNIT-06`, `E2E-04` | Unit + API + UI + E2E |
 | **AC-21** (Structured validation errors) | `API-23` | API |
 
