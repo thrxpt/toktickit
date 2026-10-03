@@ -8,7 +8,7 @@
 | PR | Branch | Reviewer verdict |
 | --- | --- | --- |
 | [#39](https://github.com/thrxpt/toktickit/pull/39) | feature/14-lab3-contract | Approved |
-| [#40](https://github.com/thrxpt/toktickit/pull/40) | feature/15-user-model-auth-foundation | Approved |
+| [#40](https://github.com/thrxpt/toktickit/pull/40) | feature/15-auth-foundation | Approved |
 | [#41](https://github.com/thrxpt/toktickit/pull/41) | feature/16-auth-shell-regression | Approved |
 | [#42](https://github.com/thrxpt/toktickit/pull/42) | feature/17-staff-ticket-queue | Approved |
 | [#43](https://github.com/thrxpt/toktickit/pull/43) | feature/18-staff-ticket-detail | Approved |
@@ -36,11 +36,11 @@
 > All 4 contract documents and test mapping tables are now 100% verified with zero missing BR references.
 
 **Reviewer approved comment:**
-> Fixes confirmed clean. BR-35 and BR-36 added to specification.md §5, api-spec.md and tests.md references updated, no stale BR-43/BR-44 references remain. All 11 sections intact, BR-01 through BR-36 numbered correctly.
+> Fixes confirmed clean. BR-35 and BR-36 added to specification.md section 5, api-spec.md and tests.md references updated, no stale BR-43/BR-44 references remain. All 11 sections intact, BR-01 through BR-36 numbered correctly.
 
 ---
 
-### feature/15-user-model-auth-foundation #40
+### feature/15-auth-foundation #40
 
 **Pull Request URL:** <https://github.com/thrxpt/toktickit/pull/40>
 
@@ -61,7 +61,7 @@
 **How I responded:**
 > Reconciled B1 using Option B, and resolved warnings W1, W2, and W4 in commits `d560b91`, `4422bac`, and `87cfdc8`:
 >
-> 1. **B1 Reconciliation:** Amended `docs/lab-03/specification.md` §7 to reflect the established Lab 2 baseline Requester accounts: 4 active (`jennifer.anderson`, `somchai.prasert`, `marcus.chen`, `priya.raman`) and 2 inactive (`retired.staff`, `daniel.okafor`). Ensures Lab 2 regression test `tests/lab-02/requesters.api.test.ts` (`API-26`) continues to pass without modification.
+> 1. **B1 Reconciliation:** Amended `docs/lab-03/specification.md` section 7 to reflect the established Lab 2 baseline Requester accounts: 4 active (`jennifer.anderson`, `somchai.prasert`, `marcus.chen`, `priya.raman`) and 2 inactive (`retired.staff`, `daniel.okafor`). Ensures Lab 2 regression test `tests/lab-02/requesters.api.test.ts` (`API-26`) continues to pass without modification.
 > 2. **W1:** Scoped `req.requesterId = user.id` in `server/src/middleware/auth.ts` strictly to `user.role === Role.REQUESTER`.
 > 3. **W2:** Updated `server/src/auth/session.ts` to fail closed when `NODE_ENV === 'production'` and `JWT_SECRET` is unset.
 > 4. **W4:** Implemented constant-time dummy bcrypt comparison in `server/src/routes/auth.ts` for unregistered emails to prevent user enumeration timing attacks.
@@ -116,7 +116,7 @@
 **How I responded:**
 > Addressed all checklist items in commit `aa0a27a`:
 >
-> - **B1:** Reconciled IT_STAFF-only queue stance across `specification.md §8`, `api-spec.md §3`, router guard, and PR description.
+> - **B1:** Reconciled IT_STAFF-only queue stance across `specification.md section 8`, `api-spec.md section 3`, router guard, and PR description.
 > - **B2:** Restored `GET /api/staff/assignees` and added specific staff Owner filter options in `StaffTicketQueue.tsx`.
 > - **Traceability:** Marked `RESP-01`, `RESP-02`, and `RESP-03` as Passed; kept `API-17` reserved and added `API-30` for queue role segregation.
 > - **W1 & W5:** Scoped pointer cursor strictly to `.zen-sortable-header`; removed dead fallback.
@@ -144,7 +144,7 @@
 **How I responded:**
 > Addressed all findings in commit `dabbf22`:
 >
-> - **B1:** Restricted `staff-ticket-detail.router.ts` and `App.tsx` detail route strictly to `IT_STAFF`. Reconciled `specification.md §8` table. Inverted API tests to assert `403 FORBIDDEN` for Administrator on GET detail and all three PATCH endpoints (`/owner`, `/priority`, `/status`).
+> - **B1:** Restricted `staff-ticket-detail.router.ts` and `App.tsx` detail route strictly to `IT_STAFF`. Reconciled `specification.md section 8` table. Inverted API tests to assert `403 FORBIDDEN` for Administrator on GET detail and all three PATCH endpoints (`/owner`, `/priority`, `/status`).
 > - **W1:** Scoped `requireAuth` in `staff-queue.router.ts` directly to `GET /` to eliminate redundant auth passes on detail routes.
 > - **W2:** Added safe 32-bit integer bound check in `parseTicketId` (`<= 2147483647`), returning structured `400 Bad Request` (`VALIDATION_FAILED`) on overflow.
 > - **W5:** Cleaned up describe block citations and updated PR test counts.
@@ -212,4 +212,377 @@
 
 **Pull Request URL:** <https://github.com/thrxpt/toktickit/pull/46>
 
-**Reviewer verdict:** Approved (All 8 Playwright E2E and responsive tests passing, 12 committed screenshots present, traceability complete, and full test suite 100% green).
+**Reviewer verdict:** Approved (All 8 Playwright E2E and responsive tests passing, 17 committed screenshots present under `artifacts/lab-03/screenshots/`, full AC traceability complete in `tests.md`, STYLE-01 token verification active, and full test suite 100% green across 413 tests).
+
+---
+
+## Pull Requests I reviewed for my partner
+
+| PR | Branch | Reviewer verdict |
+| --- | --- | --- |
+| [#65](https://github.com/fahsai-02/toktickit/pull/65) | feature/14-sprint3-engineering-contract | Approved |
+| [#66](https://github.com/fahsai-02/toktickit/pull/66) | feature/15-data-foundation | Approved |
+| [#67](https://github.com/fahsai-02/toktickit/pull/67) | feature/16-auth-api-middleware | Approved |
+| [#68](https://github.com/fahsai-02/toktickit/pull/68) | feature/17-auth-ui | Approved |
+| [#69](https://github.com/fahsai-02/toktickit/pull/69) | feature/18-requester-regression | Approved |
+| [#70](https://github.com/fahsai-02/toktickit/pull/70) | feature/19-staff-ticket-queue | Approved |
+| [#71](https://github.com/fahsai-02/toktickit/pull/71) | feature/20-staff-ticket-detail | Approved |
+| [#72](https://github.com/fahsai-02/toktickit/pull/72) | feature/21-admin-user-management | Reviewed by @Ohmmykung09 (merged) |
+| [#73](https://github.com/fahsai-02/toktickit/pull/73) | feature/22-comprehensive-testing | Approved |
+| [#74](https://github.com/fahsai-02/toktickit/pull/74) | feature/23-release-polish | Approved |
+| [#75](https://github.com/fahsai-02/toktickit/pull/75) | docs/lab-03-release-integration | Approved |
+| [#76](https://github.com/fahsai-02/toktickit/pull/76) | lab3-staging → main | Merged |
+
+---
+
+### feature/14-sprint3-engineering-contract #65
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/65>
+
+**My comment:**
+> LGTM
+
+**Partner's response:**
+> Merged into `lab3-staging`.
+
+**My verdict:**
+> Approved (`3f59026`)
+
+---
+
+### feature/15-data-foundation #66
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/66>
+
+**My comment:**
+> ### Changes Requested: Data Foundation (Schema, Migration & Seed) — #66
+>
+> This is solid foundational work for Lab 3—the schema expansion, additive migration, bcrypt password hashing, and baseline regression tests are well structured.
+>
+> However, there are a couple of blocking documentation and standards items that need to be resolved before merging:
+>
+> #### Required Changes
+>
+> 1. **Clarify Server Suite status in `docs/lab-03/tests.md` (section 6, line 214):**
+>    - **Issue:** Section 6 records the **Server (unit + API)** suite as `Pass — 12 files / 135 tests (2026-09-12)`. But in section 2, all Lab 3 endpoints (`UNIT-01..03` and `API-01..73`) are rightfully marked `Planned` as they belong to subsequent sprint issues (Issues 16–21). Marking the entire server suite as passed at this stage is premature per `tests.md` section 6 preamble and DoD item 2.
+>    - **Fix:** Update the label in section 6 to clarify that the passing result reflects the **Migration & Regression Baseline (MIG-01 + Lab 1/2 tests)** rather than the complete Lab 3 server suite.
+>
+> 2. **Replace forbidden `§` symbols with the word `section`:**
+>    - **Issue:** `AGENTS.md` (Review Protocol) explicitly specifies: *"When referring to a spec's subsection in prose, write the word 'section' (e.g. 'section 5.2'), never the § symbol."*
+>    - **Fix:** Replace all occurrences of `§<n>` with `section <n>` in:
+>      - `docs/lab-03/seed-credentials.md:6` (`specification.md §11` → `specification.md section 11`)
+>      - `server/prisma/seed.ts:22, 83, 454` (`§11` / `§7` → `section 11` / `section 7`)
+>      - `server/tests/lab-03/migration-regression.api.test.ts:7` (`specification.md §7` → `specification.md section 7`)
+>
+> 3. **Use type-only import in `server/prisma/seed.ts` (line 5):**
+>    - **Issue:** `RequestedPriority` is only used as a type annotation in `type SeedTicket`.
+>    - **Fix:** Use `import type { RequestedPriority }` to adhere to ESM/`verbatimModuleSyntax` rules.
+>
+> #### Non-blocking Notes (Recommended)
+>
+> - **Automated count assertion:** Note that `BASELINE_COUNTS_DEFAULT` in `migration-regression.api.test.ts` defaults to 0 attachments and 15 tickets. Documenting that `PRE_MIGRATION_COUNTS` should be supplied for strict local regression checks against snapshot data is recommended.
+> - **N+1 queries in seed (`server/prisma/seed.ts:538-568`):** Memoizing ticket IDs from the earlier query would avoid `findUnique` database calls inside each comment/note insert loop.
+> - **Naming:** Renaming `participant` in seed fixtures to `authorEmail` would align better with the domain model's `author` / `authorId`.
+
+**Partner's response:**
+> **Thanks for the careful review! I've fixed all 3 blocking items.**
+>
+> ## 1. Server suite status in tests.md (section 6)
+> Fixed. The table now says the `Pass` result only covers the **Migration & Regression Baseline (MIG-01 + Lab 1/2 tests)**, and that the Lab 3 endpoint tests stay `Planned` until Issues 16–21.
+>
+> ## 2. `§` → `section`
+> Done. Replaced every `§` reference in `seed-credentials.md`, `seed.ts`, `migration-regression.api.test.ts`, and `tests.md`.
+>
+> ## 3. Type-only import in seed.ts
+> Done. `RequestedPriority` is now imported with `import type { RequestedPriority }`.
+
+**My follow-up comment:**
+> ### PR Review Update: Follow-up on commit `634386a` — #66
+>
+> Thanks for addressing the previous feedback! The updates in commit `634386a` look great.
+>
+> #### Remaining Blocker: Test Timeout in `migration-regression.api.test.ts`
+>
+> When running the full server test suite (`cd server && pnpm test`), one test in `server/tests/lab-03/migration-regression.api.test.ts` consistently times out:
+> - **Failing Test:** `stores only bcrypt hashes (prefix $2) and bcrypt.compare succeeds for seeded passwords` (line 141)
+> - **Root Cause:** The test runs `bcrypt.compareSync` across all 11 seeded users with cost factor 12, taking ~5.2–5.5s, exceeding Vitest's default 5000ms timeout.
+> - **Suggested Fix:** Pass an explicit timeout to the test (`15000` / `20000ms`) or sample 1 user per role.
+
+**Partner's response:**
+> The remaining blocker is fixed, and I also landed a few extra fixes in the same wave (commits `f8c38a8`, `8d1caa1`, `709e419`, `399647d`):
+> 1. Passed explicit `20000ms` timeout to the MIG-01 test.
+> 2. Verified per-user salt hashing, ownerless contrast, single source of truth for seed data, and deterministic DB assertions (`fileParallelism: false`).
+
+**My approved comment:**
+> LGTM
+
+---
+
+### feature/16-auth-api-middleware #67
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/67>
+
+**My comment:**
+> Nice work on the authentication foundation! The session security setup (HTTP-only, `sameSite: "lax"`, 24-hour expiration, and production-only `secure` cookies), constant-time dummy bcrypt comparison for timing attack defense, case-insensitive email normalization, and clean throwaway test data lifecycle are well executed.
+>
+> All 166 tests across 13 test files are currently passing, and `pnpm build` succeeds with zero TypeScript errors.
+>
+> #### Actionable / Items to Address
+> 1. **Missing `UNIT-02` Unit Test File (`docs/lab-03/tests.md` line 35):** Add `server/tests/lab-03/password-validation.unit.test.ts` to test `validateNewPassword()` directly and flip `UNIT-02` to `Pass`.
+> 2. **Update Test Summary in `docs/lab-03/tests.md` (section 6 line 203):** Update summary table to reflect current test run (13 files / 166 tests).
+> 3. **Missing Test Traceability Comments (`AGENTS.md` Test-Writing Rule 9):** Add spec citations above `describe` blocks in `server/tests/lab-03/auth.api.test.ts`.
+> 4. **Unnecessary `async` on Synchronous `requireRole` Middleware (`server/src/middleware/auth.ts` line 52):** Remove `async` and return synchronous `(req, res, next): void` to avoid unnecessary Promise wrapping.
+
+**Partner's response:**
+> **Thanks for the thorough review! I've addressed all 4 actionable findings and considered the 3 non-blocking observations:**
+> 1. Added `server/tests/lab-03/password-validation.unit.test.ts` (7 direct tests for `validateNewPassword()`). Flipped `UNIT-02` to Pass.
+> 2. Refreshed summary in `tests.md` section 6 to Pass — 14 files / 173 tests.
+> 3. Added spec-anchor comments above describe blocks in `auth.api.test.ts`.
+> 4. Removed `async` from `requireRole`.
+> Committed as `3689c96` + `03b3924` on `feature/16-auth-api-middleware`.
+
+**My approved comment:**
+> Ready to merge into `lab3-staging`. Great job on the security foundation!
+
+---
+
+### feature/17-auth-ui #68
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/68>
+
+**My comment:**
+> Great work on this milestone! Replacing the temporary Dev Requester selector with session-based authentication and role-aware navigation is a major leap forward for Lab 3. The implementation of the real-time 3-rule password checklist matching the backend validation, clean route guards that avoid flashing unauthenticated screens, full session cookie propagation across all API calls, and the integration of the deferred client test hardening stash are all exceptionally well executed.
+>
+> All **103 client tests across 11 files** and **173 server tests across 14 files** pass cleanly, and `pnpm build` succeeds with zero errors in both packages.
+>
+> #### Actionable / Items to Address
+> 1. **Comment out `VITE_API_URL` in `client/.env.example`:** Update to `# VITE_API_URL="http://localhost:5000"` so the file guides new setups safely on same-origin Vite proxy.
+> 2. **Clean up dead CSS and add mobile truncation for `.profile-name` (`client/src/App.css:408-422`):** Remove obsolete `.btn-change-requester` / `.requester-name` rules and add mobile truncation (`max-width: 80px`).
+> 3. **Update Client Suite status in `docs/lab-03/tests.md` (section 6):** Record passing baseline (`11 files / 103 tests`).
+
+**Partner's response:**
+> Addressed all 3 actionable items plus the `roleBadgeVariant` note, committed as `7c0b7ae` on `feature/17-auth-ui`:
+> 1. Commented out `VITE_API_URL` in `client/.env.example`.
+> 2. Cleaned dead CSS in `client/src/App.css` and added mobile truncation for `.profile-name`.
+> 3. Updated `tests.md` Section 6 to `11 files / 105 tests`.
+
+**My approved comment:**
+> ### PR Review Update: Follow-up on commit `7c0b7ae` — #68
+>
+> Thanks for the prompt turnaround! Commit `7c0b7ae` resolves all review items cleanly. Verified 11 files / 105 passed in client test suite, 14 files / 173 passed in server suite, and clean builds. LGTM! Ready to merge into `lab3-staging`.
+
+---
+
+### feature/18-requester-regression #69
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/69>
+
+**My comment:**
+> Great work on this issue! Regressing all Lab 2 requester and attachment endpoints behind session authentication (`requireAuth`) while strictly ignoring any client-supplied `requesterId` (BR-03, FR-12, FR-13) is implemented cleanly.
+>
+> The ownership guards (403 `FORBIDDEN` across list, detail, attachments, download, soft removal, comments, and indicate-resolved), the append-only 405 enforcement, and the non-mutating "Problem Appears Resolved" toggle (FR-19, BR-20) all strictly adhere to the contracts.
+>
+> #### Actionable / Items to Address
+> 1. **Missing CSS styling for Resolution Summary (`docs/lab-03/ui-spec.md` section 5.3):** In `client/src/App.css` (inside `@layer layout`), add `.field-readonly.resolution-summary { background: var(--color-pale); white-space: pre-wrap; }` to display with pale green background per spec.
+> 2. **Documentation Typo in `README.md` (lines 102–106):** Point sentence directly to `docs/lab-03/seed-credentials.md`.
+> 3. **Non-blocking Nit:** Atomic legacy Requester upsert in `server/src/app.ts` using `db.requester.upsert`.
+
+**Partner's response:**
+> Both actionable items are fixed, and the atomic-upsert nit is applied too. Committed as `b039dd5` on `feature/18-requester-regression`:
+> 1. Added `.field-readonly.resolution-summary` rule with `var(--color-pale)`.
+> 2. Updated README link to point to `docs/lab-03/seed-credentials.md`.
+> 3. Converted legacy requester resolution to atomic `db.requester.upsert`.
+
+**My approved comment:**
+> ### PR Review Update: Follow-up on commit `b039dd5` — #69
+>
+> Thanks for the prompt turnaround! Commit `b039dd5` resolves all review items cleanly. Verified 16 server files / 193 passed, 13 client files / 119 passed, zero TypeScript errors. LGTM! Approved for merge into `lab3-staging`.
+
+---
+
+### feature/19-staff-ticket-queue #70
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/70>
+
+**My comment:**
+> ### Changes Requested: IT Staff Ticket Queue API + UI — #70
+>
+> Great work on this issue! The implementation of the IT Staff Ticket Queue is well-architected and adheres closely to `docs/lab-03/specification.md`, `docs/lab-03/api-spec.md`, and `docs/lab-03/ui-spec.md`.
+>
+> #### Actionable / Items to Address
+> 1. **Missing `db.$disconnect()` in `staff-queue.api.test.ts` (Rule 8 violation):** Add top-level `afterAll(async () => { await db.$disconnect(); });` in `server/tests/lab-03/staff-queue.api.test.ts`.
+>
+> #### Observations / Non-blocking Nits
+> - Reusing shared `MobileSortSelect` and `options.ts` in `StaffTicketQueue.tsx`.
+> - Declaring `hasActiveFilters` above `loadTickets` to eliminate TDZ risk.
+> - Setting explicit column widths in `App.css` per `ui-spec.md` section 5.4.
+
+**Partner's response:**
+> The blocking item and all three nits are addressed, committed as `b214982` on `feature/19-staff-ticket-queue`:
+> 1. Added `afterAll` database teardown in `staff-queue.api.test.ts`.
+> 2. Adopted shared `MobileSortSelect` and options mapping in `StaffTicketQueue.tsx`.
+> 3. Moved `hasActiveFilters` declaration above `loadTickets`.
+> 4. Pinned table column widths in `App.css` matching ui-spec section 5.4.
+
+**My approved comment:**
+> ### PR Review Update: Approved — #70
+>
+> Thanks for quickly addressing all feedback in commit `b214982`! All suites and builds pass cleanly (server 17 files / 210 tests, client 14 files / 137 tests). LGTM! Ready to merge into `lab3-staging`.
+
+---
+
+### feature/20-staff-ticket-detail #71
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/71>
+
+**My comment:**
+> Overall excellent work implementing the IT Staff Ticket Detail API and UI! The backend test suite is comprehensive (19 files / 262 tests pass) and the client suite is solid (16 files / 169 tests pass). The BR-12 status transition matrix and append-only enforcement are rock solid.
+>
+> #### Actionable / Items to Address
+> 1. **Tablet Layout Stacking (`docs/lab-03/ui-spec.md` section 5.5 line 224, section 6 line 289):** Adjust media query breakpoint for `.staff-detail-layout` to `@media (max-width: 991px)` to stack info on top and tabs below on tablet.
+> 2. **Mobile Scrollable Tabs Strip (`docs/lab-03/ui-spec.md` section 5.5 line 226, section 6 line 290):** At mobile viewports (`@media (max-width: 768px)`), apply `flex-wrap: nowrap; overflow-x: auto;` to keep tabs as a horizontal scrollable strip.
+> 3. **Attachment Tab Count Counts Soft-Removed Files (`docs/lab-03/ui-spec.md` section 5.5 line 203, `specification.md` BR-18):** Filter active attachments `ticket.attachments.filter((a) => !a.isRemoved).length` for the tab count.
+> 4. **Resolution Summary "Saved." Feedback Lingers on Edit (`client/src/StaffTicketDetail.tsx` line 670):** Add `setResolutionSaved(false)` in textarea `onChange`.
+> 5. **Inactive Category Disappears from Dropdown (`docs/lab-03/ui-spec.md` section 5.5):** If `ticket.category` is not in active categories, append it to options so historical tickets don't show a blank value.
+
+**Partner's response:**
+> Thanks for the detailed review — all points verified and fixed in commit `2accd99`:
+> 1. Added `@media (max-width: 991px)` stacking rule in `client/src/App.css`.
+> 2. Applied horizontal scrollable tab strip at `<768px`.
+> 3. Filtered active attachments count for tab header.
+> 4. Added `setResolutionSaved(false)` to clear success message on subsequent edits.
+> 5. Appended historical category to options list if inactive.
+> Added 5 new regression tests in `StaffTicketDetail.test.tsx` (16 files / 174 client tests passing).
+
+**My approved comment:**
+> All items from the previous review have been cleanly and thoroughly resolved in commit `2accd99`!
+>
+> | Item | Previous State | Resolved State in `2accd99` | Verification Proof |
+> | :--- | :--- | :--- | :--- |
+> | **1. Tablet Layout Stacking** | 2-column grid below 992px | `@media (max-width: 991px)` stacks layout | `App.css:1501-1509` |
+> | **2. Mobile Scrollable Tabs Strip** | Wrapped across multiple lines | Horizontal scrollable strip at `<768px` | `App.css:1561-1565` |
+> | **3. Active Attachment Tab Count** | Included soft-removed | Filtered active attachments | `StaffTicketDetail.tsx:324` |
+> | **4. Resolution "Saved." Reset** | Remained visible on edit | Cleared on textarea `onChange` | `StaffTicketDetail.tsx:684` |
+> | **5. Inactive Category Handling** | Showed blank select | Appended inactive category | `StaffTicketDetail.tsx:329-332` |
+>
+> All 262 server tests and 174 client tests pass cleanly. LGTM!
+
+---
+
+### feature/21-admin-user-management #72
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/72>
+
+**Note on Review:**
+> Reviewed by peer reviewer @Ohmmykung09 (changes requested on confirmation dialog for deactivation, duplicate-email error shape, concurrent P2002 409 Conflict, and nested modal/drawer Escape handling). Partner resolved all items in follow-up commits. Merged into `lab3-staging`.
+
+---
+
+### feature/22-comprehensive-testing #73
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/73>
+
+**My comment:**
+> ### Summary
+> PR #73 successfully sets up the Lab 3 E2E test runner, implements 3 new Playwright specs (`authentication`, `staff-ticket-flow`, `user-administration`), adds the Zen Green client style suite (`zen-green-lab3-style.test.tsx`), and provides a DB cleanup utility (`cleanup-e2e.ts`). All tests pass deterministically with clean CSS architecture.
+>
+> ### Key Points to Address
+> 1. **Move cleanup to `test.afterAll()`** (`staff-ticket-flow.spec.ts:83`, `user-administration.spec.ts:89`): Running cleanup at the end of the test body means an assertion failure mid-test skips cleanup, leaving dirty database state. Move to `test.afterAll()` to guarantee cleanup.
+> 2. **Prevent parallel worker collisions in config** (`playwright.config.ts:6`): Set `fullyParallel: false` and `workers: 1` directly in `playwright.config.ts` so running `npx playwright test` without CLI flags won't race the shared database.
+> 3. **E2E-04: Test AC-11 (403 Self-Deactivation)** (`user-administration.spec.ts:70`, `docs/lab-03/tests.md:165`): Deactivating the sole admin triggers 409 (last active admin, AC-12). Create a second admin in the test to exercise the 403 self-deactivation path (AC-11) instead of demoting E2E-04 in `tests.md`.
+> 4. **E2E-04: Test AC-10 First Login** (`user-administration.spec.ts:39`): Log in with the newly created user's initial credentials to verify redirection to `/change-password` before deactivating them.
+> 5. **Deduplicate Seed Data** (`e2e/lab-03/helpers.ts:12`, `authentication.spec.ts:88`): Import passwords from `server/src/lib/seedCredentials.ts` rather than inlining string literals, and avoid hardcoded `"robert.brown@toktickit.dev"`.
+
+**Partner's response:**
+> Thanks for the review. I fixed all 5 points and the minor ones (commits `6153147` and `f0be241`):
+> 1. Moved cleanup to `useLab3DbHooks()` (`beforeAll`/`afterAll` with 180s timeouts) across all specs.
+> 2. Added `fullyParallel: false` and `workers: 1` in `playwright.config.ts`.
+> 3. Created a throwaway second Administrator to explicitly verify 403 self-deactivation.
+> 4. Tested first login redirect to `/change-password` and completed password change.
+> 5. Removed hardcoded passwords and resolve dynamically from `server/src/lib/seedData.ts`.
+> 6. Fixed child-first deletion order in `cleanup-e2e.ts` to prevent FK constraint errors.
+
+**My approved comment:**
+> ### Summary
+> All items from the previous review round have been thoroughly and accurately addressed in commits `6153147` and `f0be241`. The E2E test harness now guarantees database teardown via lifecycle hooks, configures single-worker execution directly in `playwright.config.ts`, completes AC-09/10/11 coverage, and eliminates seed data duplication. Verified 286 server tests, 201 client tests, and E2E specs passing cleanly. LGTM!
+
+---
+
+### feature/23-release-polish #74
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/74>
+
+**My comment:**
+> ### Summary
+> LGTM! Approving the visual evidence and layout fixes in this PR without requiring the minor documentation nits to block merge.
+>
+> ### What was verified:
+> - **Visual evidence & viewports**: All 72 screenshots across 10 screens and 14 states captured cleanly at the exact AC viewports (Desktop `1440×900`, Tablet `820×1180`, Mobile `375×844`). All mobile captures measure exactly 375px wide.
+> - **Layout & design fixes**:
+>   - Mobile header overflow fixed via `.profile-role { display: none; }` and flex shrink on mobile.
+>   - Primary button focus indicator contrast fixed with `var(--color-secondary)` per `ui-spec.md` section 7.
+>   - Internal Note button contrast restored to 5.17:1 resting / 8.72:1 hover (`color: #fff`).
+> - **`.gitignore` fix**: Deliverables under `artifacts/` are properly tracked via `!artifacts/**/*.png`.
+> - **Test suites & builds**: Server: 20 files / 286 tests Pass; Client: 18 files / 201 tests Pass; `tsc` and `vite build` clean in both packages; Visual specs: 105 passed (72 screenshot captures + 33 visual-audit assertions).
+>
+> Ready to merge into `lab3-staging`!
+
+**Partner's response:**
+> Merged into `lab3-staging`.
+
+**My verdict:**
+> Approved (`84884a1`)
+
+---
+
+### docs/lab-03-release-integration #75
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/75>
+
+**Partner's comment:**
+> I've just pushed a small update to README.md on this branch. It fixes three things that didn't match the actual behaviour: the seeded account passwords, what the seed loads, and the "removed" wording for the last active Administrator. Could you take a look at it? Thank you.
+
+**My comment:**
+> ### Summary
+> LGTM! Approving PR #75. This PR completes the Phase B documentation and contract alignment for Issue 23 (#64), cleanly resolving the deferred nits from PR #74, updating the engineering contracts (`api-spec.md` v1.1, `specification.md`, `tests.md`, `ui-spec.md`) to match shipped code, and providing the full `reviewer.md` rewrite (1812 lines).
+>
+> ### Key Highlights Verified:
+> - **Contract Alignment (`api-spec.md` v1.1 & `specification.md`)**:
+>   - Attachment download headers verified against `server/src/app.ts:1001-1009`.
+>   - String trimming exclusion for passwords verified against `server/src/routes/auth.ts:31, 104-107`.
+>   - Rejected status transitions documented as `400` (`BUSINESS_RULE_VIOLATION`), matching `server/src/app.ts:1475`, AC-09, and BR-12.
+>   - Admin safety rules order (last-active-admin `409` evaluated before self-deactivation `403`) verified against `server/src/app.ts:2077-2097`.
+>   - 5-active attachment limit, check order, and staff/admin upload access matrix (section 4.12) verified against `server/src/app.ts:830-910`.
+> - **Accurate Verification Metrics (`tests.md` & `ui-spec.md`)**:
+>   - Horizontal scroll assertion count corrected to 69 of 72 capture runs.
+>   - All 26 rows in `ui-spec.md` section 9.1 visual checklist confirmed with explicit `Pass` marks based on student review.
+> - **Commit `dd6d857` Updates (`README.md`)**:
+>   - Admin safety wording "cannot be deactivated" aligned with `specification.md` section 2 & section 5 FR-46.
+>   - Seed description and initial password behavior accurately reflect `server/prisma/seed.ts` and `docs/lab-03/seed-credentials.md`.
+>   - Mobile viewport `375×844` aligned with AC-15.
+> - **Audit Records (`reviewer.md` & `ai-use.md`)**:
+>   - `reviewer.md` completely documents all 17 PR records (#65–#74 authored, #39–#45 reviewed in partner fork), quoting the PR #74 approval verbatim with merge commit `84884a1`.
+>   - `ai-use.md` curated to exactly 10 key prompts mapped to GitHub issues (#57–#64) and 4 clear reflection themes.
+> - **Builds & Codebase Status**:
+>   - `client`: 18 files / 201 tests Pass; `tsc && vite build` clean.
+>   - `server`: `tsc` clean; unit tests pass; Prisma generated clean.
+>   - Exactly 72 screenshots tracked under `artifacts/lab-03/screenshots/`.
+>
+> Ready to merge into `lab3-staging`!
+
+**Partner's response:**
+> Merged into `lab3-staging`.
+
+**My verdict:**
+> Approved
+
+---
+
+### lab3-staging → main #76
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/76>
+
+**Title:** `chore(release): merge Lab 3 into main (#64)`
+
+**Verdict:**
+> Merged into `main` (`84884a1`). Full Lab 3 multi-role authenticated service desk increment shipped to production.

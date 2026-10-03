@@ -79,9 +79,9 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-24 | BR-36 | Re-running database seed idempotency check | Seed runs twice without duplicate rows or errors | `users-admin.api.test.ts` | Passed |
 | API-25 | AC-01, BR-09 | Login with incorrect password | 401 Unauthorized with generic safe error | `auth.api.test.ts` | Passed |
 | API-26 | BR-14, BR-15, FR-20 | IT Staff and Administrator access to Requester ticket routes | 403 Forbidden without leaking requester tickets | `authorization.api.test.ts` | Passed |
-| API-27 | specification §8, ADR-0008 | IT Staff and Administrator access to attachment content | 200 OK for Staff; 403 Forbidden for Administrator | `authorization.api.test.ts` | Passed |
+| API-27 | specification section 8, ADR-0008 | IT Staff and Administrator access to attachment content | 200 OK for Staff; 403 Forbidden for Administrator | `authorization.api.test.ts` | Passed |
 | API-28 | api-spec Gate 1 | Anonymous requests to protected routes without session or header | 401 Unauthorized with standard error envelope | `authorization.api.test.ts` | Passed |
-| API-29 | api-spec §GET /api/tickets | Query filtering with 8 ticket statuses beyond NEW (W6) | 200 OK with matching tickets | `authorization.api.test.ts` | Passed |
+| API-29 | api-spec section GET /api/tickets | Query filtering with 8 ticket statuses beyond NEW (W6) | 200 OK with matching tickets | `authorization.api.test.ts` | Passed |
 | API-30 | BR-14, BR-15, ADR-0008 | Requester and Administrator access to IT Staff Ticket Queue & Assignees | 403 Forbidden | `authorization.api.test.ts` | Passed |
 
 ### UI Component Tests — `client/tests/lab-03/*.test.tsx`
@@ -109,12 +109,12 @@ that the server returns strict `401`, `403`, or `404` responses.
 
 | Test ID | AC / BR | What It Tests | Expected Result | Automated Test File | Final |
 | --- | --- | --- | --- | --- | --- |
-| STYLE-01 | ui-spec §1 | Zen Green color tokens and absence of external hex codes | Clean token application; no arbitrary inline hex | `theme.style.test.tsx` | Passed |
-| STYLE-02 | ui-spec §3 | Role badges render correct semantic colors and text | Requester (green), Staff (blue), Admin (purple) | `badges.style.test.tsx` | Passed |
-| STYLE-03 | ui-spec §3 | Priority badges render correct semantic colors and text | Low, Medium, High, Critical distinct | `badges.style.test.tsx` | Passed |
-| STYLE-04 | ui-spec §3 | Status badges render correct semantic colors and text | 8 distinct status presentations verified | `badges.style.test.tsx` | Passed |
-| STYLE-05 | ui-spec §4 | Internal Notes tab renders amber warning callout styling | Amber callout surface and border verified | `notes.style.test.tsx` | Passed |
-| STYLE-06 | ui-spec §3 | Account status badges render Active and Inactive states | Soft green Active and soft red Inactive verified | `badges.style.test.tsx` | Passed |
+| STYLE-01 | ui-spec section 1 | Zen Green color tokens and absence of external hex codes | Clean token application; no arbitrary inline hex | `theme.style.test.tsx` | Passed |
+| STYLE-02 | ui-spec section 3 | Role badges render correct semantic colors and text | Requester (green), Staff (blue), Admin (purple) | `badges.style.test.tsx` | Passed |
+| STYLE-03 | ui-spec section 3 | Priority badges render correct semantic colors and text | Low, Medium, High, Critical distinct | `badges.style.test.tsx` | Passed |
+| STYLE-04 | ui-spec section 3 | Status badges render correct semantic colors and text | 8 distinct status presentations verified | `badges.style.test.tsx` | Passed |
+| STYLE-05 | ui-spec section 4 | Internal Notes tab renders amber warning callout styling | Amber callout surface and border verified | `notes.style.test.tsx` | Passed |
+| STYLE-06 | ui-spec section 3 | Account status badges render Active and Inactive states | Soft green Active and soft red Inactive verified | `badges.style.test.tsx` | Passed |
 
 ### Responsive Tests — `e2e/lab-03/responsive.spec.ts`
 
@@ -168,14 +168,47 @@ that the server returns strict `401`, `403`, or `404` responses.
 
 ```bash
 # Run all unit and integration tests (Client + Server)
-rtk pnpm test
+pnpm test
 
 # Run server API tests specifically
-rtk pnpm --filter server test
+pnpm --filter server test
 
 # Run client UI tests specifically
-rtk pnpm --filter client test
+pnpm --filter client test
 
 # Run Playwright End-to-End tests
-rtk pnpm test:e2e
+pnpm test:e2e
 ```
+
+---
+
+## 5. Final Results
+
+| Level | Planned | Passing | Skipped | Status |
+| --- | --- | --- | --- | --- |
+| Unit | 6 | 6 | 0 | Passed |
+| API | 30 | 30 | 0 | Passed |
+| UI Component | 16 | 16 | 0 | Passed |
+| UI Style | 6 | 6 | 0 | Passed |
+| Responsive | 4 | 4 | 0 | Passed |
+| E2E | 4 | 4 | 0 | Passed |
+| **Total Planned** | **66** | **66** | **0** | **Passed (100%)** |
+
+### Comprehensive Suite Verification Metrics
+
+- **Server Vitest Suite**: 22 test files, 261/261 tests passed (100%)
+- **Client Vitest Suite**: 31 test files, 144/144 tests passed (100%)
+- **Playwright E2E Suite**: 4 test specs, 8/8 tests passed (100%)
+- **Total Suite Tests**: 413 passed tests across all packages and tiers
+- **TypeScript & Production Build**: `pnpm -r build` passes cleanly with zero errors across both workspaces
+
+---
+
+## 6. Known Limitations and Out-of-Scope Items
+
+- **No Self-Registration or Public Signup**: Account creation is restricted to Administrators per specification section 3.
+- **No Email Delivery or Real-World SMTP**: Password resets and notifications are handled in-app; initial passwords are communicated out-of-band per specification section 3.
+- **Single Role per User**: Users possess exactly one role (`REQUESTER`, `IT_STAFF`, or `ADMINISTRATOR`) per ADR-0006.
+- **No Hard User Deletion**: Deletion is prohibited; accounts are soft-deactivated via `isActive: false` to preserve ticket and discussion history per D-21.
+- **IT Staff Actions Taken Deferred**: Dedicated "Actions Taken" field is deferred to Lab 4 per specification section 3.
+- **Chromium E2E Focus**: Playwright runs against Chromium; responsive screenshots and checks verify viewport layout fidelity without cross-browser matrix testing.

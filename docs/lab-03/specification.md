@@ -432,7 +432,7 @@ Full JSON schemas, parameters, and error envelopes are detailed in [`api-spec.md
   *Beat*: Creating a duplicate pseudo-status `RESOLVED_BY_REQUESTER`.
 - **D-20 (Comment & Note Append-Only Model)**: Comments and Internal Notes cannot be edited
   or soft-removed in Lab 3. They are permanent, append-only operational logs.
-  *Beat*: Adding edit/delete endpoints, which was explicitly excluded in handout §4.6.
+  *Beat*: Adding edit/delete endpoints, which was explicitly excluded in handout section 4.6.
 - **D-21 (User Deactivation Over Deletion)**: Deleting users is prohibited. User accounts
   are deactivated via `isActive: false`. Foreign key integrity on created tickets,
   attachments, comments, and notes remains strictly preserved.
