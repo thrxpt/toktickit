@@ -20,14 +20,27 @@ TokTickIT verifies functionality across six architectural levels:
 | **Responsive** | `RESP-nn` | Desktop, tablet, and mobile (390px) layouts without clipping or overflow. | Playwright |
 | **E2E** | `E2E-nn` | Full multi-role user journeys executed in headless Chromium. | Playwright |
 
-### Database Isolation
+### Database Isolation and E2E Database Strategy
 
-API tests run against the dedicated test database `toktickit_test` configured in `server/.env.test`.
-The Vitest `globalSetup` creates and migrates `toktickit_test` and executes the idempotent seed.
-Each test file truncates operational tables (`InternalNote`, `Comment`, `Attachment`, `Ticket`)
-in `beforeEach`, preserving seeded reference data and core user accounts (`User`, `Category`,
-`RelatedSystem`).
+TokTickIT employs a two-tier database isolation strategy across testing layers:
 
+1. **Vitest Integration Tests (API)**:
+   API tests run against the dedicated test database `toktickit_test` configured in `server/.env.test`.
+   The Vitest `globalSetup` creates and migrates `toktickit_test` and executes the idempotent seed.
+   Each test file truncates operational tables (`InternalNote`, `Comment`, `Attachment`, `Ticket`)
+   in `beforeEach`, preserving seeded reference data and core user accounts (`User`, `Category`, `RelatedSystem`).
+
+2. **Playwright Browser Tests (E2E & Responsive)**:
+   E2E tests interact with real browser instances driven against the local application server. To guarantee
+   zero database pollution, reproducible test journeys, and clean screenshot baselines, Playwright leverages:
+   - **`globalSetup` (`e2e/lab-03/global-setup.ts`)**: Runs `pnpm db:cleanup-e2e` to purge any leftover
+     test records from interrupted runs and reset seeded accounts to pristine state before tests begin.
+   - **`globalTeardown` (`e2e/lab-03/global-teardown.ts`)**: Invokes `server/prisma/cleanup-e2e.ts` upon
+     suite completion. It performs sequential child-first deletions of all E2E transactional data
+     (tickets, attachments, comments, internal notes) and throwaway accounts (`taylor.reed.*`, `e2e.*`),
+     then re-runs `seedReferenceData()` so the database returns to its documented initial baseline.
+   - **Throwaway Entities**: E2E tests generate timestamped test data (`e2e.*`, `taylor.reed.<ts>`) rather
+     than destructively mutating primary seeded accounts.
 ### Security and RBAC Seam
 
 Access control is tested at the HTTP layer, not just in UI component renders. Tests explicitly
@@ -79,9 +92,9 @@ that the server returns strict `401`, `403`, or `404` responses.
 | API-24 | BR-36 | Re-running database seed idempotency check | Seed runs twice without duplicate rows or errors | `users-admin.api.test.ts` | Passed |
 | API-25 | AC-01, BR-09 | Login with incorrect password | 401 Unauthorized with generic safe error | `auth.api.test.ts` | Passed |
 | API-26 | BR-14, BR-15, FR-20 | IT Staff and Administrator access to Requester ticket routes | 403 Forbidden without leaking requester tickets | `authorization.api.test.ts` | Passed |
-| API-27 | specification §8, ADR-0008 | IT Staff and Administrator access to attachment content | 200 OK for Staff; 403 Forbidden for Administrator | `authorization.api.test.ts` | Passed |
+| API-27 | specification section 8, ADR-0008 | IT Staff and Administrator access to attachment content | 200 OK for Staff; 403 Forbidden for Administrator | `authorization.api.test.ts` | Passed |
 | API-28 | api-spec Gate 1 | Anonymous requests to protected routes without session or header | 401 Unauthorized with standard error envelope | `authorization.api.test.ts` | Passed |
-| API-29 | api-spec §GET /api/tickets | Query filtering with 8 ticket statuses beyond NEW (W6) | 200 OK with matching tickets | `authorization.api.test.ts` | Passed |
+| API-29 | api-spec section GET /api/tickets | Query filtering with 8 ticket statuses beyond NEW (W6) | 200 OK with matching tickets | `authorization.api.test.ts` | Passed |
 | API-30 | BR-14, BR-15, ADR-0008 | Requester and Administrator access to IT Staff Ticket Queue & Assignees | 403 Forbidden | `authorization.api.test.ts` | Passed |
 
 ### UI Component Tests — `client/tests/lab-03/*.test.tsx`
@@ -109,30 +122,30 @@ that the server returns strict `401`, `403`, or `404` responses.
 
 | Test ID | AC / BR | What It Tests | Expected Result | Automated Test File | Final |
 | --- | --- | --- | --- | --- | --- |
-| STYLE-01 | ui-spec §1 | Zen Green color tokens and absence of external hex codes | Clean token application; no arbitrary inline hex | `theme.style.test.tsx` | Planned |
-| STYLE-02 | ui-spec §3 | Role badges render correct semantic colors and text | Requester (green), Staff (blue), Admin (purple) | `badges.style.test.tsx` | Passed |
-| STYLE-03 | ui-spec §3 | Priority badges render correct semantic colors and text | Low, Medium, High, Critical distinct | `badges.style.test.tsx` | Passed |
-| STYLE-04 | ui-spec §3 | Status badges render correct semantic colors and text | 8 distinct status presentations verified | `badges.style.test.tsx` | Passed |
-| STYLE-05 | ui-spec §4 | Internal Notes tab renders amber warning callout styling | Amber callout surface and border verified | `notes.style.test.tsx` | Passed |
-| STYLE-06 | ui-spec §3 | Account status badges render Active and Inactive states | Soft green Active and soft red Inactive verified | `badges.style.test.tsx` | Passed |
+| STYLE-01 | ui-spec section 1 | Zen Green color tokens and absence of external hex codes | Clean token application; no arbitrary inline hex | `theme.style.test.tsx` | Passed |
+| STYLE-02 | ui-spec section 3 | Role badges render correct semantic colors and text | Requester (green), Staff (blue), Admin (purple) | `badges.style.test.tsx` | Passed |
+| STYLE-03 | ui-spec section 3 | Priority badges render correct semantic colors and text | Low, Medium, High, Critical distinct | `badges.style.test.tsx` | Passed |
+| STYLE-04 | ui-spec section 3 | Status badges render correct semantic colors and text | 8 distinct status presentations verified | `badges.style.test.tsx` | Passed |
+| STYLE-05 | ui-spec section 4 | Internal Notes tab renders amber warning callout styling | Amber callout surface and border verified | `notes.style.test.tsx` | Passed |
+| STYLE-06 | ui-spec section 3 | Account status badges render Active and Inactive states | Soft green Active and soft red Inactive verified | `badges.style.test.tsx` | Passed |
 
 ### Responsive Tests — `e2e/lab-03/responsive.spec.ts`
 
 | Test ID | Viewport | What It Tests | Expected Result | Final |
 | --- | --- | --- | --- | --- |
 | RESP-01 | Desktop (1280px) | Full multi-column tables, queue, and side panels | Clean spacing, no clipping, no overflow | Passed |
-| RESP-02 | Tablet (768px) | Condensed tables, 2-column forms, drawer overlays | Elements adapt cleanly without horizontal scroll | Passed |
+| RESP-02 | Tablet (768px) | Condensed tablet ticket queue table; zero horizontal overflow | Elements adapt cleanly without horizontal scroll | Passed |
 | RESP-03 | Mobile (390px) | Queue transforms to cards; full-width action buttons | Touch targets ≥44px, zero horizontal overflow | Passed |
-| RESP-04 | Mobile (390px) | Admin User Management responsive layout | User list and drawer fit viewport cleanly | Planned |
+| RESP-04 | Mobile (390px) | Admin User Management responsive layout | User list and drawer fit viewport cleanly | Passed |
 
 ### End-to-End Tests — `e2e/lab-03/*.spec.ts`
 
 | Test ID | AC Trace | User Journey | Automated Test File | Final |
 | --- | --- | --- | --- | --- |
-| E2E-01 | AC-01, AC-05 | Complete login, role shell display, and logout flow | `authentication.spec.ts` | Planned |
-| E2E-02 | AC-02, AC-03 | Mandatory first-login password change and app entry | `authentication.spec.ts` | Planned |
-| E2E-03 | AC-10, AC-11, AC-14, AC-15 | Staff workflow: queue, claim ticket, update priority/status, add comment and note | `staff-ticket-flow.spec.ts` | Planned |
-| E2E-04 | AC-16, AC-17, AC-18, AC-20 | Admin workflow: create user, search, edit, reset password, prevent self-deactivation | `user-administration.spec.ts` | Planned |
+| E2E-01 | AC-01, AC-04, AC-05 | Complete login, role shell display, and logout flow | `authentication.spec.ts` | Passed |
+| E2E-02 | AC-02, AC-03 | Mandatory first-login password change and app entry | `authentication.spec.ts` | Passed |
+| E2E-03 | AC-10, AC-11, AC-12, AC-13, AC-14, AC-15 | Staff workflow: queue, claim ticket, update priority/status, add comment and note | `staff-ticket-flow.spec.ts` | Passed |
+| E2E-04 | AC-16, AC-17, AC-18, AC-19, AC-20 | Admin workflow: create user, search, edit, reset password, prevent self-deactivation | `user-administration.spec.ts` | Passed |
 
 ---
 
@@ -143,7 +156,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | **AC-01** (Valid login) | `API-01`, `API-25`, `UI-01`, `E2E-01` | API + UI + E2E |
 | **AC-02** (Must change password gate) | `API-03`, `UI-02`, `UI-16`, `E2E-02` | API + UI + E2E |
 | **AC-03** (Change password execution) | `API-04`, `UI-03`, `UI-16`, `E2E-02` | API + UI + E2E |
-| **AC-04** (Inactive account login failure) | `API-02`, `UI-01` | API + UI |
+| **AC-04** (Inactive account login failure) | `API-02`, `UI-01`, `E2E-01` | API + UI + E2E |
 | **AC-05** (Logout session invalidation) | `API-05`, `UI-04`, `UI-16`, `E2E-01` | API + UI + E2E |
 | **AC-06** (Requester session ownership) | `API-06`, `API-26`, `API-28`, `UI-16` | API + UI |
 | **AC-07** (Requester cross-owner access 404) | `API-07` | API |
@@ -151,14 +164,14 @@ that the server returns strict `401`, `403`, or `404` responses.
 | **AC-09** (Requester resolution indication) | `API-09`, `UI-05` | API + UI |
 | **AC-10** (IT Staff Queue query/filter) | `API-10`, `UI-06`, `E2E-03` | API + UI + E2E |
 | **AC-11** (IT Staff claims unassigned ticket) | `API-11`, `UI-07`, `E2E-03` | API + UI + E2E |
-| **AC-12** (IT Staff updates IT Priority) | `API-12`, `UI-08` | API + UI |
-| **AC-13** (IT Staff transitions ticket status) | `API-13`, `UNIT-03`, `UNIT-04`, `UI-08` | Unit + API + UI |
+| **AC-12** (IT Staff updates IT Priority) | `API-12`, `UI-08`, `E2E-03` | API + UI + E2E |
+| **AC-13** (IT Staff transitions ticket status) | `API-13`, `UNIT-03`, `UNIT-04`, `UI-08`, `E2E-03` | Unit + API + UI + E2E |
 | **AC-14** (Public Comments discussion) | `API-14`, `UI-09`, `E2E-03` | API + UI + E2E |
 | **AC-15** (Internal Notes discussion) | `API-15`, `UI-10`, `E2E-03` | API + UI + E2E |
 | **AC-16** (Admin lists and searches users) | `API-18`, `UI-11`, `UNIT-06`, `E2E-04` | Unit + API + UI + E2E |
 | **AC-17** (Admin duplicate email conflict) | `API-19`, `UI-12`, `UNIT-06` | Unit + API + UI |
 | **AC-18** (Admin cannot deactivate self) | `API-20`, `UI-13`, `E2E-04` | API + UI + E2E |
-| **AC-19** (Cannot deactivate sole active admin) | `API-21`, `UI-13` | API + UI |
+| **AC-19** (Cannot deactivate sole active admin) | `API-21`, `UI-13`, `E2E-04` | API + UI + E2E |
 | **AC-20** (Admin resets initial password) | `API-22`, `UI-14`, `UNIT-06`, `E2E-04` | Unit + API + UI + E2E |
 | **AC-21** (Structured validation errors) | `API-23` | API |
 
@@ -168,14 +181,55 @@ that the server returns strict `401`, `403`, or `404` responses.
 
 ```bash
 # Run all unit and integration tests (Client + Server)
-rtk pnpm test
+pnpm test
 
 # Run server API tests specifically
-rtk pnpm --filter server test
+pnpm --filter server test
 
 # Run client UI tests specifically
-rtk pnpm --filter client test
+pnpm --filter client test
 
 # Run Playwright End-to-End tests
-rtk pnpm test:e2e
+pnpm test:e2e
 ```
+
+---
+
+## 5. Final Results
+
+| Level | Planned | Passing | Skipped | Status |
+| --- | --- | --- | --- | --- |
+| Unit | 6 | 6 | 0 | Passed |
+| API | 30 | 30 | 0 | Passed |
+| UI Component | 16 | 16 | 0 | Passed |
+| UI Style | 6 | 6 | 0 | Passed |
+| Responsive | 4 | 4 | 0 | Passed |
+| E2E | 4 | 4 | 0 | Passed |
+| **Total Planned** | **66** | **66** | **0** | **Passed (100%)** |
+
+### Suite Verification Metrics and Traceability Relationship
+
+The test suite tracks two complementary counts:
+
+1. **Contract Test IDs (66 Planned Tests)**:
+   The authoritative rows defined in Section 2 (`UNIT-01..06`, `API-01..30`, `UI-01..16`, `STYLE-01..06`,
+   `RESP-01..04`, `E2E-01..04`). Every acceptance criterion maps to at least one contract ID, all 66 of which
+   are verified and marked `Passed`.
+
+2. **Runner Assertion Blocks (413 Passing Executions)**:
+   The grand total of individual `it()` and `test()` blocks executed across all test frameworks and packages:
+   - **Server Vitest Suite**: 22 test files, 261 passed tests (unit + API + migration/regression baseline).
+   - **Client Vitest Suite**: 31 test files, 144 passed tests (components, routes, style tokens).
+   - **Playwright Suite**: 4 test spec files containing 8 individual tests (4 E2E journeys + 4 responsive viewports).
+   - **Total**: 261 + 144 + 8 = **413 passed tests** (100% green).
+   - **Build Validation**: `tsc -p . --noEmit` (covering root Playwright config and `e2e/**/*.ts`) and `pnpm -r build` (client Vite and server TypeScript) compile with zero errors.
+---
+
+## 6. Known Limitations and Out-of-Scope Items
+
+- **No Self-Registration or Public Signup**: Account creation is restricted to Administrators per specification section 3.
+- **No Email Delivery or Real-World SMTP**: Password resets and notifications are handled in-app; initial passwords are communicated out-of-band per specification section 3.
+- **Single Role per User**: Users possess exactly one role (`REQUESTER`, `IT_STAFF`, or `ADMINISTRATOR`) per ADR-0006.
+- **No Hard User Deletion**: Deletion is prohibited; accounts are soft-deactivated via `isActive: false` to preserve ticket and discussion history per D-21.
+- **IT Staff Actions Taken Deferred**: Dedicated "Actions Taken" field is deferred to Lab 4 per specification section 3.
+- **Chromium E2E Focus**: Playwright runs against Chromium; responsive screenshots and checks verify viewport layout fidelity without cross-browser matrix testing.

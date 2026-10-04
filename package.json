@@ -6,17 +6,22 @@
   "packageManager": "pnpm@11.20.0",
   "scripts": {
     "dev": "pnpm -r --parallel dev",
-    "build": "pnpm -r build",
+    "build": "tsc -p . --noEmit && pnpm -r build",
+    "typecheck": "tsc -p . --noEmit",
     "test": "pnpm -r test",
     "test:e2e": "playwright test",
+    "test:e2e:lab3": "playwright test e2e/lab-03",
+    "test:e2e:lab2": "playwright test e2e/lab-02",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:check": "pnpm --filter server db:check",
     "db:migrate": "pnpm --filter server db:migrate",
-    "db:seed": "pnpm --filter server db:seed"
+    "db:seed": "pnpm --filter server db:seed",
+    "db:cleanup-e2e": "pnpm --filter server db:cleanup-e2e"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
-    "@types/node": "^24.13.3"
+    "@types/node": "^24.13.3",
+    "typescript": "^7.0.2"
   }
 }
