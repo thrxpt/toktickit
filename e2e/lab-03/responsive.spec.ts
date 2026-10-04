@@ -1,0 +1,128 @@
+import { expect, type Page, test } from "@playwright/test";
+
+import { login, TEST_USERS } from "./helpers";
+
+async function loginAsStaff(page: Page): Promise<void> {
+  await login(page, TEST_USERS.staff.email, TEST_USERS.staff.password);
+  await page.waitForURL("**/staff/queue");
+}
+
+async function loginAsAdmin(page: Page): Promise<void> {
+  await login(page, TEST_USERS.admin.email, TEST_USERS.admin.password);
+  await page.waitForURL("**/admin/users");
+}
+
+async function assertNoHorizontalScroll(page: Page): Promise<void> {
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+}
+
+test.describe("Responsive Layout and Viewports (ui-spec §5)", () => {
+  test("RESP-01 — Desktop viewport (1280px) renders full multi-column table without clipping", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await loginAsStaff(page);
+
+    await page.goto("/staff/queue");
+    await expect(page.locator('h1:has-text("Ticket Queue")')).toBeVisible();
+    await assertNoHorizontalScroll(page);
+
+    // Desktop table with full columns should be visible
+    const table = page.locator('table[aria-label="IT Staff Ticket Queue"]');
+    await expect(table).toBeVisible();
+    await expect(table.locator('th:has-text("Ticket No.")')).toBeVisible();
+    await expect(table.locator('th:has-text("Created Date")')).toBeVisible();
+    await expect(table.locator('th:has-text("Summary")')).toBeVisible();
+    await expect(table.locator('th:has-text("Category")')).toBeVisible();
+    await expect(table.locator('th:has-text("Req. Priority")')).toBeVisible();
+    await expect(table.locator('th:has-text("IT Priority")')).toBeVisible();
+    await expect(table.locator('th:has-text("Status")')).toBeVisible();
+    await expect(table.locator('th:has-text("Owner")')).toBeVisible();
+  });
+
+  test("RESP-02 — Tablet viewport (768px) adapts cleanly without horizontal scroll", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await loginAsStaff(page);
+
+    await page.goto("/staff/queue");
+    await expect(page.locator('h1:has-text("Ticket Queue")')).toBeVisible();
+    await assertNoHorizontalScroll(page);
+
+    // Table is visible on tablet
+    const table = page.locator('table[aria-label="IT Staff Ticket Queue"]');
+    await expect(table).toBeVisible();
+
+    // Primary columns remain visible
+    await expect(table.locator('th:has-text("Ticket No.")')).toBeVisible();
+    await expect(table.locator('th:has-text("Summary")')).toBeVisible();
+    await expect(table.locator('th:has-text("Category")')).toBeVisible();
+    await expect(table.locator('th:has-text("IT Priority")')).toBeVisible();
+    await expect(table.locator('th:has-text("Status")')).toBeVisible();
+    await expect(table.locator('th:has-text("Owner")')).toBeVisible();
+
+    // Secondary columns are hidden to condense the table on tablet per ui-spec §5
+    await expect(table.locator('th:has-text("Created Date")')).not.toBeVisible();
+    await expect(table.locator('th:has-text("Req. Priority")')).not.toBeVisible();
+  });
+
+  test("RESP-03 — Mobile viewport (390px) renders queue as cards with touch targets >= 44px", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginAsStaff(page);
+
+    await page.goto("/staff/queue");
+    await expect(page.locator('h1:has-text("Ticket Queue")')).toBeVisible();
+    await assertNoHorizontalScroll(page);
+
+    // Desktop table should be hidden on mobile
+    const desktopTable = page.locator('table[aria-label="IT Staff Ticket Queue"]');
+    await expect(desktopTable).not.toBeVisible();
+
+    // Verify touch target dimensions on mobile buttons (>= 44px)
+    const filterBtn = page.locator('button:has-text("Filters")');
+    await expect(filterBtn).toBeVisible();
+    const box = await filterBtn.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.width).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test("RESP-04 — Mobile viewport (390px) renders Admin User Management and Drawer cleanly without overflow", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginAsAdmin(page);
+
+    await page.goto("/admin/users");
+    await expect(page.locator('h1:has-text("User Management")')).toBeVisible();
+    await assertNoHorizontalScroll(page);
+
+    // Verify touch target dimensions on mobile create button (>= 44px)
+    const createBtn = page.locator('button:has-text("Create User")');
+    await expect(createBtn).toBeVisible();
+    const box = await createBtn.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.width).toBeGreaterThanOrEqual(44);
+    }
+
+    // Open Create User drawer
+    await createBtn.click();
+    await expect(page.locator("#userName")).toBeVisible();
+    await assertNoHorizontalScroll(page);
+
+    // Close drawer
+    await page.click('button:has-text("Cancel")');
+    await expect(page.locator("#userName")).not.toBeVisible();
+  });
+});

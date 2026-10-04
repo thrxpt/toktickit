@@ -1,11 +1,6 @@
 // TokTickIT data model.
 // The connection URL lives in prisma.config.ts, which reads DATABASE_URL from
 // server/.env — see prisma/config docs: https://pris.ly/prisma-config
-//
-// Field lists are fixed by docs/lab-02/specification.md §7. Vocabulary is
-// CONTEXT.md's: Requester (never User), Related System, Attachment, and
-// removal is soft removal (BR-38) — nothing here is ever hard-deleted, so no
-// relation cascades.
 
 generator client {
   provider     = "prisma-client"
@@ -25,30 +20,52 @@ enum RequestedPriority {
   HIGH
 }
 
-// One value, deliberately (BR-15). Every transition out of NEW is excluded
-// from Lab 2 (specification.md §3), so the Lab that implements a transition
-// adds the value it transitions into.
-enum TicketStatus {
-  NEW
+// IT Priority managed by IT Staff / Admin (BR-20).
+enum ITPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }
 
-model Requester {
-  id        Int      @id @default(autoincrement())
-  name      String
-  // Unique for seed idempotency (BR-44) and as the natural key the seed
-  // upserts on; Lab 3's authentication will want it too.
-  email     String   @unique
-  // Retiring a Requester hides them from the selector (BR-05) without
-  // destroying the Tickets they raised.
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// Role for users in TokTickIT (BR-13, ADR-0008).
+enum Role {
+  REQUESTER
+  IT_STAFF
+  ADMINISTRATOR
+}
 
-  tickets             Ticket[]
-  // Two relations reach Requester from Attachment — uploader and remover —
-  // so Prisma needs each one named.
+// Ticket status lifecycle values (BR-21, BR-22).
+enum TicketStatus {
+  NEW
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_REQUESTER
+  RESOLVED
+  CLOSED
+  REOPENED
+  CANCELLED
+}
+
+model User {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  email              String   @unique
+  passwordHash       String
+  role               Role     @default(REQUESTER)
+  isActive           Boolean  @default(true)
+  mustChangePassword Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  submittedTickets    Ticket[]     @relation("TicketRequester")
+  ownedTickets        Ticket[]     @relation("TicketOwner")
   uploadedAttachments Attachment[] @relation("AttachmentUploader")
   removedAttachments  Attachment[] @relation("AttachmentRemover")
+  comments            Comment[]
+  internalNotes       InternalNote[]
+
+  @@index([role, isActive])
 }
 
 model RelatedSystem {
@@ -63,9 +80,6 @@ model RelatedSystem {
 model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
-  // Added in Lab 2 with a default so existing rows migrate without a backfill
-  // (§7). Retiring a Category keeps Tickets already filed under it valid
-  // (BR-16); GET /api/categories still returns { id, name }, filtered.
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
@@ -74,13 +88,12 @@ model Category {
 
 model Ticket {
   id           Int    @id @default(autoincrement())
-  // Unique is BR-01's guarantee and the backstop for the ticket_number_seq
-  // sequence in BR-12: a bug in the formatting code fails at the database
-  // rather than minting two Tickets with one identity.
   ticketNumber String @unique
 
   requesterId     Int
-  requester       Requester     @relation(fields: [requesterId], references: [id])
+  requester       User          @relation("TicketRequester", fields: [requesterId], references: [id])
+  ticketOwnerId   Int?
+  ticketOwner     User?         @relation("TicketOwner", fields: [ticketOwnerId], references: [id], onDelete: Restrict)
   categoryId      Int
   category        Category      @relation(fields: [categoryId], references: [id])
   relatedSystemId Int
@@ -89,23 +102,24 @@ model Ticket {
   summary     String
   description String
 
-  requestedPriority RequestedPriority
-  status            TicketStatus      @default(NEW)
+  requestedPriority   RequestedPriority
+  itPriority          ITPriority        @default(LOW)
+  status              TicketStatus      @default(NEW)
+  resolvedByRequester Boolean           @default(false)
 
   createdAt DateTime @default(now())
-  // BR-28 makes updatedAt sortable, so Prisma maintains it rather than any
-  // route setting it by hand.
   updatedAt DateTime @updatedAt
 
-  attachments Attachment[]
+  attachments   Attachment[]
+  comments      Comment[]
+  internalNotes InternalNote[]
 
-  // My Tickets always filters by owner and sorts newest first — the sprint's
-  // only hot path (§7).
   @@index([requesterId, createdAt(sort: Desc)])
-  // The three filter columns of BR-27.
   @@index([categoryId])
   @@index([status])
   @@index([requestedPriority])
+  @@index([ticketOwnerId, status])
+  @@index([itPriority, status])
 }
 
 model Attachment {
@@ -113,26 +127,43 @@ model Attachment {
   ticketId Int
   ticket   Ticket @relation(fields: [ticketId], references: [id])
 
-  // What the Requester recognises the file as (BR-37); the bytes live under
-  // storageKey, which is generated and never leaves the server (ADR-0004).
   originalFilename String
   mimeType         String
-  // 5 MB is the limit (BR-34), nowhere near a 32-bit integer.
   sizeBytes        Int
   storageKey       String @unique
 
   uploadedById Int
-  uploadedBy   Requester @relation("AttachmentUploader", fields: [uploadedById], references: [id])
-  createdAt    DateTime  @default(now())
+  uploadedBy   User     @relation("AttachmentUploader", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
 
-  // Soft removal (BR-38, BR-39): the row stays, carrying who removed it, when,
-  // and why. Null on an active Attachment.
   removedAt     DateTime?
   removedById   Int?
-  removedBy     Requester? @relation("AttachmentRemover", fields: [removedById], references: [id], onDelete: Restrict)
+  removedBy     User?    @relation("AttachmentRemover", fields: [removedById], references: [id], onDelete: Restrict)
   removalReason String?
 
-  // The active-Attachment count of BR-35, and the active/removed split on
-  // Ticket Detail.
   @@index([ticketId, removedAt])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt(sort: Asc)])
+}
+
+model InternalNote {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt(sort: Asc)])
 }

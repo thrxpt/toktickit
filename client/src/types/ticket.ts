@@ -1,6 +1,49 @@
-export type RequestedPriority = 'LOW' | 'MEDIUM' | 'HIGH'
+import type { UserRole } from "./auth";
 
-export type TicketStatus = 'NEW'
+export type RequestedPriority = "LOW" | "MEDIUM" | "HIGH";
+
+export type ITPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export type TicketStatus =
+  | "NEW"
+  | "OPEN"
+  | "IN_PROGRESS"
+  | "WAITING_FOR_REQUESTER"
+  | "RESOLVED"
+  | "CLOSED"
+  | "REOPENED"
+  | "CANCELLED";
+
+export interface StaffQueueTicketItem {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  categoryName: string;
+  requestedPriority: RequestedPriority;
+  itPriority: ITPriority;
+  status: TicketStatus;
+  ticketOwner: {
+    id: number;
+    name: string;
+  } | null;
+  requester: {
+    id: number;
+    name: string;
+  };
+  resolvedByRequester: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffQueueResponse {
+  items: StaffQueueTicketItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
 
 export interface TicketListItem {
   id: number
@@ -76,4 +119,58 @@ export interface TicketDetail {
     active: AttachmentDto[]
     removed: AttachmentDto[]
   }
+  resolvedByRequester?: boolean
+}
+
+export interface CommentAuthor {
+  id: number;
+  name: string;
+  role: UserRole;
+}
+
+export interface CommentDto {
+  id: number;
+  content: string;
+  createdAt: string;
+  author: CommentAuthor;
+}
+
+export interface InternalNoteDto {
+  id: number;
+  content: string;
+  createdAt: string;
+  author: CommentAuthor;
+}
+
+export interface StaffTicketDetailDto {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  description: string;
+  category: {
+    id: number;
+    name: string;
+  };
+  relatedSystem: {
+    id: number;
+    name: string;
+  };
+  requester: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  ticketOwner: {
+    id: number;
+    name: string;
+  } | null;
+  requestedPriority: RequestedPriority;
+  itPriority: ITPriority;
+  status: TicketStatus;
+  resolvedByRequester: boolean;
+  createdAt: string;
+  updatedAt: string;
+  attachments: AttachmentDto[];
+  publicCommentsCount: number;
+  internalNotesCount: number;
 }

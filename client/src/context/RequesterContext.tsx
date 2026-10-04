@@ -21,7 +21,7 @@ export interface RequesterContextValue {
   reloadRequesters: () => Promise<void>
 }
 
-const RequesterContext = createContext<RequesterContextValue | undefined>(
+export const RequesterContext = createContext<RequesterContextValue | undefined>(
   undefined,
 )
 

@@ -1,13 +1,20 @@
-import { Link, Navigate, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Route, Routes } from "react-router-dom";
 
-import AppShell from './components/AppShell'
-import RequesterGuard from './components/RequesterGuard'
-import { RequesterProvider } from './context/RequesterContext'
-import CheckSystem from './pages/CheckSystem'
-import CreateTicket from './pages/CreateTicket'
-import MyTickets from './pages/MyTickets'
-import RequesterSelection from './pages/RequesterSelection'
-import RequesterTicketDetail from './pages/RequesterTicketDetail'
+import { AuthProvider } from "./auth/AuthContext";
+import AppShell from "./components/AppShell";
+import { RequesterProvider } from "./context/RequesterContext";
+import ChangePassword from "./pages/ChangePassword";
+import CheckSystem from "./pages/CheckSystem";
+import CreateTicket from "./pages/CreateTicket";
+import Login from "./pages/Login";
+import MyTickets from "./pages/MyTickets";
+import RequesterSelection from "./pages/RequesterSelection";
+import RequesterTicketDetail from "./pages/RequesterTicketDetail";
+import StaffTicketDetail from "./pages/staff/StaffTicketDetail";
+import StaffTicketQueue from "./pages/staff/StaffTicketQueue";
+import UserManagement from "./pages/admin/UserManagement";
+import { RequirePasswordChange } from "./routes/RequirePasswordChange";
+import { RequireRole } from "./routes/RequireRole";
 
 function NotFoundPage() {
   return (
@@ -22,7 +29,7 @@ function NotFoundPage() {
         </Link>
       </div>
     </div>
-  )
+  );
 }
 
 export function AppRoutes() {
@@ -30,6 +37,17 @@ export function AppRoutes() {
     <Routes>
       {/* Root redirects to /tickets */}
       <Route path="/" element={<Navigate to="/tickets" replace />} />
+
+      {/* Authentication screens (Lab 3) */}
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/change-password"
+        element={
+          <RequirePasswordChange>
+            <ChangePassword />
+          </RequirePasswordChange>
+        }
+      />
 
       {/* Lab 2 Development Requester Selection (Issue 8) */}
       <Route
@@ -41,40 +59,78 @@ export function AppRoutes() {
         }
       />
 
-      {/* Guarded Ticket Routes (FR-04, AC-02) */}
+      {/* Guarded Ticket Routes (FR-02, FR-04, FR-06, AC-02, AC-03, AC-06, BR-02, BR-03) */}
       <Route
         path="/tickets"
         element={
-          <RequesterGuard>
+          <RequireRole roles={["REQUESTER"]}>
             <AppShell>
               <MyTickets />
             </AppShell>
-          </RequesterGuard>
+          </RequireRole>
         }
       />
       <Route
         path="/tickets/new"
         element={
-          <RequesterGuard>
+          <RequireRole roles={["REQUESTER"]}>
             <AppShell>
               <CreateTicket />
             </AppShell>
-          </RequesterGuard>
+          </RequireRole>
         }
       />
       <Route
         path="/tickets/:id"
         element={
-          <RequesterGuard>
+          <RequireRole roles={["REQUESTER"]}>
             <AppShell
               breadcrumbs={[
-                { label: 'My Tickets', to: '/tickets' },
-                { label: 'Ticket Details' },
+                { label: "My Tickets", to: "/tickets" },
+                { label: "Ticket Details" },
               ]}
             >
               <RequesterTicketDetail />
             </AppShell>
-          </RequesterGuard>
+          </RequireRole>
+        }
+      />
+
+      {/* Staff Routes (Lab 3) */}
+      <Route
+        path="/staff/queue"
+        element={
+          <RequireRole roles={["IT_STAFF"]}>
+            <AppShell>
+              <StaffTicketQueue />
+            </AppShell>
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/staff/tickets/:id"
+        element={
+          <RequireRole roles={["IT_STAFF"]}>
+            <AppShell
+              breadcrumbs={[
+                { label: "My Queue", to: "/staff/queue" },
+                { label: "Ticket Detail" },
+              ]}
+            >
+              <StaffTicketDetail />
+            </AppShell>
+          </RequireRole>
+        }
+      />
+      <Route path="/queue" element={<Navigate to="/staff/queue" replace />} />
+      <Route
+        path="/admin/users"
+        element={
+          <RequireRole roles={["ADMINISTRATOR"]}>
+            <AppShell>
+              <UserManagement />
+            </AppShell>
+          </RequireRole>
         }
       />
 
@@ -98,15 +154,17 @@ export function AppRoutes() {
         }
       />
     </Routes>
-  )
+  );
 }
 
 export function App() {
   return (
-    <RequesterProvider>
-      <AppRoutes />
-    </RequesterProvider>
-  )
+    <AuthProvider>
+      <RequesterProvider>
+        <AppRoutes />
+      </RequesterProvider>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;

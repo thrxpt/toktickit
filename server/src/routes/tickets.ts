@@ -1,7 +1,7 @@
 import express, { type Request, type Response } from "express";
 import { z } from "zod";
 
-import { sendError } from "../errors";
+import { formatZodErrors, sendError } from "../errors";
 import type { Prisma } from "../generated/prisma/client";
 import {
   rejectRequesterIdInBody,
@@ -38,9 +38,22 @@ const listTicketsQuerySchema = z
       })
       .optional(),
     status: z
-      .enum(["NEW"], {
-        message: "Status must be NEW",
-      })
+      .enum(
+        [
+          "NEW",
+          "OPEN",
+          "IN_PROGRESS",
+          "WAITING_FOR_REQUESTER",
+          "RESOLVED",
+          "CLOSED",
+          "REOPENED",
+          "CANCELLED",
+        ],
+        {
+          message:
+            "Status must be NEW, OPEN, IN_PROGRESS, WAITING_FOR_REQUESTER, RESOLVED, CLOSED, REOPENED, or CANCELLED",
+        },
+      )
       .optional(),
     sort: z
       .enum(["createdAt", "ticketNumber", "updatedAt"], {
@@ -70,23 +83,6 @@ const listTicketsQuerySchema = z
       ),
   })
   .strict();
-
-function formatZodErrors(error: z.ZodError): Record<string, string> {
-  const fields: Record<string, string> = {};
-  for (const issue of error.issues) {
-    if (issue.code === "unrecognized_keys") {
-      for (const key of issue.keys) {
-        fields[key] = `Unrecognized query parameter '${key}'`;
-      }
-    } else {
-      const fieldName = issue.path[0];
-      if (typeof fieldName === "string" && !fields[fieldName]) {
-        fields[fieldName] = issue.message;
-      }
-    }
-  }
-  return fields;
-}
 
 export const ticketsRouter = express.Router();
 ticketsRouter.use(requireRequesterContext);
@@ -130,9 +126,14 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
       }
     }
 
+    if (!req.requesterId) {
+      sendError(res, "FORBIDDEN");
+      return;
+    }
+
     // Requester ownership is ALWAYS enforced first (BR-07, AC-20)
     const where: Prisma.TicketWhereInput = {
-      requesterId: req.requesterId!,
+      requesterId: req.requesterId,
     };
 
     if (search) {
@@ -274,7 +275,7 @@ ticketsRouter.get("/:id", async (req: Request, res: Response) => {
       return;
     }
 
-    res.status(200).json({
+    const baseResponse = {
       id: ticket.id,
       ticketNumber: ticket.ticketNumber,
       summary: ticket.summary,
@@ -290,6 +291,77 @@ ticketsRouter.get("/:id", async (req: Request, res: Response) => {
       createdAt: ticket.createdAt.toISOString(),
       updatedAt: ticket.updatedAt.toISOString(),
       attachments: serializeAttachments(ticket.attachments),
+    };
+
+    if (req.user) {
+      res.status(200).json({
+        ...baseResponse,
+        resolvedByRequester: ticket.resolvedByRequester,
+      });
+      return;
+    }
+
+    res.status(200).json(baseResponse);
+  } catch {
+    sendError(res, "DATABASE_UNAVAILABLE");
+  }
+});
+
+// POST /api/tickets/:id/resolve-indication (FR-08, BR-05, BR-24, AC-09, API-09)
+ticketsRouter.post("/:id/resolve-indication", async (req: Request, res: Response) => {
+  const requesterId = req.requesterId;
+  if (!requesterId) {
+    sendError(res, "REQUESTER_CONTEXT_MISSING");
+    return;
+  }
+
+  const idResult = z
+    .string()
+    .regex(/^[1-9]\d*$/)
+    .safeParse(req.params.id);
+  if (!idResult.success) {
+    sendError(res, "TICKET_NOT_FOUND");
+    return;
+  }
+
+  const id = parseInt(idResult.data, 10);
+
+  try {
+    const ticket = await prisma.ticket.findFirst({
+      where: {
+        id,
+        requesterId,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!ticket) {
+      sendError(res, "TICKET_NOT_FOUND");
+      return;
+    }
+
+    // BR-24: Ticket cannot be CLOSED or CANCELLED
+    if (ticket.status === "CLOSED" || ticket.status === "CANCELLED") {
+      sendError(res, "VALIDATION_FAILED", {
+        status: "Cannot indicate resolution on a closed or cancelled ticket.",
+      });
+      return;
+    }
+
+    const updated = await prisma.ticket.update({
+      where: { id: ticket.id },
+      data: { resolvedByRequester: true },
+      select: { id: true, resolvedByRequester: true },
+    });
+
+    res.status(200).json({
+      id: updated.id,
+      resolvedByRequester: updated.resolvedByRequester,
+      message:
+        "Problem indicated as resolved. IT Staff will review and formally close the ticket.",
     });
   } catch {
     sendError(res, "DATABASE_UNAVAILABLE");

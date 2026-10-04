@@ -12,18 +12,25 @@
     "db:check": "tsx --env-file=.env scripts/db-check.ts",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
+    "db:cleanup-e2e": "tsx --env-file=.env prisma/cleanup-e2e.ts",
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "multer": "^2.3.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.2.0",
     "@types/node": "^24.13.3",
     "@types/supertest": "^7.2.1",
