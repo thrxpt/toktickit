@@ -1,6 +1,6 @@
 # Lab 3 AI Use
 
-**LLM used:** Claude Sonnet 4.6 / Claude Opus 4.6 via Claude Code CLI and Pi agent harness, and Gemini 3.1 Pro / Gemini 3 Flash via Antigravity grounding
+**LLM used:** Gemini 3.8 Flash via Pi agent harness
 
 The third sprint marked TokTickIT's transition from a single-user prototype to an authenticated,
 multi-role service desk spanning Requesters, IT Staff, and Administrators. Across this sprint,
