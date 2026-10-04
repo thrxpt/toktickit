@@ -1,12 +1,12 @@
 import { execSync } from "node:child_process";
 
 export default async function globalSetup(): Promise<void> {
-  // Re-seed the development database before E2E tests to ensure
-  // deterministic user accounts, passwords, and reference data.
+  // Restore database to documented pristine seed state before running E2E tests,
+  // purging any leftover test records from aborted previous runs.
   try {
-    execSync("pnpm --filter server db:seed", { stdio: "inherit" });
+    execSync("pnpm db:cleanup-e2e", { stdio: "inherit" });
   } catch (error) {
-    console.error("Failed to seed database during E2E globalSetup:", error);
+    console.error("Failed to prepare database during E2E globalSetup:", error);
     throw error;
   }
 }

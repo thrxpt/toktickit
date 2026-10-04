@@ -32,10 +32,10 @@ test.describe("IT Staff Ticket Queue and Operational Flow (AC-10 to AC-15)", () 
     await expect(
       page.locator('h2:has-text("Ticket Created Successfully")'),
     ).toBeVisible();
-    const ticketNumberLocator = page.locator("text=/TKT-2026-\\d+/").first();
+    const ticketNumberLocator = page.locator("text=/TKT-\\d{4}-\\d+/").first();
     await expect(ticketNumberLocator).toBeVisible();
     const ticketNumberText = await ticketNumberLocator.textContent();
-    const match = ticketNumberText?.match(/TKT-2026-\d+/);
+    const match = ticketNumberText?.match(/TKT-\d{4}-\d+/);
     expect(match).not.toBeNull();
     const ticketNumber = match ? match[0] : "";
 
@@ -76,8 +76,6 @@ test.describe("IT Staff Ticket Queue and Operational Flow (AC-10 to AC-15)", () 
     // 3. Search for the unassigned ticket (AC-10, FR-09)
     const searchInput = page.locator('input[placeholder*="Search by ticket number"]');
     await searchInput.fill(ticketNumber);
-    // Debounce wait
-    await page.waitForTimeout(350);
 
     const ticketRow = page.locator(`tr:has-text("${ticketNumber}")`);
     await expect(ticketRow).toBeVisible();

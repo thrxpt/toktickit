@@ -1,8 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-describe("STYLE-01 — Zen Green color tokens and absence of external hex codes (ui-spec §1)", () => {
+describe("STYLE-01 — Zen Green color tokens and absence of external hex codes (ui-spec section 1)", () => {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
   const themeCssPath = path.resolve(
     __dirname,
     "../../../src/styles/theme.css",
@@ -11,6 +14,11 @@ describe("STYLE-01 — Zen Green color tokens and absence of external hex codes 
   it("declares all required Zen Green color tokens on :root in theme.css", () => {
     expect(fs.existsSync(themeCssPath)).toBe(true);
     const themeContent = fs.readFileSync(themeCssPath, "utf-8");
+
+    // Verify tokens are declared inside the :root block specifically (C7)
+    const rootBlockMatch = themeContent.match(/:root\s*\{([^}]+)\}/);
+    expect(rootBlockMatch).not.toBeNull();
+    const rootBlock = rootBlockMatch ? rootBlockMatch[1] : "";
 
     const requiredTokens = [
       "--zen-primary",
@@ -33,7 +41,7 @@ describe("STYLE-01 — Zen Green color tokens and absence of external hex codes 
     ];
 
     for (const token of requiredTokens) {
-      expect(themeContent).toContain(token);
+      expect(rootBlock).toContain(token);
     }
   });
 
@@ -62,7 +70,10 @@ describe("STYLE-01 — Zen Green color tokens and absence of external hex codes 
     const sourceFiles = findSourceFiles(srcDir);
     expect(sourceFiles.length).toBeGreaterThan(0);
 
-    const hexColorRegex = /#(?:[0-9a-fA-F]{3,4}){1,2}\b/g;
+    // Tightened CSS hex color regex matching color properties or string literals (C8),
+    // avoiding false positives from hash anchors or variable names like #fade
+    const hexColorRegex =
+      /:\s*#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b|["'`]#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})["'`]/g;
 
     const filesWithHex: { file: string; matches: string[] }[] = [];
     for (const filePath of sourceFiles) {

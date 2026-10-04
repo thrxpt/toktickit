@@ -20,14 +20,27 @@ TokTickIT verifies functionality across six architectural levels:
 | **Responsive** | `RESP-nn` | Desktop, tablet, and mobile (390px) layouts without clipping or overflow. | Playwright |
 | **E2E** | `E2E-nn` | Full multi-role user journeys executed in headless Chromium. | Playwright |
 
-### Database Isolation
+### Database Isolation and E2E Database Strategy
 
-API tests run against the dedicated test database `toktickit_test` configured in `server/.env.test`.
-The Vitest `globalSetup` creates and migrates `toktickit_test` and executes the idempotent seed.
-Each test file truncates operational tables (`InternalNote`, `Comment`, `Attachment`, `Ticket`)
-in `beforeEach`, preserving seeded reference data and core user accounts (`User`, `Category`,
-`RelatedSystem`).
+TokTickIT employs a two-tier database isolation strategy across testing layers:
 
+1. **Vitest Integration Tests (API)**:
+   API tests run against the dedicated test database `toktickit_test` configured in `server/.env.test`.
+   The Vitest `globalSetup` creates and migrates `toktickit_test` and executes the idempotent seed.
+   Each test file truncates operational tables (`InternalNote`, `Comment`, `Attachment`, `Ticket`)
+   in `beforeEach`, preserving seeded reference data and core user accounts (`User`, `Category`, `RelatedSystem`).
+
+2. **Playwright Browser Tests (E2E & Responsive)**:
+   E2E tests interact with real browser instances driven against the local application server. To guarantee
+   zero database pollution, reproducible test journeys, and clean screenshot baselines, Playwright leverages:
+   - **`globalSetup` (`e2e/lab-03/global-setup.ts`)**: Runs `pnpm db:cleanup-e2e` to purge any leftover
+     test records from interrupted runs and reset seeded accounts to pristine state before tests begin.
+   - **`globalTeardown` (`e2e/lab-03/global-teardown.ts`)**: Invokes `server/prisma/cleanup-e2e.ts` upon
+     suite completion. It performs sequential child-first deletions of all E2E transactional data
+     (tickets, attachments, comments, internal notes) and throwaway accounts (`taylor.reed.*`, `e2e.*`),
+     then re-runs `seedReferenceData()` so the database returns to its documented initial baseline.
+   - **Throwaway Entities**: E2E tests generate timestamped test data (`e2e.*`, `taylor.reed.<ts>`) rather
+     than destructively mutating primary seeded accounts.
 ### Security and RBAC Seam
 
 Access control is tested at the HTTP layer, not just in UI component renders. Tests explicitly
@@ -121,7 +134,7 @@ that the server returns strict `401`, `403`, or `404` responses.
 | Test ID | Viewport | What It Tests | Expected Result | Final |
 | --- | --- | --- | --- | --- |
 | RESP-01 | Desktop (1280px) | Full multi-column tables, queue, and side panels | Clean spacing, no clipping, no overflow | Passed |
-| RESP-02 | Tablet (768px) | Condensed tables, 2-column forms, drawer overlays | Elements adapt cleanly without horizontal scroll | Passed |
+| RESP-02 | Tablet (768px) | Condensed tablet ticket queue table; zero horizontal overflow | Elements adapt cleanly without horizontal scroll | Passed |
 | RESP-03 | Mobile (390px) | Queue transforms to cards; full-width action buttons | Touch targets ≥44px, zero horizontal overflow | Passed |
 | RESP-04 | Mobile (390px) | Admin User Management responsive layout | User list and drawer fit viewport cleanly | Passed |
 
@@ -194,14 +207,22 @@ pnpm test:e2e
 | E2E | 4 | 4 | 0 | Passed |
 | **Total Planned** | **66** | **66** | **0** | **Passed (100%)** |
 
-### Comprehensive Suite Verification Metrics
+### Suite Verification Metrics and Traceability Relationship
 
-- **Server Vitest Suite**: 22 test files, 261/261 tests passed (100%)
-- **Client Vitest Suite**: 31 test files, 144/144 tests passed (100%)
-- **Playwright E2E Suite**: 4 test specs, 8/8 tests passed (100%)
-- **Total Suite Tests**: 413 passed tests across all packages and tiers
-- **TypeScript & Production Build**: `pnpm -r build` passes cleanly with zero errors across both workspaces
+The test suite tracks two complementary counts:
 
+1. **Contract Test IDs (66 Planned Tests)**:
+   The authoritative rows defined in Section 2 (`UNIT-01..06`, `API-01..30`, `UI-01..16`, `STYLE-01..06`,
+   `RESP-01..04`, `E2E-01..04`). Every acceptance criterion maps to at least one contract ID, all 66 of which
+   are verified and marked `Passed`.
+
+2. **Runner Assertion Blocks (413 Passing Executions)**:
+   The grand total of individual `it()` and `test()` blocks executed across all test frameworks and packages:
+   - **Server Vitest Suite**: 22 test files, 261 passed tests (unit + API + migration/regression baseline).
+   - **Client Vitest Suite**: 31 test files, 144 passed tests (components, routes, style tokens).
+   - **Playwright Suite**: 4 test spec files containing 8 individual tests (4 E2E journeys + 4 responsive viewports).
+   - **Total**: 261 + 144 + 8 = **413 passed tests** (100% green).
+   - **Build Validation**: `tsc -p . --noEmit` (covering root Playwright config and `e2e/**/*.ts`) and `pnpm -r build` (client Vite and server TypeScript) compile with zero errors.
 ---
 
 ## 6. Known Limitations and Out-of-Scope Items

@@ -36,7 +36,7 @@ export const TEST_USERS = {
 } as const;
 
 /**
- * Capture high-resolution screenshot with ensured directory creation.
+ * Capture viewport screenshot at standard 1x scale matching AC viewports.
  */
 export async function captureScreenshot(
   page: Page,
@@ -51,7 +51,8 @@ export async function captureScreenshot(
 }
 
 /**
- * Log in with credentials and wait for either home route or change-password.
+ * Submits credentials on the /login form.
+ * Callers asserting valid logins await their expected URL (e.g. `page.waitForURL(...)`).
  */
 export async function login(
   page: Page,

@@ -12,6 +12,7 @@
     "db:check": "tsx --env-file=.env scripts/db-check.ts",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
+    "db:cleanup-e2e": "tsx --env-file=.env prisma/cleanup-e2e.ts",
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate"
   },

@@ -27,8 +27,6 @@ test.describe("Administrator User Management and Safety Rules (AC-16 to AC-20)",
     // 2. Search and filter users (AC-16, FR-15)
     const searchInput = page.locator('input[placeholder*="Search users"]');
     await searchInput.fill("Michael Brown");
-    await page.waitForTimeout(300); // debounce 250ms
-
     await expect(page.locator('tr:has-text("Michael Brown")')).toBeVisible();
     await expect(
       page.locator('tr:has-text("Jennifer Anderson")'),
@@ -36,7 +34,6 @@ test.describe("Administrator User Management and Safety Rules (AC-16 to AC-20)",
 
     // Clear search
     await searchInput.fill("");
-    await page.waitForTimeout(300);
     await expect(
       page.locator('tr:has-text("Jennifer Anderson")'),
     ).toBeVisible();
@@ -79,7 +76,19 @@ test.describe("Administrator User Management and Safety Rules (AC-16 to AC-20)",
     await page.click('button[data-testid="btn-cancel-drawer"]');
     await expect(page.locator("#userName")).not.toBeVisible();
 
-    // 5. Safety rule: Self-deactivation and last admin lock (AC-18, AC-19, BR-29, BR-30)
+    // 5. Safety rule: Self-deactivation and sole active admin locks (AC-18, AC-19, BR-29, BR-30)
+    // First create a second active Administrator so sole-admin rule does not mask self-deactivation
+    const secondAdminEmail = `e2e.admin2.${Date.now()}@toktickit.com`;
+    await page.click('button:has-text("Create User")');
+    await expect(page.locator("#userName")).toBeVisible();
+    await page.fill("#userName", "Second Admin");
+    await page.fill("#userEmail", secondAdminEmail);
+    await page.selectOption("#userRole", "ADMINISTRATOR");
+    await page.fill("#userInitialPassword", "SecondAdminPass123!");
+    await page.click('button[data-testid="btn-save-user"]');
+    await expect(page.locator(`tr:has-text("${secondAdminEmail}")`)).toBeVisible();
+
+    // 5a. AC-18: Verify self-deactivation is prevented when another active admin exists
     const adminRow = page.locator('tr:has-text("admin@toktickit.com")');
     await adminRow.locator('button:has-text("Edit")').click();
     await expect(page.locator("#userName")).toBeVisible();
@@ -90,24 +99,30 @@ test.describe("Administrator User Management and Safety Rules (AC-16 to AC-20)",
       "artifacts/lab-03/screenshots/user-management/edit-user-safety-lock.png",
     );
 
-    // Active toggle switch is disabled
-    const activeSwitch = page.locator("#userActive");
-    await expect(activeSwitch).toBeDisabled();
-
-    // Deactivate action button is disabled
-    const deactivateBtn = page.locator(
-      'button[data-testid="btn-toggle-deactivate"]',
-    );
-    await expect(deactivateBtn).toBeDisabled();
-
-    // Safety tooltip / explanatory text is present
-    await expect(
-      page.locator('[data-testid="deactivate-tooltip-text"]'),
-    ).toBeVisible();
-
+    // Active toggle and action buttons are disabled with self-deactivation explanation
+    await expect(page.locator("#userActive")).toBeDisabled();
+    await expect(page.locator('button[data-testid="btn-toggle-deactivate"]')).toBeDisabled();
+    await expect(page.locator('[data-testid="deactivate-tooltip-text"]')).toContainText("own account");
     await page.click('button[data-testid="btn-cancel-drawer"]');
     await expect(page.locator("#userName")).not.toBeVisible();
 
+    // 5b. Deactivate second admin to leave admin@toktickit.com as sole active admin
+    const secondAdminRow = page.locator(`tr:has-text("${secondAdminEmail}")`);
+    await secondAdminRow.locator('button:has-text("Edit")').click();
+    await expect(page.locator("#userName")).toBeVisible();
+    await page.click('button[data-testid="btn-toggle-deactivate"]');
+    await page.click('button:has-text("Confirm Deactivation")');
+    await page.click('button[data-testid="btn-save-user"]');
+    await expect(page.locator("#userName")).not.toBeVisible();
+
+    // 5c. AC-19: Verify sole active admin deactivation is prevented
+    await adminRow.locator('button:has-text("Edit")').click();
+    await expect(page.locator("#userName")).toBeVisible();
+    await expect(page.locator("#userActive")).toBeDisabled();
+    await expect(page.locator('button[data-testid="btn-toggle-deactivate"]')).toBeDisabled();
+    await expect(page.locator('[data-testid="deactivate-tooltip-text"]')).toContainText("sole active Administrator");
+    await page.click('button[data-testid="btn-cancel-drawer"]');
+    await expect(page.locator("#userName")).not.toBeVisible();
     // 6. Reset initial password (AC-20, BR-33, FR-19)
     await page
       .locator(`tr:has-text("${newUserEmail}")`)
