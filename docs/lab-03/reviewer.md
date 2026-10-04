@@ -14,7 +14,7 @@
 | [#43](https://github.com/thrxpt/toktickit/pull/43) | feature/18-staff-ticket-detail | Approved |
 | [#44](https://github.com/thrxpt/toktickit/pull/44) | feature/19-comments-and-notes | Approved |
 | [#45](https://github.com/thrxpt/toktickit/pull/45) | feature/20-admin-user-management | Approved |
-| [#46](https://github.com/thrxpt/toktickit/pull/46) | feature/21-e2e-visual-release | Changes requested → Addressed |
+| [#46](https://github.com/thrxpt/toktickit/pull/46) | feature/21-e2e-visual-release | Approved |
 
 ---
 
@@ -301,7 +301,11 @@
 >
 > All 144 client tests, 261 server tests, root typecheck, and production builds are green.
 
-**Reviewer verdict:** Pending verification of review updates.
+**Reviewer approved comment:**
+> LGMT.
+
+**Reviewer verdict:**
+> Approved (2026-10-04, @fahsai-02)
 
 ---
 
