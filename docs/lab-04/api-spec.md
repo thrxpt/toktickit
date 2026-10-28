@@ -173,9 +173,11 @@ Updates an Action Taken in place (BR-03 immutability applies).
 }
 ```
 
-All five editable fields are accepted; omitted optional fields keep their stored
-value except that turning `followUpRequired` off clears `followUpNote`. Validation
-matches POST. `performedBy`/`createdAt` are immutable and rejected if supplied.
+All five editable fields are accepted. Omitted optional fields keep their stored
+value. Setting `followUpRequired` to `false` clears the stored `followUpNote`;
+supplying a non-empty note in the same request while the flag is false is rejected
+exactly as in POST (BR-04). Validation otherwise matches POST.
+`performedBy`/`createdAt` are immutable and rejected if supplied.
 
 #### Responses
 
@@ -311,7 +313,7 @@ mentioned is unchanged.
 
 ### Amended list query parameter: `statusGroup`
 
-`GET /api/tickets` and `GET /api/staff/tickets` accept an optional `statusGroup`:
+`GET /api/tickets` accepts an optional `statusGroup`:
 
 | Value | Meaning | Equivalent status filter |
 | --- | --- | --- |
@@ -319,16 +321,18 @@ mentioned is unchanged.
 | `resolved` | Finished positively | `RESOLVED`, `CLOSED` |
 
 `statusGroup` and `status` are mutually exclusive; supplying both answers
-`400 INVALID_QUERY_PARAMETER`. The parameter exists so a dashboard card's
-drill-down returns exactly the set its metric counted (BR-25).
+`400 INVALID_QUERY_PARAMETER`. The parameter exists so a Requester dashboard card's
+drill-down returns exactly the set its metric counted (BR-25). The IT Staff queue
+needs no equivalent: its cards drill by a single status, owner, or priority, all of
+which it already filters.
 
 ### Staff routes become operational-role routes
 
 Every `/api/staff/*` endpoint in Lab 3 (queue, assignees, detail, owner, priority,
 status) now permits `IT_STAFF` **and** `ADMINISTRATOR` (ADR-0010, BR-20). Requesters
-remain `403 FORBIDDEN`. `GET /api/staff/assignees` still returns only active IT Staff
-as assignable owners unless the caller is an Administrator assigning to an
-Administrator, who is also a valid Ticket Owner.
+remain `403 FORBIDDEN`. `GET /api/staff/assignees` is unchanged: it lists active IT
+Staff as assignment targets, while an Administrator remains a valid owner under the
+existing owner validation rule.
 
 ### GET /api/staff/tickets/:id
 
@@ -343,7 +347,8 @@ Adds to the existing payload:
 
 `permittedTransitions` is the server's matrix result for the current status, so the
 UI never derives transitions independently (FR-07). Roles: IT Staff and
-Administrator.
+Administrator. The Requester Ticket detail payload is unchanged; Requesters have no
+transitions to render.
 
 ### PATCH /api/staff/tickets/:id/owner
 
@@ -351,7 +356,7 @@ Administrator.
 { "ownerId": 2, "expectedVersion": 4 }
 ```
 
-- **200**: `{ "ticketId": 12, "ticketOwnerId": 2, "status": "OPEN", "version": 5 }`
+- **200**: `{ "ticketId": 12, "ticketOwnerId": 2, "status": "OPEN", "ticketVersion": 5, "message": "Ticket ownership updated." }`
 - **400**: invalid/inactive owner.
 - **409 STALE_UPDATE**.
 
@@ -361,7 +366,7 @@ Administrator.
 { "itPriority": "HIGH", "expectedVersion": 5 }
 ```
 
-- **200**: `{ "ticketId": 12, "itPriority": "HIGH", "version": 6 }`
+- **200**: `{ "ticketId": 12, "itPriority": "HIGH", "ticketVersion": 6, "message": "IT Priority updated." }`
 - **400**: invalid priority.
 - **409 STALE_UPDATE**.
 
@@ -371,22 +376,23 @@ Administrator.
 { "status": "RESOLVED", "expectedVersion": 6 }
 ```
 
-- **200**: `{ "ticketId": 12, "status": "RESOLVED", "version": 7 }`
+- **200**: `{ "ticketId": 12, "status": "RESOLVED", "ticketVersion": 7, "message": "Status updated successfully." }`
 - **400 INVALID_STATUS_TRANSITION**: invalid, same-status, or terminal-source
   transition (BR-15, BR-16).
 - **409 STALE_UPDATE**.
 
 ### POST /api/tickets/:id/resolve-indication
 
-Unchanged request shape and response body, except the response now also includes the
-bumped `version`. The indication bumps `version` (BR-11) but does not require
-`expectedVersion`, and it never changes `status` (BR-18).
+Unchanged request shape and response body, except the response now also includes
+`ticketVersion`. The indication bumps the version (BR-11) but does not require
+`expectedVersion`; it never changes `status` (BR-18). A staff member holding a stale
+view then correctly receives `409` on their next write and reloads.
 
 ```json
 {
   "id": 12,
   "resolvedByRequester": true,
-  "version": 8,
+  "ticketVersion": 8,
   "message": "Problem indicated as resolved. IT Staff will review and formally close the ticket."
 }
 ```
@@ -400,15 +406,17 @@ bumped `version`. The indication bumps `version` (BR-11) but does not require
 
 ## 4. Concurrency Rules
 
-1. `expectedVersion` is required on every mutating request listed above. Missing or
-   non-integer answers `400 VALIDATION_FAILED`.
+1. `expectedVersion` is required on every mutating request in §3 (owner, priority,
+   status, action create, action update). Missing or non-integer answers
+   `400 VALIDATION_FAILED`. The Requester-only resolve-indication is the sole
+   exception: it carries no guard but still bumps the version.
 2. The server performs a conditional write
    (`WHERE id = :ticketId AND version = :expectedVersion`) and increments `version`
    in the same statement. Zero affected rows means the caller was stale.
 3. A stale write answers `409 STALE_UPDATE` with `fields.expectedVersion` naming both
    versions. Nothing is partially applied.
-4. Every successful mutation response returns the new `version`, so a client can
-   continue without a re-fetch.
+4. Every successful mutation response returns the new `ticketVersion`, so a client
+   can continue without a re-fetch.
 5. Actions Taken creation is version-guarded too, which makes a double-click with the
    same `expectedVersion` create exactly one row (BR-13).
 6. Public Comments and Internal Notes are append-only discussion and do not bump

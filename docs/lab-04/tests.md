@@ -99,11 +99,17 @@ The `toktickit_test` database strategy from Lab 3 continues, with two additions:
 | --- | --- | --- | --- |
 | API-20 | AC-13, BR-21 | Unassigned, owned-by-me, all eight status counts, all four priority counts, recent list | Every value equals a direct database count; recent list capped at five, `updatedAt` desc |
 | API-21 | AC-14, BR-20 | Administrator and IT Staff dashboard payloads | Admin receives `userCounts` (total/active/inactive/byRole); Staff response omits it |
-| API-22 | AC-21, BR-26 | Seed run twice on a seeded database | No duplicates for Users, Tickets, or Actions Taken; counts unchanged |
-| API-23 | AC-21, BR-27 | Migration against a Lab 3 database shape including a zero-action Ticket | Legacy Ticket reads, dashboards, and detail remain valid |
-| API-24 | AC-13 | Performance smoke: staff dashboard against the full demo dataset | Responds `200` within 500 ms on the local test database |
+| API-22 | AC-21, BR-26 | Seed run twice on a seeded database | No duplicates for Users, Tickets, or Actions Taken; counts unchanged; demo set still covers zero/one/many actions |
+| API-23 | AC-21, BR-27 | Migration applied to a Lab 3 database, reversed on the test database, plus harness baseline | Legacy rows and zero-action Tickets valid after up-migration; down-migration restores the schema; truncation deletes ActionTaken before Ticket; E2E cleanup restores the full demo baseline |
+| API-24 | AC-13 | Performance smoke: staff dashboard against the full demo dataset | Responds `200` within a generous 500 ms local budget (single retry before failing) |
 | API-25 | AC-26, BR-28 | Forced stale update and missing action through the error envelope | Envelope shape with safe messages; no stack, SQL, or path |
 | API-26 | AC-22, BR-30 | `GET /api/requesters` after retirement | Standard 404; no user list leaked |
+
+### Regression Suite Execution
+
+| Test ID | AC / BR | What It Runs | Expected Result |
+| --- | --- | --- | --- |
+| REG-01 | AC-22, BR-31 | All Lab 1–3 unit, API, UI, style, responsive, and E2E suites on `lab4-staging` after migration and seed changes | Every suite green; only the retirement updates in §5 differ; zero skips |
 
 ### UI Component — `client/tests/lab-04/*.test.tsx`
 
@@ -172,7 +178,7 @@ The `toktickit_test` database strategy from Lab 3 continues, with two additions:
 | AC-19 | UI-07 | UI |
 | AC-20 | UI-09, RESP-04 | UI + Responsive |
 | AC-21 | API-22, API-23 | API |
-| AC-22 | API-26 + full regression run | API + all suites |
+| AC-22 | API-26, REG-01 | API + full regression |
 | AC-23 | API-13, API-14, E2E-02 | API + E2E |
 | AC-24 | UI-10, STYLE-02, STYLE-03, RESP-01..04 | UI + Style + Responsive |
 | AC-25 | RESP-01..04 | Responsive |
@@ -251,7 +257,8 @@ Filled in by the release ticket after implementation; planned counts:
 | UI Style | 3 | — | — | Planned |
 | Responsive | 4 | — | — | Planned |
 | E2E | 3 | — | — | Planned |
-| **Total** | **49** | — | — | Planned |
+| Regression suite | 1 | — | — | Planned |
+| **Total** | **50** | — | — | Planned |
 
 Known limitations to carry into the release evidence:
 

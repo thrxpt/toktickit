@@ -1,0 +1,85 @@
+# Lab 4 AI Use
+
+**LLM used:** DeepSeek V4.1 Flash via OpenCode agent harness
+
+Lab 4 turns the working multi-role service desk into a finished product: the work
+log (Actions Taken), the final Ticket lifecycle, role dashboards, and a hardening
+pass over everything Labs 1–3 shipped. AI assistance stays under the same
+Spec-Driven Development and test-first discipline as earlier labs — the contract is
+written and merged before code, every rule carries an ID, and nothing is accepted
+without automated proof and peer review.
+
+This file is a living record. The rows below cover the contract Issue (#49) that
+opens the Lab; later Issues append their own prompts and outcomes rather than
+rewriting history.
+
+## Key Prompts
+
+| # | Prompt | Outcome |
+| --- | --- | --- |
+| 1 | `/implement #49` — "Write the Lab 4 engineering contract" | Fetched the Issue and read the Lab 3 contract set (`specification`, `api-spec`, `ui-spec`, `tests`) in full to mirror its house format, numbering, error envelope, and test seams before writing a line. |
+| 2 | "Read `server/src/tickets/status-machine.ts`, `server/src/errors.ts`, `server/prisma/schema.prisma`, and `client/src/App.tsx`; quote what actually exists" | Rejected a paraphrase-first contract. The transition matrix, the live error codes, and the remaining Lab 2 vestiges (`/select-requester`, `/api/requesters`) were quoted from code, which is what made the contract's later corrections possible. |
+| 3 | "The seed is reference-data only by design — how does the handout's demo-data requirement change that?" | Surfaced a real conflict: `seed-data.ts` deliberately excludes transactional rows, but the handout requires demo Tickets and Actions Taken. Resolved as D-27 with an idempotent transactional seed, `ActionTaken`-before-`Ticket` truncation order, and E2E cleanup that restores the baseline. |
+| 4 | "Handout §4.3 has Administrators performing IT Staff behavior; ADR-0008 forbids it. Decide, don't average." | Forced a single authoritative stance instead of a compromise: ADR-0010 supersedes ADR-0008 in one direction (Administrators gain ticket operations; IT Staff still cannot manage users), with the superseded clause marked in place. |
+| 5 | "Define dashboard metrics so each card's drill-down returns exactly the set it counted" | Produced the metric tables plus the `statusGroup=open|resolved` list parameter, because a five-status "open" count cannot drill down through a single-status filter. Caught an inconsistency between the count definition and the link. |
+| 6 | "Design the concurrency contract: what exactly is versioned, what is not, and what the client sees" | Chose an integer `Ticket.version` with `expectedVersion` on every Ticket-owned mutation and `409 STALE_UPDATE`; Public Comments and Internal Notes are append-only and deliberately outside the guard. Actions Taken writes are version-guarded too, so a double-click cannot create two rows. |
+| 7 | "Write the test plan from the contract, before implementation, with full AC traceability" | Produced 50 planned IDs across UNIT, API, UI, STYLE, RESP, E2E, and a regression row, each with a file path and expected result. Every AC-01..AC-26 maps to at least one planned test; numbering restarts for Lab 4. |
+| 8 | Two-axis code review over the contract diff (Standards and Spec, in parallel) | Caught what self-review missed: a dashboard drill-down that did not match its count, `version` vs `ticketVersion` naming drift, a stale `§7` citation, `CLOSED → REOPENED` wrongly described as terminal, and two mandated documents (`reviewer.md`, `ai-use.md`) missing from the deliverable. All were fixed in the PR before review. |
+
+## My Reflection
+
+### 1. The contract is where contradictions are cheapest to fix
+
+Every ambiguity in a contract becomes two implementations later. The clearest
+example was the dashboard drill-down: the contract defined "Open Tickets" as five
+statuses, then linked the card to a single-status filter. Both halves read fine in
+isolation. Only when I compared the metric table against the query parameters did
+the mismatch appear — and fixing it took one new list parameter instead of a
+rewritten dashboard in Issue 27.
+
+The same pattern appeared with the seed. The existing seed is deliberately
+reference-data only, with a comment saying transactional data is never seeded. The
+handout asks for demo Tickets. An AI that "helpfully" adds Tickets to that file
+without touching the comment leaves the codebase lying to its next reader. Naming
+the contradiction (D-27) and updating the test harness in the same contract is the
+only version that stays true.
+
+### 2. Inventory before invention
+
+The most useful prompts were the least creative ones: read the status machine, the
+error codes, the schema, the routes. The matrix in
+`server/src/tickets/status-machine.ts` is the authority for BR-15, and quoting it
+directly meant the contract could not drift from the code it describes. Similarly,
+reading `errors.ts` showed that `INVALID_QUERY_PARAMETER` already exists, so the
+contract introduces only `STALE_UPDATE` and `ACTION_TAKEN_NOT_FOUND` and says so
+explicitly.
+
+AI is very willing to invent a plausible API. The only defence is reading the one
+that exists.
+
+### 3. Superseding a decision is a writing task, not a deleting task
+
+ADR-0008 said Administrators cannot operate the queue. The handout says they must.
+The tempting move is to rewrite ADR-0008. That destroys the record of why the
+separation existed and makes the reversal invisible to a future reader. Instead,
+ADR-0008 keeps its text and gains a pointer to ADR-0010, which states precisely
+which clause it replaces and which clauses still stand. A decision record's value
+is its history, not its current correctness.
+
+### 4. Review with axes, not opinions
+
+The two-axis review (Standards against the repo's own rules, Spec against the Issue
+and handout) found different classes of defect, which is why running them in
+parallel rather than as one pass mattered. Standards caught the stale `§` citations,
+the missing `lab4-staging` git-flow update, and a glossary that still claimed
+Administrators do not manage Tickets. Spec caught the missing mandated documents
+and the untested rollback path. Neither list would have been complete alone.
+
+### 5. What stays human
+
+Two judgement calls were mine, not the model's: that the Development Requester must
+be fully removed now rather than kept for convenience (D-28), and that the
+"recently" metric must be list length rather than a date window (D-26), because a
+date window drags time zones and clock control into tests for no requirement's
+benefit. The model produced defensible arguments for several alternatives. Choosing
+between defensible alternatives is the job.

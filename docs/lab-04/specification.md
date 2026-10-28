@@ -136,6 +136,11 @@ server-side, and the UI merely guides the user toward what the server allows.
 | --- | --- |
 | BR-01 | An Action Taken belongs to exactly one Ticket. |
 | BR-02 | The Ticket Owner coordinates the Ticket, but an Action Taken may be recorded by a different IT Staff member or an Administrator. |
+
+### Action Taken Rules
+
+| ID | Rule |
+| --- | --- |
 | BR-03 | Performed by is derived from the authenticated session and is immutable after creation. |
 | BR-04 | Follow-up Note is required if and only if Follow-Up Required is true; supplying one when false, or omitting one when true, is rejected with `400`. |
 | BR-05 | Action Description and Result are required, trimmed of surrounding whitespace, and bounded to 1–2,000 characters. |
@@ -144,27 +149,47 @@ server-side, and the UI merely guides the user toward what the server allows.
 | BR-08 | Any active IT Staff member or Administrator may create or update Actions Taken on any accessible Ticket. |
 | BR-09 | An owning Requester may read all Actions Taken on the Ticket; a non-owning Requester receives `404` (ADR-0005). |
 | BR-10 | Requesters may never create, update, or delete Actions Taken; the backend answers `403 FORBIDDEN`. |
+
+### Concurrency and Versioning
+
+| ID | Rule |
+| --- | --- |
 | BR-11 | Every write to a Ticket-owned field (owner, IT Priority, status, resolution indication, Actions Taken create/update) increments `version` by one; Public Comments and Internal Notes do not. |
 | BR-12 | Mutating Ticket endpoints require `expectedVersion`; a mismatch answers `409 STALE_UPDATE` and changes nothing. The comparison and increment are atomic. |
 | BR-13 | A repeated submission carrying the same `expectedVersion` is rejected with `409 STALE_UPDATE`, so a double-click or retry cannot create two Actions Taken. |
+
+### Ticket Lifecycle and Resolution
+
+| ID | Rule |
+| --- | --- |
 | BR-14 | The permitted statuses remain `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, and `CANCELLED`. |
 | BR-15 | The final transition matrix is: `NEW` → `OPEN`, `IN_PROGRESS`, `CANCELLED`; `OPEN` → `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CANCELLED`; `IN_PROGRESS` → `WAITING_FOR_REQUESTER`, `RESOLVED`, `CANCELLED`; `WAITING_FOR_REQUESTER` → `IN_PROGRESS`, `RESOLVED`, `CANCELLED`; `RESOLVED` → `CLOSED`, `REOPENED`; `CLOSED` → `REOPENED`; `REOPENED` → `IN_PROGRESS`, `RESOLVED`, `CANCELLED`; `CANCELLED` is terminal. |
 | BR-16 | A transition to the current status is rejected. |
 | BR-17 | Only IT Staff and Administrators may change status; Requesters receive `403 FORBIDDEN`. |
 | BR-18 | The resolution gate: only IT Staff or Administrators may set `RESOLVED` or `CLOSED`. A Requester's resolution indication never changes status and never bypasses this gate. |
 | BR-19 | Claiming or reassigning an unassigned `NEW` Ticket advances it to `OPEN` (preserved from BR-23 of Lab 3). |
+
+### Roles, Dashboards, and Visibility
+
+| ID | Rule |
+| --- | --- |
 | BR-20 | Administrators may access the IT Staff Ticket Queue and perform every IT Staff ticket operation, and share the IT Staff dashboard (ADR-0010, supersedes ADR-0008 for this direction). |
-| BR-21 | Dashboard metrics are computed by the backend with the definitions in §5 of `api-spec.md`; values are integers, counts never negative, and lists are ordered `updatedAt` descending. |
+| BR-21 | Dashboard metrics are computed by the backend with the definitions in §2 of `api-spec.md`; values are integers, counts never negative, and lists are ordered `updatedAt` descending. |
 | BR-22 | "Recently" means the five most recent matching Tickets by `updatedAt`; no date window or time zone boundary participates in any Lab 4 metric. |
 | BR-23 | The Requester dashboard is scoped by the session user's `requesterId`; a caller can never see another Requester's counts or Tickets. |
 | BR-24 | Dashboard endpoints returning no matching data answer `200` with zeros and empty lists, never `404` or `500`. |
 | BR-25 | Every dashboard count and list has a documented drill-down destination built from `api-spec.md` query parameters. |
+
+### Data Integrity, Migration, and System Behavior
+
+| ID | Rule |
+| --- | --- |
 | BR-26 | The database seed is idempotent: repeated runs converge without duplicates, upserting on natural keys, including the new demo Tickets and Actions Taken. |
 | BR-27 | The migration is additive and preserves every Lab 1–3 row; legacy Tickets without Actions Taken remain valid and appear normally in dashboards. |
-| BR-28 | Error responses never expose stack traces, SQL, Prisma errors, filesystem paths, or internal identifiers. New failure codes are `STALE_UPDATE` and `ACTION_TAKEN_NOT_FOUND`. |
+| BR-28 | Error responses never expose stack traces, SQL, Prisma errors, filesystem paths, or internal identifiers. The new failure codes introduced by Lab 4 are `STALE_UPDATE` and `ACTION_TAKEN_NOT_FOUND`; existing codes such as `INVALID_QUERY_PARAMETER` are reused. |
 | BR-29 | Every write operation is authorized server-side; UI visibility is never treated as authorization. |
 | BR-30 | The Development Requester selector and its reference endpoint are retired; authenticated identity is the only source of ownership. |
-| BR-31 | Every Lab 1–3 behavior continues to pass its existing automated tests, except the Development Requester retirement updates named in `tests.md` §7. |
+| BR-31 | Every Lab 1–3 behavior continues to pass its existing automated tests, except the Development Requester retirement updates named in `tests.md` §5. |
 | BR-32 | All new UI uses only Zen Green tokens from `theme.css`; no hex values appear in any other file. |
 
 ---
@@ -236,8 +261,9 @@ write to a Ticket-owned field increments it atomically (BR-11, BR-12).
   and newly created Tickets alike), and dashboards read Ticket fields only.
 - Rollback: the migration is reversible by dropping the new table and column; the
   documented recovery path is restoring the pre-migration dump if the down migration
-  is unavailable in a grading environment. The approach is exercised in the
-  migration/regression tests (`tests.md` API-22).
+  is unavailable in a grading environment. The migration, its reverse, and the
+  restoration of the seeded baseline are exercised by API-23; seed convergence is
+  API-22.
 
 ### Seed
 
@@ -257,8 +283,8 @@ their `(ticketId, description)` pair. The demo set covers:
 
 Because seeded transactional data now exists, the verification harness adapts:
 per-test truncation deletes `ActionTaken` before `Ticket`; the Playwright cleanup
-re-runs the full demo seed so the baseline is restored. Both are covered by
-`tests.md` API-22 and API-23.
+re-runs the full demo seed so the baseline is restored. Both behaviors are asserted
+in API-23.
 
 ### Justified Database Decisions
 
@@ -292,9 +318,10 @@ Full payloads, validation, authorization, status codes, and error envelopes are 
 | Staff | `PATCH /api/staff/tickets/:id/owner`, `/priority`, `/status` | IT Staff, Admin | Now require `expectedVersion`; return new `version` |
 | Requester | `POST /api/tickets/:id/resolve-indication` | Requester | Bumps `version`; status unchanged |
 
-The additive response fields are `version` (all Ticket payloads) and
-`permittedTransitions` (staff/requester Ticket detail). Existing payload keys keep
-their meaning, so Lab 2–3 clients continue to parse responses.
+The additive response fields are `version` (all Ticket payloads),
+`ticketVersion` (mutation responses), and `permittedTransitions` (the IT Staff and
+Administrator Ticket detail payload). Existing payload keys keep their meaning, so
+Lab 2–3 clients continue to parse responses.
 
 ---
 
@@ -360,6 +387,11 @@ their meaning, so Lab 2–3 clients continue to parse responses.
    merge through reviewed PRs; `lab4-staging` merges into `main` for release.
 7. README documents setup, migration, seed, test, and demonstration instructions
    that actually work from a clean clone.
+8. The handout's required repository structure is complete: `docs/lab-04/` holds the
+   four contract documents, `reviewer.md` (the peer-review record, never
+   self-certified before a verdict exists), and `ai-use.md` (prompts and
+   reflection); `artifacts/lab-04/` holds the committed screenshots the UI
+   checklist requires.
 
 ---
 
@@ -396,3 +428,9 @@ their meaning, so Lab 2–3 clients continue to parse responses.
   screen and `/api/requesters` endpoint are removed; Lab 2 E2E specs move to
   authenticated login while preserving their ticket-behavior assertions. *Beat*:
   leaving an unauthenticated identity selector in a fully authenticated product.
+- **D-29 (Dashboards reverse Lab 3's KPI exclusion)**: Lab 3 explicitly excluded "KPI
+  dashboards" because Lab 4 owns them; the Lab 4 handout (§4.6) now authorizes a
+  small, fixed set of operational metrics. The dashboards remain summaries with
+  drill-downs, not reporting tools, so the earlier exclusion's intent (no BI) still
+  holds. *Beat*: keeping the exclusion and shipping no dashboards in the lab whose
+  requirements name them.

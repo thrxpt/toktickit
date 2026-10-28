@@ -55,3 +55,8 @@ or deleting legacy page components would immediately break Lab 2 regression suit
 - 100% of Lab 1 and Lab 2 regression tests pass without modification or skips.
 - The Lab 3 production application enforces real authentication, password-change gates, and role boundaries.
 - Cross-role ticket leakage and anonymous impersonation are eliminated.
+
+> **Superseded in part by Lab 4 D-28.** Lab 4 removes the Development Requester
+> selection screen and `/api/requesters`; the Lab 2 evidence tests that began at the
+> selector move to authenticated login while keeping their ticket assertions
+> (`docs/lab-04/tests.md` §5). The header fallback and role rules above stand.

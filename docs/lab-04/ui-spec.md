@@ -137,7 +137,7 @@ One route, role-switched content. Page title reflects the role: "My Dashboard",
 2. `MetricCard` grid: **Open Tickets** (count), **Waiting for You** (count), each
    drilling into the filtered My Tickets list.
 3. **Recently Updated** `DashboardList` (drill: `sortBy=updatedAt&sortOrder=desc`).
-4. **Recently Resolved** `DashboardList` (drill: `status=RESOLVED`).
+4. **Recently Resolved** `DashboardList` (drill: `statusGroup=resolved`).
 5. Empty state (no Tickets at all): the two cards show `0` and both lists show their
    empty copy, plus a **Create Ticket** button.
 
@@ -156,9 +156,11 @@ One route, role-switched content. Page title reflects the role: "My Dashboard",
 #### Administrator
 
 - The IT Staff dashboard content, plus a final **Accounts** card group: Total,
-  Active, Inactive, and one card per role, each linking to `/admin/users` with the
-  matching filter. If the account metrics fail, only that group shows its error
-  state; the ticket metrics remain usable.
+  Active, Inactive, and one card per role. Total and the per-role cards link to
+  `/admin/users?role=<ROLE>`; Active and Inactive are informational (the user list
+  API filters by role, not activation state), so they render without a link. If the
+  account metrics fail, only that group shows its error state; the ticket metrics
+  remain usable.
 - A short link "Manage users →" appears in the heading area.
 
 #### Dashboard states
@@ -182,7 +184,7 @@ One route, role-switched content. Page title reflects the role: "My Dashboard",
   Action Date/Time read-only.
 - Successful save: editor closes, list refreshes in server order, and a success
   toast/alert appears. The Ticket's version is updated from the response before the
-  next mutation (api-spec §4.4).
+  next mutation (api-spec §4, rule 4).
 - Empty: "No Actions Taken yet. Record the first action to start the work log."
 - A Ticket with zero actions is normal, never an error.
 
@@ -201,9 +203,10 @@ One route, role-switched content. Page title reflects the role: "My Dashboard",
 
 - The **Current Status** dropdown lists only `permittedTransitions` from the
   server payload, plus the current status as the selected, non-selectable option.
-- When no transitions are permitted (`CANCELLED`, and after `CLOSED` until reopen),
-  the control renders as a read-only field with an explanation ("This Ticket is
-  cancelled; no further status changes are possible.").
+- When no transitions are permitted (`CANCELLED` only, which is terminal), the
+  control renders as a read-only field with an explanation ("This Ticket is
+  cancelled; no further status changes are possible."). A `CLOSED` Ticket still
+  offers `REOPENED`.
 - On success: the status badge, the dropdown options, and the `version` refresh from
   the response; a success message appears.
 - On `409`: `ConflictAlert` with **Reload ticket**; the chosen value is not applied.
