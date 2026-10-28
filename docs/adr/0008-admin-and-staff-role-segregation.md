@@ -33,6 +33,11 @@ Administrators and IT Staff have disjoint permissions:
 Attempting an action outside one's role returns `403 Forbidden` (or `404 Not Found`
 for resource endpoints where existence must not be leaked).
 
+> **Superseded in part by [ADR-0010](0010-lab4-administrator-ticket-access.md)
+> (Lab 4).** Administrators may now use the IT Staff ticket surfaces for support and
+> testing; the IT Staff exclusion from User Management and all other rules here
+> still stand.
+
 ## Consequences
 
 Each role receives a dedicated top-level navigation destination and application view:
