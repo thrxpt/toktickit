@@ -215,6 +215,7 @@ staffQueueRouter.get(
         select: {
           id: true,
           ticketNumber: true,
+          version: true,
           summary: true,
           requestedPriority: true,
           itPriority: true,
@@ -239,6 +240,7 @@ staffQueueRouter.get(
     const items = tickets.map((t) => ({
       id: t.id,
       ticketNumber: t.ticketNumber,
+      version: t.version,
       summary: t.summary,
       categoryName: t.category.name,
       requestedPriority: t.requestedPriority,

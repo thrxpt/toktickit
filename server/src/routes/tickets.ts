@@ -15,6 +15,13 @@ import {
   postTicketAttachmentHandlers,
 } from "./attachments";
 
+import {
+  expectedVersionSchema,
+  updateTicketAtVersion,
+} from "../tickets/ticket-version";
+
+const resolutionSchema = z.object({ expectedVersion: expectedVersionSchema }).strict();
+
 const listTicketsQuerySchema = z
   .object({
     search: z
@@ -173,6 +180,7 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
         select: {
           id: true,
           ticketNumber: true,
+          version: true,
           summary: true,
           requestedPriority: true,
           status: true,
@@ -278,6 +286,7 @@ ticketsRouter.get("/:id", async (req: Request, res: Response) => {
     const baseResponse = {
       id: ticket.id,
       ticketNumber: ticket.ticketNumber,
+      version: ticket.version,
       summary: ticket.summary,
       description: ticket.description,
       requestedPriority: ticket.requestedPriority,
@@ -325,6 +334,12 @@ ticketsRouter.post("/:id/resolve-indication", async (req: Request, res: Response
   }
 
   const id = parseInt(idResult.data, 10);
+  const parsed = resolutionSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    sendError(res, "VALIDATION_FAILED", formatZodErrors(parsed.error));
+    return;
+  }
+  const { expectedVersion } = parsed.data;
 
   try {
     const ticket = await prisma.ticket.findFirst({
@@ -335,11 +350,17 @@ ticketsRouter.post("/:id/resolve-indication", async (req: Request, res: Response
       select: {
         id: true,
         status: true,
+        version: true,
       },
     });
 
     if (!ticket) {
       sendError(res, "TICKET_NOT_FOUND");
+      return;
+    }
+
+    if (ticket.version !== expectedVersion) {
+      sendError(res, "STALE_UPDATE");
       return;
     }
 
@@ -351,14 +372,17 @@ ticketsRouter.post("/:id/resolve-indication", async (req: Request, res: Response
       return;
     }
 
-    const updated = await prisma.ticket.update({
-      where: { id: ticket.id },
-      data: { resolvedByRequester: true },
-      select: { id: true, resolvedByRequester: true },
+    const updated = await updateTicketAtVersion(ticket.id, expectedVersion, {
+      resolvedByRequester: true,
     });
+    if (!updated) {
+      sendError(res, "STALE_UPDATE");
+      return;
+    }
 
     res.status(200).json({
       id: updated.id,
+      ticketVersion: updated.version,
       resolvedByRequester: updated.resolvedByRequester,
       message:
         "Problem indicated as resolved. IT Staff will review and formally close the ticket.",

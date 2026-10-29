@@ -5,6 +5,7 @@ import apiFetch from "../api/client";
 import AttachmentSection from "../components/AttachmentSection";
 import Badge from "../components/Badge";
 import ConfirmDialog from "../components/ConfirmDialog";
+import ConflictAlert from "../components/tickets/ConflictAlert";
 import PublicComments from "../components/tickets/PublicComments";
 import ReadOnlyField from "../components/ReadOnlyField";
 import StateBlock from "../components/StateBlock";
@@ -36,16 +37,18 @@ export function RequesterTicketDetail() {
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
+  const [needsReload, setNeedsReload] = useState(false);
+  const [showConflict, setShowConflict] = useState(false);
   const [resolveError, setResolveError] = useState<string | null>(null);
 
-  const fetchTicket = useCallback(() => {
+  const fetchTicket = useCallback((preserveEditors = false) => {
     if (!id || !activeRequester) {
       setLoading(false);
       return;
     }
 
     const controller = new AbortController();
-    setLoading(true);
+    if (!preserveEditors) setLoading(true);
     setError(false);
     setNotFound(false);
 
@@ -64,6 +67,8 @@ export function RequesterTicketDetail() {
         }
         const data: TicketDetail = await res.json();
         setTicket(data);
+        setNeedsReload(false);
+        setShowConflict(false);
       } catch (err: unknown) {
         if (
           controller.signal.aborted ||
@@ -71,8 +76,11 @@ export function RequesterTicketDetail() {
         ) {
           return;
         }
-        setError(true);
-        setTicket(null);
+        if (preserveEditors) setResolveError("Unable to reload Ticket. Please try again.");
+        else {
+          setError(true);
+          setTicket(null);
+        }
       } finally {
         setLoading(false);
       }
@@ -147,21 +155,30 @@ export function RequesterTicketDetail() {
   }
 
   const handleConfirmResolution = async () => {
-    if (!ticket || isResolving) return;
+    if (!ticket || isResolving || needsReload) return;
     setIsResolving(true);
     setResolveError(null);
     try {
       const res = await apiFetch(`/api/tickets/${ticket.id}/resolve-indication`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expectedVersion: ticket.version }),
       });
+      const data = await res.json().catch(() => null);
+      if (res.status === 409 && data?.error?.code === "STALE_UPDATE") {
+        setNeedsReload(true);
+        setShowConflict(true);
+        setIsConfirmOpen(false);
+        return;
+      }
       if (!res.ok) {
-        const errData = await res.json().catch(() => null);
+        const errData = data;
         throw new Error(
           errData?.error?.message || "Failed to submit resolution indication",
         );
       }
       setTicket((prev) =>
-        prev ? { ...prev, resolvedByRequester: true } : prev,
+        prev ? { ...prev, resolvedByRequester: true, version: data.ticketVersion } : prev,
       );
       setIsConfirmOpen(false);
     } catch (err: unknown) {
@@ -193,7 +210,7 @@ export function RequesterTicketDetail() {
                 ticket.resolvedByRequester ||
                 ticket.status === "CLOSED" ||
                 ticket.status === "CANCELLED" ||
-                isResolving
+                isResolving || needsReload
               }
             >
               Problem Appears Resolved
@@ -221,6 +238,8 @@ export function RequesterTicketDetail() {
         </div>
       </div>
 
+      {showConflict && <ConflictAlert onReload={() => fetchTicket(true)} onDismiss={() => setShowConflict(false)} />}
+      {needsReload && !showConflict && <button type="button" className="btn btn-primary mb-3" onClick={() => fetchTicket(true)}>Reload ticket</button>}
       {resolveError && (
         <div className="alert alert-danger alert-dismissible mb-4" role="alert">
           {resolveError}

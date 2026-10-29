@@ -226,11 +226,12 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/owner`)
       .set("Cookie", staff.cookie)
-      .send({ ownerId: staff.user.id });
+      .send({ ownerId: staff.user.id, expectedVersion: ticket.version });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       ticketId: ticket.id,
+      ticketVersion: 1,
       ticketOwnerId: staff.user.id,
       status: "OPEN",
       message: "Ticket ownership updated.",
@@ -254,11 +255,12 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/owner`)
       .set("Cookie", staff.cookie)
-      .send({ ownerId: staff.user.id });
+      .send({ ownerId: staff.user.id, expectedVersion: ticket.version });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       ticketId: ticket.id,
+      ticketVersion: 1,
       ticketOwnerId: staff.user.id,
       status: "IN_PROGRESS",
       message: "Ticket ownership updated.",
@@ -282,7 +284,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/owner`)
       .set("Cookie", staff.cookie)
-      .send({ ownerId: fixtures.staff2.id });
+      .send({ ownerId: fixtures.staff2.id, expectedVersion: ticket.version });
 
     expect(res.status).toBe(200);
     expect(res.body.ticketOwnerId).toBe(fixtures.staff2.id);
@@ -304,7 +306,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/owner`)
       .set("Cookie", staff.cookie)
-      .send({ ownerId: null });
+      .send({ ownerId: null, expectedVersion: ticket.version });
 
     expect(res.status).toBe(200);
     expect(res.body.ticketOwnerId).toBeNull();
@@ -325,7 +327,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/owner`)
       .set("Cookie", staff.cookie)
-      .send({ ownerId: null });
+      .send({ ownerId: null, expectedVersion: ticket.version });
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("NEW");
@@ -343,7 +345,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     const res = await request(app)
       .patch("/api/staff/tickets/invalid-id/owner")
       .set("Cookie", staff.cookie)
-      .send({ ownerId: staff.user.id });
+      .send({ ownerId: staff.user.id, expectedVersion: 0 });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_FAILED");
@@ -358,7 +360,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/owner`)
       .set("Cookie", staff.cookie)
-      .send({ ownerId: fixtures.inactiveStaff.id });
+      .send({ ownerId: fixtures.inactiveStaff.id, expectedVersion: ticket.version });
 
     expect(res.status).toBe(400);
   });
@@ -371,7 +373,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/owner`)
       .set("Cookie", staff.cookie)
-      .send({ ownerId: fixtures.requester.id });
+      .send({ ownerId: fixtures.requester.id, expectedVersion: ticket.version });
 
     expect(res.status).toBe(400);
   });
@@ -381,7 +383,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     const res = await request(app)
       .patch("/api/staff/tickets/999999/owner")
       .set("Cookie", staff.cookie)
-      .send({ ownerId: staff.user.id });
+      .send({ ownerId: staff.user.id, expectedVersion: 0 });
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("TICKET_NOT_FOUND");
@@ -394,7 +396,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/owner`)
       .set("Cookie", requester.cookie)
-      .send({ ownerId: null });
+      .send({ ownerId: null, expectedVersion: ticket.version });
 
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe("FORBIDDEN");
@@ -407,7 +409,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/owner`)
       .set("Cookie", admin.cookie)
-      .send({ ownerId: admin.user.id });
+      .send({ ownerId: admin.user.id, expectedVersion: ticket.version });
 
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe("FORBIDDEN");
@@ -425,11 +427,12 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/priority`)
       .set("Cookie", staff.cookie)
-      .send({ itPriority: "CRITICAL" });
+      .send({ itPriority: "CRITICAL", expectedVersion: ticket.version });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       ticketId: ticket.id,
+      ticketVersion: 1,
       itPriority: "CRITICAL",
       message: "IT Priority updated.",
     });
@@ -446,10 +449,11 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
     const ticket = await createTicket({ itPriority: "LOW" });
 
     for (const priority of ["MEDIUM", "HIGH", "LOW"] as const) {
+      const detail = await request(app).get(`/api/staff/tickets/${ticket.id}`).set("Cookie", staff.cookie);
       const res = await request(app)
         .patch(`/api/staff/tickets/${ticket.id}/priority`)
         .set("Cookie", staff.cookie)
-        .send({ itPriority: priority });
+        .send({ itPriority: priority, expectedVersion: detail.body.version });
 
       expect(res.status).toBe(200);
       expect(res.body.itPriority).toBe(priority);
@@ -463,7 +467,7 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/priority`)
       .set("Cookie", staff.cookie)
-      .send({ itPriority: "SUPER_URGENT" });
+      .send({ itPriority: "SUPER_URGENT", expectedVersion: ticket.version });
 
     expect(res.status).toBe(400);
   });
@@ -473,7 +477,7 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
     const res = await request(app)
       .patch("/api/staff/tickets/invalid-id/priority")
       .set("Cookie", staff.cookie)
-      .send({ itPriority: "HIGH" });
+      .send({ itPriority: "HIGH", expectedVersion: 0 });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_FAILED");
@@ -485,7 +489,7 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
     const res = await request(app)
       .patch("/api/staff/tickets/999999/priority")
       .set("Cookie", staff.cookie)
-      .send({ itPriority: "HIGH" });
+      .send({ itPriority: "HIGH", expectedVersion: 0 });
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("TICKET_NOT_FOUND");
@@ -498,7 +502,7 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/priority`)
       .set("Cookie", requester.cookie)
-      .send({ itPriority: "HIGH" });
+      .send({ itPriority: "HIGH", expectedVersion: ticket.version });
 
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe("FORBIDDEN");
@@ -511,7 +515,7 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/priority`)
       .set("Cookie", admin.cookie)
-      .send({ itPriority: "HIGH" });
+      .send({ itPriority: "HIGH", expectedVersion: ticket.version });
 
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe("FORBIDDEN");
@@ -526,11 +530,12 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/status`)
       .set("Cookie", staff.cookie)
-      .send({ status: "IN_PROGRESS" });
+      .send({ status: "IN_PROGRESS", expectedVersion: ticket.version });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       ticketId: ticket.id,
+      ticketVersion: 1,
       status: "IN_PROGRESS",
       message: "Status updated successfully.",
     });
@@ -548,7 +553,7 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/status`)
       .set("Cookie", staff.cookie)
-      .send({ status: "RESOLVED" });
+      .send({ status: "RESOLVED", expectedVersion: ticket.version });
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("RESOLVED");
@@ -561,7 +566,7 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/status`)
       .set("Cookie", staff.cookie)
-      .send({ status: "RESOLVED" });
+      .send({ status: "RESOLVED", expectedVersion: ticket.version });
 
     expect(res.status).toBe(400);
     expect(res.body).toEqual({
@@ -585,7 +590,7 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/status`)
       .set("Cookie", staff.cookie)
-      .send({ status: "REOPENED" });
+      .send({ status: "REOPENED", expectedVersion: ticket.version });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("INVALID_STATUS_TRANSITION");
@@ -596,7 +601,7 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
     const res = await request(app)
       .patch("/api/staff/tickets/invalid-id/status")
       .set("Cookie", staff.cookie)
-      .send({ status: "OPEN" });
+      .send({ status: "OPEN", expectedVersion: 0 });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_FAILED");
@@ -608,7 +613,7 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
     const res = await request(app)
       .patch("/api/staff/tickets/999999/status")
       .set("Cookie", staff.cookie)
-      .send({ status: "OPEN" });
+      .send({ status: "OPEN", expectedVersion: 0 });
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("TICKET_NOT_FOUND");
@@ -621,7 +626,7 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/status`)
       .set("Cookie", requester.cookie)
-      .send({ status: "IN_PROGRESS" });
+      .send({ status: "IN_PROGRESS", expectedVersion: ticket.version });
 
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe("FORBIDDEN");
@@ -634,7 +639,7 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/status`)
       .set("Cookie", admin.cookie)
-      .send({ status: "IN_PROGRESS" });
+      .send({ status: "IN_PROGRESS", expectedVersion: ticket.version });
 
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe("FORBIDDEN");
