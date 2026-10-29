@@ -56,7 +56,15 @@ or deleting legacy page components would immediately break Lab 2 regression suit
 - The Lab 3 production application enforces real authentication, password-change gates, and role boundaries.
 - Cross-role ticket leakage and anonymous impersonation are eliminated.
 
-> **Superseded in part by Lab 4 D-28.** Lab 4 removes the Development Requester
-> selection screen and `/api/requesters`; the Lab 2 evidence tests that began at the
-> selector move to authenticated login while keeping their ticket assertions
-> (`docs/lab-04/tests.md` §5). The header fallback and role rules above stand.
+> **Superseded in part by Lab 4 D-28 and ADR-0010.** D-28 removes the Development
+> Requester screen, `/api/requesters`, and every `X-Requester-Id` fallback in all
+> environments, including tests and attachment content. It supersedes decision 5
+> and the unauthenticated-create `400 REQUESTER_CONTEXT_MISSING` exception:
+> protected requests without a valid session answer `401 UNAUTHENTICATED`.
+> Legacy API/UI/E2E tests use authenticated sessions; selector/reference-endpoint
+> tests are deleted with replacement coverage (`docs/lab-04/tests.md` §5).
+> Session-first ownership and IT Staff exclusion from User Management still stand.
+> ADR-0010 separately supersedes decision 3's Administrator attachment restriction
+> and the operational-ticket restrictions: Administrators gain IT Staff ticket
+> behavior. Header compatibility and the earlier claim that it eliminates anonymous
+> impersonation are historical Lab 3 behavior, not the Lab 4 security contract.

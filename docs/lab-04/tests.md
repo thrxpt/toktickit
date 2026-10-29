@@ -28,8 +28,10 @@ Lab 4 reuses the six seams proven in Lab 3 — no new seam is introduced:
   a button.
 - **Dashboard calculations are asserted against direct database queries** in the same
   test (count via Prisma, then compare to the endpoint), so a metric cannot drift.
-- **Concurrency is asserted with two writers and one `expectedVersion`**, proving the
-  conditional update rather than trusting UI disabling.
+- **Concurrency is asserted with two writers and one `expectedVersion`**, both
+  concurrently and sequentially (API-07). Failed ActionTaken writes leave the
+  Ticket version and action unchanged (API-27), proving transaction rollback
+  rather than trusting UI disabling.
 - **Workflow is asserted twice**: once against the pure matrix (`UNIT-02`) and once
   through the endpoint (`API-10`), so a UI-only change cannot satisfy it.
 
@@ -63,23 +65,24 @@ The `toktickit_test` database strategy from Lab 3 continues, with two additions:
 
 | Test ID | AC / BR | What It Tests | Expected Result |
 | --- | --- | --- | --- |
-| API-01 | AC-01, BR-01, BR-03 | Valid staff create | `201`; row under the correct Ticket; `performedBy` equals the session user |
+| API-01 | AC-01, BR-01, BR-03 | Valid staff create | `201`; row under the correct Ticket; `performedBy` equals the session user; internal `seedKey` absent from responses |
 | API-02 | AC-03, BR-04 | Follow-up omitted while required; note sent while not required | `400 VALIDATION_FAILED` with `followUpNote` field error in both directions |
 | API-03 | AC-05, BR-10 | Requester create and update attempts | `403 FORBIDDEN`; no row created or changed |
 | API-04 | AC-04, BR-09 | Owner Requester lists actions; unrelated Requester lists same Ticket | `200` ascending for the owner; `404 TICKET_NOT_FOUND` for the other |
-| API-05 | AC-02, BR-03 | Update description/result/follow-up; attempt to change `performedBy` | `200`; changed fields persist; performer and `createdAt` unchanged; supplied `performedBy` rejected |
+| API-05 | AC-02, BR-03, BR-26 | Update description/result/follow-up; attempt to change `performedBy` or supply seed-only `seedKey` on create/update | `200` for valid update; performer and `createdAt` unchanged; supplied `performedBy`/`seedKey` rejected; internal seed keys absent from read/update responses |
 | API-06 | AC-06 | Unknown action id, and an action id belonging to another Ticket | `404 ACTION_TAKEN_NOT_FOUND` |
-| API-07 | AC-07, BR-13 | Two creates with the same `expectedVersion` (sequential) | First `201`; second `409 STALE_UPDATE`; exactly one row exists |
+| API-07 | AC-07, BR-12, BR-13 | Two creates with the same `expectedVersion`, once concurrently and once sequentially | One `201`, one `409 STALE_UPDATE`; exactly one new action row and one Ticket version increment in each schedule |
+| API-27 | AC-07, AC-26, BR-12, BR-13 | Force an ActionTaken insert/update failure inside the database transaction after the conditional Ticket write | Safe error response; persisted action data and Ticket version both equal their pre-request values; retry with the original version can succeed |
 
 #### `ticket-workflow.api.test.ts`
 
 | Test ID | AC / BR | What It Tests | Expected Result |
 | --- | --- | --- | --- |
-| API-08 | AC-08, BR-12 | Stale update on status, owner, and priority | Each answers `409 STALE_UPDATE`; Ticket fields unchanged |
-| API-09 | AC-08, BR-11 | Successful mutation responses | New `version` returned and incremented by exactly one |
+| API-08 | AC-08, BR-12 | Stale update on status, owner, priority, Requester resolution indication, and Action Taken update | Each answers `409 STALE_UPDATE`; Ticket fields/version and action unchanged |
+| API-09 | AC-08, BR-11, BR-12 | Successful mutation responses and missing/negative/non-integer versions on every guarded endpoint | Success returns `ticketVersion` incremented by exactly one; invalid versions answer `400 VALIDATION_FAILED` without writes |
 | API-10 | AC-09, BR-15, BR-16 | Matrix through the endpoint: permitted edge, invalid edge, same-status, post-`CANCELLED` | `200` / `400 INVALID_STATUS_TRANSITION` respectively |
 | API-11 | AC-10, BR-15 | `GET /api/staff/tickets/:id` payload | Contains `version` and `permittedTransitions` equal to the matrix for the current status |
-| API-12 | AC-11, BR-18 | Requester resolve-indication on an `OPEN` Ticket | `200`; `resolvedByRequester: true`; status unchanged; version bumped |
+| API-12 | AC-08, AC-11, BR-11, BR-12, BR-18 | Owning Requester sends current `expectedVersion` on an `OPEN` Ticket; Staff then writes with the pre-indication version | Indication answers `200`, returns incremented `ticketVersion`, sets `resolvedByRequester: true`, and leaves status unchanged; the Staff write answers `409 STALE_UPDATE` and changes nothing |
 | API-13 | AC-23, BR-20 | Administrator claims, prioritises, transitions, and records an action | All succeed, superseding ADR-0008 in the ticket direction only |
 | API-14 | AC-23 | IT Staff calls `GET /api/admin/users` | `403 FORBIDDEN` |
 | API-15 | AC-11, BR-17 | Requester calls `PATCH /api/staff/tickets/:id/status` | `403 FORBIDDEN` |
@@ -91,7 +94,7 @@ The `toktickit_test` database strategy from Lab 3 continues, with two additions:
 | API-16 | AC-12, BR-23 | Metrics for a Requester with seeded Tickets | Counts and lists equal direct queries scoped to that Requester only |
 | API-17 | AC-16, BR-24 | Requester with no Tickets | `200` with zero counts and empty arrays |
 | API-18 | AC-17 | IT Staff and Administrator call the Requester dashboard | `403 FORBIDDEN` |
-| API-19 | AC-15, BR-25 | Each documented drill-down query against `/api/tickets` | Returned set matches the originating metric |
+| API-19 | AC-15, BR-25 | Each Requester drill-down against `/api/tickets`, including `sort=updatedAt&order=desc`; invalid/empty/repeated `statusGroup` and `status` plus `statusGroup` | Valid queries return the matching collection in documented order; invalid group or conflicting filters answer `400 INVALID_QUERY_PARAMETER` |
 
 #### `staff-dashboard.api.test.ts`
 
@@ -99,17 +102,23 @@ The `toktickit_test` database strategy from Lab 3 continues, with two additions:
 | --- | --- | --- | --- |
 | API-20 | AC-13, BR-21 | Unassigned, owned-by-me, all eight status counts, all four priority counts, recent list | Every value equals a direct database count; recent list capped at five, `updatedAt` desc |
 | API-21 | AC-14, BR-20 | Administrator and IT Staff dashboard payloads | Admin receives `userCounts` (total/active/inactive/byRole); Staff response omits it |
-| API-22 | AC-21, BR-26 | Seed run twice on a seeded database | No duplicates for Users, Tickets, or Actions Taken; counts unchanged; demo set still covers zero/one/many actions |
-| API-23 | AC-21, BR-27 | Migration applied to a Lab 3 database, reversed on the test database, plus harness baseline | Legacy rows and zero-action Tickets valid after up-migration; down-migration restores the schema; truncation deletes ActionTaken before Ticket; E2E cleanup restores the full demo baseline |
+| API-22 | AC-21, BR-26 | Seed run twice: demo Tickets upsert by stable Ticket Number, Actions Taken by stable unique `seedKey`; two actions on one Ticket share a description | Counts and fixture ids unchanged; same-description actions remain separate; ordinary actions allow null seed keys; zero/one/many coverage remains |
+| API-23 | AC-21, BR-27 | Migrations applied to a Lab 3 database, reversed on the test database, plus harness baseline | Legacy rows and zero-action Tickets valid; nullable unique `seedKey` and both dashboard `updatedAt` indexes exist; down-migrations restore the schema; truncation deletes ActionTaken before Ticket; E2E cleanup restores the full demo baseline |
 | API-24 | AC-13 | Performance smoke: staff dashboard against the full demo dataset | Responds `200` within a generous 500 ms local budget (single retry before failing) |
 | API-25 | AC-26, BR-28 | Forced stale update and missing action through the error envelope | Envelope shape with safe messages; no stack, SQL, or path |
 | API-26 | AC-22, BR-30 | `GET /api/requesters` after retirement | Standard 404; no user list leaked |
+
+#### `requester-retirement.api.test.ts`
+
+| Test ID | AC / BR | What It Tests | Expected Result |
+| --- | --- | --- | --- |
+| API-28 | AC-22, BR-29, BR-30 | Header-only Ticket list/create and attachment-content access with Requester/IT Staff/Administrator ids; no session; expired session plus header; valid session plus a conflicting header | No valid session always answers `401 UNAUTHENTICATED`, including ticket creation; no rows created or bytes returned. With a valid session, identity/role comes only from that session, ownership is enforced, and a header cannot turn Staff/Admin into a Requester |
 
 ### Regression Suite Execution
 
 | Test ID | AC / BR | What It Runs | Expected Result |
 | --- | --- | --- | --- |
-| REG-01 | AC-22, BR-31 | All Lab 1–3 unit, API, UI, style, responsive, and E2E suites on `lab4-staging` after migration and seed changes | Every suite green; only the retirement updates in §5 differ; zero skips |
+| REG-01 | AC-22, BR-31 | All Lab 1–3 unit, API, UI, style, responsive, and E2E suites on `lab4-staging` after migration and seed changes | Every suite green with only the contract updates in §5; obsolete tests are documented deletions with replacement coverage; zero skips |
 
 ### UI Component — `client/tests/lab-04/*.test.tsx`
 
@@ -123,8 +132,10 @@ The `toktickit_test` database strategy from Lab 3 continues, with two additions:
 | UI-06 | AC-18, FR-19 | Rapid double submit | Submit disabled in flight; one request observed | `ActionsTaken.test.tsx` |
 | UI-07 | AC-19 | Requester Ticket Detail with actions | All actions render; no create/edit controls exist in the DOM | `ActionsTaken.test.tsx` |
 | UI-08 | AC-10, FR-07 | Status control renders only `permittedTransitions`; success refreshes badge; `CANCELLED` read-only | Options equal payload; no extra statuses; cancelled state explains and disables | `TicketWorkflow.test.tsx` |
-| UI-09 | AC-20, FR-20 | `409` during an action edit | Conflict alert appears, entered text preserved, reload control present | `TicketWorkflow.test.tsx` |
+| UI-09 | AC-08, AC-20, FR-06, FR-20 | `409` during an action edit or Requester resolution indication; successful indication returns a new version | Conflict alert appears, entered text preserved, reload control present; indication sends `expectedVersion` and success refreshes the local version | `TicketWorkflow.test.tsx` |
 | UI-10 | AC-24, FR-16 | Role navigation includes Dashboard with active indication | Each role sees its destinations; active item carries `aria-current="page"` | `StaffDashboard.test.tsx` |
+| UI-11 | AC-12, AC-15, BR-25 | Follow Requester cards/recent-list links into My Tickets; paginate and choose a single status | Links use `statusGroup` and `sort`/`order`; My Tickets forwards them to the API, retains them on pagination, and clears the group when a single status is chosen | `RequesterDashboard.test.tsx` |
+| UI-12 | AC-14, AC-15 | Follow Admin Total/per-role Accounts cards into User Management, then navigate between roles and back to Total | Total links to `/admin/users`; role links use `/admin/users?role=<ROLE>`; URL role changes update the selected filter and API request; Active/Inactive counts have no links | `StaffDashboard.test.tsx` |
 
 ### UI Style — `client/tests/lab-04/style/*.test.tsx`
 
@@ -149,7 +160,7 @@ The `toktickit_test` database strategy from Lab 3 continues, with two additions:
 | --- | --- | --- | --- |
 | E2E-01 | AC-01, AC-02, AC-03, AC-07, AC-18 | Staff opens a Ticket, records an action with follow-up, edits it, double-submits, and sees one row | `actions-taken-flow.spec.ts` |
 | E2E-02 | AC-09, AC-10, AC-11, AC-23 | Requester indicates resolved; Admin transitions the Ticket through resolution and closure; Requester sees the outcome | `ticket-resolution.spec.ts` |
-| E2E-03 | AC-12, AC-13, AC-14, AC-15, AC-16 | Requester, Staff, and Admin load dashboards, follow a metric to the matching list, and see the empty state for a zero-data Requester | `dashboards.spec.ts` |
+| E2E-03 | AC-12, AC-13, AC-14, AC-15, AC-16 | Requester, Staff, and Admin load dashboards; Requester follows grouped-status/recent-update links, Admin follows Total/per-role account links; destinations apply the filters/order; zero-data Requester sees empty state | `dashboards.spec.ts` |
 
 ---
 
@@ -163,26 +174,26 @@ The `toktickit_test` database strategy from Lab 3 continues, with two additions:
 | AC-04 | API-04 | API |
 | AC-05 | API-03 | API |
 | AC-06 | API-06 | API |
-| AC-07 | API-07, E2E-01 | API + E2E |
-| AC-08 | API-08, API-09 | API |
+| AC-07 | API-07, API-27, E2E-01 | API + E2E |
+| AC-08 | API-08, API-09, API-12, UI-09 | API + UI |
 | AC-09 | UNIT-02, API-10, E2E-02 | Unit + API + E2E |
 | AC-10 | API-11, UI-08, E2E-02 | API + UI + E2E |
 | AC-11 | API-12, E2E-02 | API + E2E |
-| AC-12 | UNIT-03, API-16, UI-02, E2E-03 | Unit + API + UI + E2E |
+| AC-12 | UNIT-03, API-16, UI-02, UI-11, E2E-03 | Unit + API + UI + E2E |
 | AC-13 | UNIT-03, API-20, API-24, UI-01, E2E-03 | Unit + API + UI + E2E |
-| AC-14 | API-21, UI-03, E2E-03 | API + UI + E2E |
-| AC-15 | API-19, UI-01, E2E-03 | API + UI + E2E |
+| AC-14 | API-21, UI-03, UI-12, E2E-03 | API + UI + E2E |
+| AC-15 | API-19, UI-01, UI-11, UI-12, E2E-03 | API + UI + E2E |
 | AC-16 | API-17, UI-02, E2E-03 | API + UI + E2E |
 | AC-17 | API-18, UI-03 | API + UI |
 | AC-18 | UI-04, UI-05, UI-06, E2E-01 | UI + E2E |
 | AC-19 | UI-07 | UI |
 | AC-20 | UI-09, RESP-04 | UI + Responsive |
 | AC-21 | API-22, API-23 | API |
-| AC-22 | API-26, REG-01 | API + full regression |
+| AC-22 | API-26, API-28, REG-01 | API + full regression |
 | AC-23 | API-13, API-14, E2E-02 | API + E2E |
 | AC-24 | UI-10, STYLE-02, STYLE-03, RESP-01..04 | UI + Style + Responsive |
 | AC-25 | RESP-01..04 | Responsive |
-| AC-26 | API-25, UI-03 | API + UI |
+| AC-26 | API-25, API-27, UI-03 | API + UI |
 
 ---
 
@@ -199,22 +210,66 @@ migration:
   authentication, password change, RBAC, queue, ticket operations, comments, notes,
   user management.
 
-No Lab 1–3 test may be skipped or weakened to make Lab 4 pass. The only permitted
-edits are the Development Requester retirement updates below.
+No Lab 1–3 test may be skipped or weakened to make Lab 4 pass. The permitted
+contract updates are listed below; obsolete tests are deletions with replacement
+coverage, not skips. Ticket, ownership, validation, and attachment assertions stay.
 
 ---
 
-## 5. Planned Development Requester Retirement Updates
+## 5. Planned Regression Updates for the Lab 4 Contract
 
-D-28 removes `/select-requester` and `/api/requesters`. Affected evidence:
+D-28 removes `/select-requester`, `/api/requesters`, and `X-Requester-Id` identity
+in all environments, including tests; there is no `NODE_ENV` bypass (FR-22, BR-30).
+These implementation changes belong to Issue 28; the header-only rejection is
+proved by API-28 and the retired endpoint by API-26. This docs-only Issue records
+the plan before those changes are made.
+
+### Retirement Inventory
+
+| Module | Required change | Evidence |
+| --- | --- | --- |
+| `server/src/middleware/requester-context.ts` | Remove header fallback and unauthenticated-create exception; derive Requester identity/role from the session | API-28; migrated Lab 2 requester-context tests |
+| `server/src/routes/attachments.ts` | Remove the separate header fallback on attachment content; preserve authorized session downloads and ownership checks | API-28; migrated Lab 2 attachment tests |
+| `client/src/context/RequesterContext.tsx` | Remove `RequesterProvider`, `RequesterContext`, `useRequester`, and `STORAGE_KEY`; stop the mount-time `/api/requesters` fetch | Lab 2/3 route and shell tests verify no selector fetch or stored identity use |
+| `client/src/api/client.ts` | Remove `X-Requester-Id` injection from `toktickit_requester_id`; retain cookie credentials | Lab 2/3 route and Requester page tests |
+| `client/src/App.tsx`, `client/src/pages/RequesterSelection.tsx`, `client/src/components/AppShell.tsx` | Remove selector route/page/link and provider wrapper | Updated `AppRoutes.test.tsx` / `AppShell.test.tsx`; selector-only test deleted |
+| `client/src/routes/RequireAuth.tsx`, `client/src/routes/RequireRole.tsx`, `client/src/components/RequesterGuard.tsx` | Remove selector redirects and legacy identity branches; use session login/forbidden behavior, removing the obsolete guard if unused | Lab 2/3 route tests retain unauthenticated and cross-role assertions |
+| `client/src/pages/CreateTicket.tsx`, `MyTickets.tsx`, `RequesterTicketDetail.tsx` | Replace selected-Requester fallback with authenticated session context | Existing page tests retain creation/list/detail assertions |
+| `client/src/auth/AuthContext.tsx` | Remove any remaining provider dependencies; discard legacy `toktickit_requester_id` without ever reading it as identity | Existing auth/logout tests; stale localStorage never authenticates |
+
+### Legacy Evidence Updates
 
 | Test | Change | Why it is not a regression |
 | --- | --- | --- |
-| `e2e/lab-02/*.spec.ts` journeys that begin at `/select-requester` | Replace selector step with login as the seeded Requester | The assertions about creating, listing, and managing Tickets are unchanged; identity is now real, as Lab 3 requires |
-| Any API test calling `GET /api/requesters` | Deleted, replaced by API-26 asserting the endpoint is gone | The endpoint populated a retired screen; its removal is the asserted behavior |
-| `client/tests/lab-02` RequesterSelection tests | Removed with the screen | The screen no longer exists; ticket UI coverage remains |
+| `server/tests/lab-02/{create-ticket,my-tickets,ticket-detail,attachments}.api.test.ts` | Replace header identity setup with login/session helpers for seeded Requesters; retain all Ticket/Attachment/validation/ownership assertions | The same protected operations are exercised with trustworthy identity |
+| `server/tests/lab-02/requester-context.api.test.ts` | Replace header-format/missing/inactive-identity expectations with session-only, inactive-user, cross-role, and header-impersonation rejection cases; unauthenticated creation now expects `401` | Obsolete header semantics are replaced by BR-30 coverage, including API-28 |
+| `server/tests/lab-02/requesters.api.test.ts` | Delete endpoint-list tests; API-26 proves standard 404 | The endpoint populated the retired selector |
+| `client/tests/lab-02/RequesterSelection.test.tsx` | Delete with the retired screen | Updated route/shell tests prove no selector route/link/fetch remains |
+| `client/tests/lab-02/{AppRoutes,AppShell,CreateTicket,MyTickets,RequesterTicketDetail,AttachmentSection}.test.tsx` and affected `style/*.test.tsx` | Replace RequesterProvider/storage fixtures with authenticated context; replace selector redirects/links with login or role-forbidden expectations | Ticket UI, ownership, validation, attachment, theme, and accessibility assertions remain |
+| `client/tests/lab-03/{AppRoutes,AppShell,Login,ChangePassword,RequesterTicketDetail}.test.tsx` | Remove legacy provider fixtures or selector expectations wherever present; retain session/password-change/RBAC coverage | Retires compatibility scaffolding without weakening real authentication |
+| `e2e/lab-02/{helpers.ts,requester-ticket-flow.spec.ts,evidence.spec.ts,responsive.spec.ts}` | Replace selector steps with seeded-Requester login; preserve journey, viewport, and screenshot assertions | Ticket behavior stays covered under authenticated identity |
 
-All other Lab 2 assertions (tickets, attachments, validation, ownership) stay.
+The five header-using Lab 2 API files above contain 73 `X-Requester-Id` occurrences
+at the reviewed baseline `4b47ce7`; the count is an inventory aid, not a target to
+preserve. Tests must run against the same session-only middleware as the app.
+
+### Version, Role, and Dashboard Contract Updates
+
+BR-12 and ADR-0010 deliberately amend earlier behavior; these are additional named
+exceptions to unchanged legacy evidence (BR-31), not authorization to weaken it:
+
+- Lab 2/3 API and E2E tests mutating owner, priority, status, or resolution
+  indication fetch the current Ticket version and send `expectedVersion`.
+  Requester detail UI mocks include `version` and assert its submission. Stale
+  assertions are added through API-08, API-09, API-12, and UI-09.
+- Lab 3 API/UI/E2E cases asserting Administrator exclusion from staff ticket routes
+  or attachment content become permitted-operation assertions (API-13, AC-23).
+  IT Staff exclusion from User Management and Requester ownership/role assertions
+  remain mandatory (API-14, API-15, API-28).
+- Existing route/shell/login tests adopt `/dashboard` as the post-login landing
+  destination for each role, preserving original login, password-change, and
+  role-boundary checks (UI-10). Dashboard drill-down changes to My Tickets and
+  User Management are covered by API-19, UI-11, UI-12, and E2E-03.
 
 ---
 
@@ -252,13 +307,13 @@ Filled in by the release ticket after implementation; planned counts:
 | Level | Planned | Passing | Skipped | Status |
 | --- | --- | --- | --- | --- |
 | Unit | 3 | — | — | Planned |
-| API | 26 | — | — | Planned |
-| UI Component | 10 | — | — | Planned |
+| API | 28 | — | — | Planned |
+| UI Component | 12 | — | — | Planned |
 | UI Style | 3 | — | — | Planned |
 | Responsive | 4 | — | — | Planned |
 | E2E | 3 | — | — | Planned |
 | Regression suite | 1 | — | — | Planned |
-| **Total** | **50** | — | — | Planned |
+| **Total** | **54** | — | — | Planned |
 
 Known limitations to carry into the release evidence:
 

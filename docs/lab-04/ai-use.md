@@ -1,6 +1,12 @@
 # Lab 4 AI Use
 
-**LLM used:** DeepSeek V4.1 Flash via OpenCode agent harness
+**LLMs used:** GLM 5.3 Flash (`opencode/glm-5.3-flash-free`) for the initial
+requirements/specification work and DeepSeek V4.1 Flash
+(`opencode/deepseek-v4.1-flash-free`) for the contract drafting and initial fixes,
+via the OpenCode agent harness. GPT-6.1 Sol (`gpt-6.1-sol`) via the Codex harness
+in T3 Code verified the peer review and prepared the follow-up contract fixes.
+These identifiers are taken from the recorded session metadata; no additional
+model build/version is claimed.
 
 Lab 4 turns the working multi-role service desk into a finished product: the work
 log (Actions Taken), the final Ticket lifecycle, role dashboards, and a hardening
@@ -25,6 +31,7 @@ rewriting history.
 | 6 | "Design the concurrency contract: what exactly is versioned, what is not, and what the client sees" | Chose an integer `Ticket.version` with `expectedVersion` on every Ticket-owned mutation and `409 STALE_UPDATE`; Public Comments and Internal Notes are append-only and deliberately outside the guard. Actions Taken writes are version-guarded too, so a double-click cannot create two rows. |
 | 7 | "Write the test plan from the contract, before implementation, with full AC traceability" | Produced 50 planned IDs across UNIT, API, UI, STYLE, RESP, E2E, and a regression row, each with a file path and expected result. Every AC-01..AC-26 maps to at least one planned test; numbering restarts for Lab 4. |
 | 8 | Two-axis code review over the contract diff (Standards and Spec, in parallel) | Caught what self-review missed: a dashboard drill-down that did not match its count, `version` vs `ticketVersion` naming drift, a stale `§7` citation, `CLOSED → REOPENED` wrongly described as terminal, and two mandated documents (`reviewer.md`, `ai-use.md`) missing from the deliverable. All were fixed in the PR before review. |
+| 9 | "My peer reviewer is already give the comment. Please check and verify whether it meets the requirements." Then: "If it's valid you can fix this with new commit." | Independently checked the peer's four blockers against the contract and code, then corrected session-only retirement, unique seed keys, drill-down parameters/client handling, and transactional version guards. Added rollback/identity/drill-down test-plan coverage (54 planned IDs), documented index decisions, and recorded Changes requested without claiming approval. |
 
 ## My Reflection
 

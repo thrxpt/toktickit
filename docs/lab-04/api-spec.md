@@ -29,6 +29,11 @@ Unknown/expired sessions answer `401 UNAUTHENTICATED` on every protected route.
 Role mismatch answers `403 FORBIDDEN`. Ownership mismatch answers `404` with the
 resource's `*_NOT_FOUND` code, never `403`, to avoid confirming existence.
 
+`X-Requester-Id` supplies no identity in any environment, including tests (BR-30,
+D-28). Without a valid session, header-only requests answer `401 UNAUTHENTICATED`,
+including ticket creation and attachment content. With a valid session, the header
+is ignored; it cannot impersonate another User or change the caller's role.
+
 ### Error Envelope
 
 Lab 3's envelope remains mandatory:
@@ -133,7 +138,7 @@ Records an Action Taken. Performed by is taken from the session (BR-03).
   absent, `null`, or `""` when false (BR-04).
 - `attachmentNotes`: optional, trimmed, `""` normalizes to `null`, max 1,000.
 - `expectedVersion`: required integer ≥ 0 (BR-12).
-- `performedBy`, `performedById`, `createdAt`: not accepted; presence answers
+- `performedBy`, `performedById`, `createdAt`, `seedKey`: not accepted; presence answers
   `400 VALIDATION_FAILED` with the offending field named.
 
 #### Responses
@@ -178,6 +183,8 @@ value. Setting `followUpRequired` to `false` clears the stored `followUpNote`;
 supplying a non-empty note in the same request while the flag is false is rejected
 exactly as in POST (BR-04). Validation otherwise matches POST.
 `performedBy`/`createdAt` are immutable and rejected if supplied.
+`seedKey` is seed-only metadata; it is rejected on writes and omitted from every
+Action Taken response.
 
 #### Responses
 
@@ -232,8 +239,12 @@ Drill-down (client-built links, using the amended list parameters below):
 
 - Open Tickets → `/tickets?statusGroup=open` — the same five-status set the metric counts.
 - Waiting for You → `/tickets?status=WAITING_FOR_REQUESTER`.
-- Recently Updated → `/tickets?sortBy=updatedAt&sortOrder=desc`.
-- Recently Resolved → `/tickets?statusGroup=resolved` — the same two-status set.
+- Recently Updated → `/tickets?sort=updatedAt&order=desc`.
+- Recently Resolved → `/tickets?statusGroup=resolved&sort=updatedAt&order=desc` — the same two-status set in recent-update order.
+
+The recent dashboard lists show at most five Tickets. Their list-page links open
+the full matching collection with the same ordering, rather than limiting the
+destination to five (AC-15).
 
 - **403 FORBIDDEN**: IT Staff or Administrator.
 
@@ -298,7 +309,10 @@ Drill-down:
 - Status → `/staff/queue?status=<STATUS>`
 - Priority → `/staff/queue?priority=<PRIORITY>`
 - Recently Updated → `/staff/queue?sortBy=updatedAt&sortOrder=desc`
-- User counts (Admin) → `/admin/users` (role filter buttons)
+- Total user count (Admin) → `/admin/users`.
+- Per-role user counts (Admin) → `/admin/users?role=<ROLE>`.
+- Active/inactive user counts are informational text, with no drill-down; the
+  existing User Management API has no activation-state filter.
 
 - **403 FORBIDDEN**: Requester.
 - `userCounts` is omitted, not null, for IT Staff.
@@ -320,11 +334,26 @@ mentioned is unchanged.
 | `open` | Tickets still being worked | `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `REOPENED` |
 | `resolved` | Finished positively | `RESOLVED`, `CLOSED` |
 
-`statusGroup` and `status` are mutually exclusive; supplying both answers
-`400 INVALID_QUERY_PARAMETER`. The parameter exists so a Requester dashboard card's
-drill-down returns exactly the set its metric counted (BR-25). The IT Staff queue
+Only the exact values `open` and `resolved` are accepted; other values (including
+empty or repeated values) answer `400 INVALID_QUERY_PARAMETER`. `statusGroup` and
+`status` are mutually exclusive; supplying both answers
+`400 INVALID_QUERY_PARAMETER` (API-19). The parameter exists so a Requester
+dashboard card's drill-down returns exactly the set its metric counted (BR-25). The IT Staff queue
 needs no equivalent: its cards drill by a single status, owner, or priority, all of
 which it already filters.
+
+Requester sorting retains the existing `sort=createdAt|ticketNumber|updatedAt`
+and `order=asc|desc` parameters (defaults `createdAt`, `desc`); it does not accept
+`sortBy`/`sortOrder`. Staff queue sorting retains `sortBy`/`sortOrder`.
+
+Issue 27 updates `client/src/pages/MyTickets.tsx` to read and forward `statusGroup`
+to `/api/tickets` alongside `sort`/`order`, retain it during pagination, and clear
+it when a single `status` is selected (and clear `status` when a group is selected).
+It updates `client/src/pages/admin/UserManagement.tsx` to initialize the role filter
+from `?role=REQUESTER|IT_STAFF|ADMINISTRATOR` and synchronize that filter on URL
+navigation. Total accounts opens `/admin/users` without a role filter. These use
+the existing admin API `role` parameter; no new admin API parameter is introduced.
+API-19, UI-11, UI-12, and E2E-03 cover the links and their destinations.
 
 ### Staff routes become operational-role routes
 
@@ -347,8 +376,8 @@ Adds to the existing payload:
 
 `permittedTransitions` is the server's matrix result for the current status, so the
 UI never derives transitions independently (FR-07). Roles: IT Staff and
-Administrator. The Requester Ticket detail payload is unchanged; Requesters have no
-transitions to render.
+Administrator. The Requester Ticket detail payload adds `version` but no
+`permittedTransitions`; Requesters have no transitions to render.
 
 ### PATCH /api/staff/tickets/:id/owner
 
@@ -383,10 +412,20 @@ transitions to render.
 
 ### POST /api/tickets/:id/resolve-indication
 
-Unchanged request shape and response body, except the response now also includes
-`ticketVersion`. The indication bumps the version (BR-11) but does not require
-`expectedVersion`; it never changes `status` (BR-18). A staff member holding a stale
-view then correctly receives `409` on their next write and reloads.
+**Roles**: owning Requester only. Requires `expectedVersion` just like the other
+Ticket mutations (FR-06, BR-12). The indication bumps the version (BR-11) and never
+changes `status` (BR-18). The Requester detail screen takes the version from its
+Ticket payload and includes it in the request:
+
+```json
+{ "expectedVersion": 7 }
+```
+
+- **400 VALIDATION_FAILED**: missing, negative, or non-integer `expectedVersion`.
+- **403 FORBIDDEN**: IT Staff or Administrator.
+- **404 TICKET_NOT_FOUND**: missing Ticket or non-owning Requester.
+- **409 STALE_UPDATE**: stale version; neither the indication nor version changes.
+- **200 OK**: existing response fields plus `ticketVersion`:
 
 ```json
 {
@@ -397,6 +436,9 @@ view then correctly receives `409` on their next write and reloads.
 }
 ```
 
+A staff member holding version `7` then receives `409 STALE_UPDATE` on their next
+write; API-12 asserts that the advisory indication invalidates that stale view.
+
 ### Other Ticket responses
 
 `GET /api/tickets`, `GET /api/tickets/:id`, and `GET /api/staff/tickets` add
@@ -406,10 +448,9 @@ view then correctly receives `409` on their next write and reloads.
 
 ## 4. Concurrency Rules
 
-1. `expectedVersion` is required on every mutating request in §3 (owner, priority,
-   status, action create, action update). Missing or non-integer answers
-   `400 VALIDATION_FAILED`. The Requester-only resolve-indication is the sole
-   exception: it carries no guard but still bumps the version.
+1. `expectedVersion` is required on Actions Taken create/update (§1) and the
+   Ticket mutations in §3 (owner, priority, status, and Requester resolution
+   indication). Missing, negative, or non-integer answers `400 VALIDATION_FAILED`.
 2. The server performs a conditional write
    (`WHERE id = :ticketId AND version = :expectedVersion`) and increments `version`
    in the same statement. Zero affected rows means the caller was stale.
@@ -417,8 +458,12 @@ view then correctly receives `409` on their next write and reloads.
    versions. Nothing is partially applied.
 4. Every successful mutation response returns the new `ticketVersion`, so a client
    can continue without a re-fetch.
-5. Actions Taken creation is version-guarded too, which makes a double-click with the
-   same `expectedVersion` create exactly one row (BR-13).
+5. The conditional Ticket update/version increment and ActionTaken insert/update
+   execute in one database transaction (BR-12, BR-13). A stale version, missing
+   action, constraint failure, or failed action write rolls back both changes.
+   Concurrent or sequential creates with the same `expectedVersion` yield one
+   `201`, one `409 STALE_UPDATE`, exactly one action row, and one version increment.
+   API-07 covers both schedules; API-27 proves rollback on create/update failures.
 6. Public Comments and Internal Notes are append-only discussion and do not bump
    `version`.
 
@@ -430,14 +475,23 @@ view then correctly receives `409` on their next write and reloads.
 the Development Requester selector, which authenticated identity replaced in Lab 3.
 Requests now fall through to the standard 404.
 
+The header identity path is also retired (BR-30): delete the `X-Requester-Id`
+fallback in `server/src/middleware/requester-context.ts` and the separate fallback
+in `server/src/routes/attachments.ts`. Remove the unauthenticated ticket-create
+exception returning `400 REQUESTER_CONTEXT_MISSING`; no session now means
+`401 UNAUTHENTICATED`. API-28 verifies these paths, including Staff/Admin ids in
+the header and a session combined with a conflicting header.
+
 ---
 
 ## 6. Regression Guarantees
 
-- Every Lab 2 and Lab 3 request and response shape remains valid for clients that do
-  not send `expectedVersion` and never mutate Tickets — reads are unaffected.
-- Ticket mutations from Lab 3 clients now require `expectedVersion`; this is the one
-  deliberate breaking change, made so no user can silently overwrite another's work
-  (BR-12).
-- Attachment upload/download/soft-removal, comments, notes, authentication, password
-  change, and User Management are untouched.
+- Authenticated read payloads retain their existing fields and add `version` to
+  Tickets. `statusGroup` is the only new optional Ticket-list query parameter.
+- Ticket mutations, including resolution indication, require `expectedVersion`
+  (BR-12); legacy mutation tests are updated to fetch and send it.
+- Session authentication replaces header-only identity everywhere (BR-30);
+  `/api/requesters` is removed. The exact legacy test updates are in `tests.md` §5.
+- Attachment upload/download/soft-removal, comments, notes, password change, and
+  User Management retain their behavior for permitted authenticated callers.
+  Administrator ticket access widens per ADR-0010; IT Staff cannot manage users.

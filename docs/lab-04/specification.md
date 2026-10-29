@@ -106,14 +106,14 @@ server-side, and the UI merely guides the user toward what the server allows.
 | FR-03 | IT Staff and Administrators can update an existing Action Taken's description, result, follow-up fields, and attachment notes. |
 | FR-04 | The owning Requester, IT Staff, and Administrators can list all Actions Taken on a Ticket in ascending Action Date/Time order. |
 | FR-05 | A Requester who does not own the Ticket cannot read its Actions Taken, and receives `404` consistent with ownership protection. |
-| FR-06 | The backend exposes each Ticket's current version, requires `expectedVersion` on every mutating Ticket operation, and answers `409 STALE_UPDATE` when the caller's version is stale. |
+| FR-06 | The backend exposes each Ticket's current version, requires `expectedVersion` on every mutating Ticket operation including Requester resolution indication, and answers `409 STALE_UPDATE` when the caller's version is stale. |
 | FR-07 | The backend returns the permitted status transitions for a Ticket, and the UI offers only those transitions for the caller's role. |
 | FR-08 | The backend enforces the final status-transition matrix and the resolution gate even when a client calls the API directly; invalid and same-status transitions are rejected. |
 | FR-09 | A Requester's "Problem Appears Resolved" indication is recorded but never changes Ticket status; only IT Staff or Administrators may set `RESOLVED`, `CLOSED`, `REOPENED`, or `CANCELLED`. |
 | FR-10 | A Requester dashboard reports total open Tickets, Tickets waiting for the Requester, recently updated Tickets, and recently resolved Tickets, scoped to the authenticated Requester. |
 | FR-11 | An IT Staff dashboard reports unassigned Tickets, Tickets owned by the caller, counts by status, counts by IT Priority, and recently updated Tickets. |
 | FR-12 | An Administrator dashboard reuses the IT Staff metrics and adds concise user-account counts. |
-| FR-13 | Every dashboard metric or list drills down to the corresponding filtered My Tickets or Ticket Queue view. |
+| FR-13 | Ticket dashboard counts and recent lists drill down to the corresponding filtered/ordered My Tickets or Ticket Queue view. Administrator Total/per-role account counts link to User Management; Active/Inactive account counts are informational because the user list has no activation-state filter. |
 | FR-14 | Dashboards define loading, empty, forbidden, and safe-failure states; an empty dataset renders zero values and empty lists, never an error. |
 | FR-15 | All dashboard values are computed by the backend from authoritative data; the client never derives metrics from partial collections. |
 | FR-16 | Role-appropriate Dashboard navigation appears for every Role with a clear active-page indication. |
@@ -122,7 +122,7 @@ server-side, and the UI merely guides the user toward what the server allows.
 | FR-19 | Duplicate submissions caused by repeated clicking or network retry are prevented or safely rejected; only one record results. |
 | FR-20 | Forms preserve entered data after recoverable failures, including `409` conflicts, and offer a refresh path. |
 | FR-21 | The seed becomes idempotent demo data covering all statuses, priorities, ownership states, and zero/one/many Actions Taken, without duplicating on re-run. |
-| FR-22 | The obsolete Development Requester selection screen and its unauthenticated reference endpoint are removed, and their Lab 2 evidence tests are updated to authenticated sessions without weakening their assertions. |
+| FR-22 | The obsolete Development Requester selection screen, `/api/requesters`, and every `X-Requester-Id` identity fallback are removed in all environments, including tests. Lab 2 evidence tests use authenticated sessions without weakening their Ticket assertions. |
 | FR-23 | The completed application preserves all Labs 1–3 authentication, authorization, Requester, IT Staff, Administrator, comment, note, and attachment behavior. |
 | FR-24 | Administrator users can reach the IT Staff Ticket Queue, Ticket Detail, and ticket operations (ADR-0010), while IT Staff remain unable to reach User Management. |
 
@@ -155,8 +155,8 @@ server-side, and the UI merely guides the user toward what the server allows.
 | ID | Rule |
 | --- | --- |
 | BR-11 | Every write to a Ticket-owned field (owner, IT Priority, status, resolution indication, Actions Taken create/update) increments `version` by one; Public Comments and Internal Notes do not. |
-| BR-12 | Mutating Ticket endpoints require `expectedVersion`; a mismatch answers `409 STALE_UPDATE` and changes nothing. The comparison and increment are atomic. |
-| BR-13 | A repeated submission carrying the same `expectedVersion` is rejected with `409 STALE_UPDATE`, so a double-click or retry cannot create two Actions Taken. |
+| BR-12 | Mutating Ticket endpoints, including Requester resolution indication, require `expectedVersion`; a mismatch answers `409 STALE_UPDATE` and changes nothing. The conditional Ticket write and version increment are atomic. An ActionTaken insert/update and its conditional Ticket write run in one database transaction; any failure rolls both back. |
+| BR-13 | A repeated submission carrying the same `expectedVersion` is rejected with `409 STALE_UPDATE`, so a double-click or retry cannot create two Actions Taken. Concurrent submissions produce exactly one action row and one version increment; a failed ActionTaken write leaves both the action and Ticket version unchanged (BR-12). |
 
 ### Ticket Lifecycle and Resolution
 
@@ -178,18 +178,18 @@ server-side, and the UI merely guides the user toward what the server allows.
 | BR-22 | "Recently" means the five most recent matching Tickets by `updatedAt`; no date window or time zone boundary participates in any Lab 4 metric. |
 | BR-23 | The Requester dashboard is scoped by the session user's `requesterId`; a caller can never see another Requester's counts or Tickets. |
 | BR-24 | Dashboard endpoints returning no matching data answer `200` with zeros and empty lists, never `404` or `500`. |
-| BR-25 | Every dashboard count and list has a documented drill-down destination built from `api-spec.md` query parameters. |
+| BR-25 | Every dashboard count and list has a documented calculation; Ticket counts/lists and Administrator Total/per-role account counts have a drill-down destination using `api-spec.md` query parameters. Active/Inactive account counts are informational and have no link because User Management has no activation-state filter. |
 
 ### Data Integrity, Migration, and System Behavior
 
 | ID | Rule |
 | --- | --- |
-| BR-26 | The database seed is idempotent: repeated runs converge without duplicates, upserting on natural keys, including the new demo Tickets and Actions Taken. |
+| BR-26 | The database seed is idempotent: repeated runs converge without duplicates. Users and reference data retain their natural keys, demo Tickets upsert by stable Ticket Number, and demo Actions Taken upsert by a stable, unique `seedKey` (nullable for ordinary actions). Descriptions are never unique keys. |
 | BR-27 | The migration is additive and preserves every Lab 1–3 row; legacy Tickets without Actions Taken remain valid and appear normally in dashboards. |
 | BR-28 | Error responses never expose stack traces, SQL, Prisma errors, filesystem paths, or internal identifiers. The new failure codes introduced by Lab 4 are `STALE_UPDATE` and `ACTION_TAKEN_NOT_FOUND`; existing codes such as `INVALID_QUERY_PARAMETER` are reused. |
 | BR-29 | Every write operation is authorized server-side; UI visibility is never treated as authorization. |
-| BR-30 | The Development Requester selector and its reference endpoint are retired; authenticated identity is the only source of ownership. |
-| BR-31 | Every Lab 1–3 behavior continues to pass its existing automated tests, except the Development Requester retirement updates named in `tests.md` §5. |
+| BR-30 | The Development Requester selector, `/api/requesters`, and every `X-Requester-Id` identity fallback (including attachment content) are retired in all environments; authenticated session identity is the only source of ownership. A header alone, regardless of the supplied User's role, answers `401 UNAUTHENTICATED`; a header with a session cannot override that session's identity or role. |
+| BR-31 | Every Lab 1–3 behavior continues to pass its existing automated tests except the explicit Lab 4 contract updates named in `tests.md` §5: Development Requester retirement, version-guarded writes, Administrator ticket access, and dashboard navigation/drill-downs. Tests are never skipped or weakened to mask a regression. |
 | BR-32 | All new UI uses only Zen Green tokens from `theme.css`; no hex values appear in any other file. |
 
 ---
@@ -234,6 +234,7 @@ and `InternalNote`, because its fields, validation, and role rules differ:
 | Field | Type | Notes |
 | --- | --- | --- |
 | `id` | `Int` autoincrement | Primary key |
+| `seedKey` | `String? @unique` | Stable identifier for demo seed upserts (BR-26); `null` for ordinary actions; never accepted from or exposed to API clients |
 | `ticketId` | `Int` FK → `Ticket.id`, on delete restrict | BR-01 |
 | `description` | `String` | Action Description, 1–2,000 trimmed |
 | `result` | `String` | Result, 1–2,000 trimmed |
@@ -253,15 +254,25 @@ Relation: `Ticket.actionsTaken ActionTaken[]` and `User.performedActions ActionT
 every existing row by the migration default; no backfill script is required. Every
 write to a Ticket-owned field increments it atomically (BR-11, BR-12).
 
+### Dashboard Indexes
+
+Add `@@index([requesterId, updatedAt(sort: Desc)])` for ownership-scoped recent
+Ticket reads and `@@index([updatedAt(sort: Desc)])` for the shared operational
+recent list (BR-21, BR-22). Keep the existing status, priority, and owner indexes
+for filtered counts. The existing `createdAt` index cannot serve the dashboards'
+`updatedAt` ordering; these two indexes avoid sorting the full matching collection.
+
 ### Migration, Backfill, and Recovery
 
-- One additive Prisma migration creates `ActionTaken` and adds `Ticket.version`.
+- Additive Prisma migrations add `Ticket.version` (Issue 23), then create
+  `ActionTaken` with its nullable unique `seedKey` (Issue 24) and the dashboard
+  indexes (Issue 27).
   Nothing is dropped or renamed, so all Lab 1–3 rows survive untouched.
 - No backfill is needed: a Ticket with zero Actions Taken is valid (legacy Tickets
   and newly created Tickets alike), and dashboards read Ticket fields only.
-- Rollback: the migration is reversible by dropping the new table and column; the
-  documented recovery path is restoring the pre-migration dump if the down migration
-  is unavailable in a grading environment. The migration, its reverse, and the
+- Rollback: the migrations are reversible by dropping the new indexes, table, and
+  column; the documented recovery path is restoring the pre-migration dump if a
+  down migration is unavailable in a grading environment. The migrations, their reverses, and the
   restoration of the seeded baseline are exercised by API-23; seed convergence is
   API-22.
 
@@ -269,8 +280,13 @@ write to a Ticket-owned field increments it atomically (BR-11, BR-12).
 
 `seedReferenceData` grows an idempotent demo-data section. Users, Categories, and
 Related Systems keep their existing natural keys. Demo Tickets use **stable Ticket
-Numbers** (the natural key) and upsert rather than insert; Actions Taken upsert on
-their `(ticketId, description)` pair. The demo set covers:
+Numbers** (the natural key) and upsert rather than insert. Issue 24 gives each demo
+Action Taken a stable, unique `seedKey` such as `lab4-action:battery-check`, and
+upserts with `where: { seedKey }` (BR-26). Ordinary actions leave this field `null`;
+PostgreSQL permits multiple null values in the unique column. Do not add a unique
+constraint on `(ticketId, description)`: two actions on one Ticket may legitimately
+have identical descriptions. API-22 verifies stable ids after a re-seed and that
+same-description actions remain separate. The demo set covers:
 
 - every status at least once, including `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`,
   `REOPENED`, and `CANCELLED`;
@@ -299,6 +315,10 @@ in API-23.
 3. **Text `attachmentNotes` over Action-to-Attachment joins.** The stakeholder asks
    for a pointer to "what file to look for", not a second upload path; duplicating
    bytes or links would create two sources of truth for the same evidence.
+4. **Indexes follow dashboard queries.** Ownership plus `updatedAt` supports the
+   Requester list; a separate `updatedAt` index supports the Staff/Admin list.
+   Existing status/priority/owner indexes remain useful for counts; retaining only
+   `createdAt` indexes would not support recent-update ordering.
 
 ---
 
@@ -315,8 +335,8 @@ Full payloads, validation, authorization, status codes, and error envelopes are 
 | Dashboard | `GET /api/dashboard/requester` | Requester | Own-Ticket metrics and recent lists |
 | Dashboard | `GET /api/dashboard/staff` | IT Staff, Admin | Operational metrics; account counts for Admin |
 | Staff | `GET /api/staff/tickets/:id` | IT Staff, Admin | Detail now includes `version` and `permittedTransitions` |
-| Staff | `PATCH /api/staff/tickets/:id/owner`, `/priority`, `/status` | IT Staff, Admin | Now require `expectedVersion`; return new `version` |
-| Requester | `POST /api/tickets/:id/resolve-indication` | Requester | Bumps `version`; status unchanged |
+| Staff | `PATCH /api/staff/tickets/:id/owner`, `/priority`, `/status` | IT Staff, Admin | Require `expectedVersion`; return new `ticketVersion` |
+| Requester | `POST /api/tickets/:id/resolve-indication` | Requester | Requires `expectedVersion`; bumps version and returns `ticketVersion`; status unchanged |
 
 The additive response fields are `version` (all Ticket payloads),
 `ticketVersion` (mutation responses), and `permittedTransitions` (the IT Staff and
@@ -335,22 +355,22 @@ Lab 2–3 clients continue to parse responses.
 | AC-04 | **Given** a Requester who owns the Ticket, **when** they list Actions Taken, **then** all actions are returned ascending; an unrelated Requester receives `404`. |
 | AC-05 | **Given** a Requester, **when** they attempt to create or update an Action Taken, **then** the backend answers `403 FORBIDDEN` and no row changes. |
 | AC-06 | **Given** a Ticket id that does not exist or an action id belonging to another Ticket, **when** requested, **then** the API answers `404` with `TICKET_NOT_FOUND` or `ACTION_TAKEN_NOT_FOUND`. |
-| AC-07 | **Given** two writers with the same `expectedVersion`, **when** both create an Action Taken, **then** the first succeeds and the second answers `409 STALE_UPDATE`, leaving exactly one row. |
-| AC-08 | **Given** a stale `expectedVersion`, **when** status, owner, or IT Priority is updated, **then** the API answers `409 STALE_UPDATE` and the Ticket is unchanged. |
+| AC-07 | **Given** two writers with the same `expectedVersion`, **when** both create an Action Taken concurrently or sequentially, **then** one succeeds and the other answers `409 STALE_UPDATE`, leaving exactly one row and one version increment. If the ActionTaken write fails, the transaction leaves both the action and Ticket version unchanged. |
+| AC-08 | **Given** a stale `expectedVersion`, **when** status, owner, IT Priority, Requester resolution indication, or an Action Taken is updated, **then** the API answers `409 STALE_UPDATE` and neither the Ticket nor action changes. |
 | AC-09 | **Given** the final matrix, **when** any transition is attempted, **then** permitted transitions succeed, and invalid, same-status, or post-`CANCELLED` transitions answer `400 INVALID_STATUS_TRANSITION`. |
 | AC-10 | **Given** the staff Ticket Detail payload, **when** it renders, **then** the status control offers exactly `permittedTransitions`, and a successful change refreshes the displayed status and version. |
 | AC-11 | **Given** a Requester indication, **when** it is recorded, **then** status is unchanged and no endpoint allows a Requester to set any status. |
 | AC-12 | **Given** an authenticated Requester, **when** dashboard data is retrieved, **then** only metrics and lists for that Requester's Tickets are returned. |
 | AC-13 | **Given** seeded demo data, **when** the IT Staff dashboard is retrieved, **then** unassigned, owned-by-me, status, and priority counts match direct database queries. |
 | AC-14 | **Given** an Administrator, **when** the staff dashboard is retrieved, **then** the IT Staff metrics plus user-account counts are returned. |
-| AC-15 | **Given** any dashboard card, **when** followed, **then** it opens the documented filtered My Tickets or Ticket Queue view whose contents match the metric. |
+| AC-15 | **Given** a dashboard drill-down link, **when** followed, **then** My Tickets, Ticket Queue, or User Management reads the documented URL parameters and shows the matching filtered and ordered collection; recent lists link to the full matching collection in `updatedAt` descending order. |
 | AC-16 | **Given** a Requester with no Tickets, **when** their dashboard loads, **then** zero counts and empty lists render with an empty state, and the API answered `200`. |
 | AC-17 | **Given** a role using a dashboard endpoint it does not own, **when** it calls the API, **then** the response is `403 FORBIDDEN`. |
 | AC-18 | **Given** the Actions Taken UI, **when** a staff member creates or edits an action, **then** the list reflects server order and conditional Follow-up validation, and a rapid double submit produces one record. |
 | AC-19 | **Given** the Requester Ticket Detail, **when** Actions Taken exist, **then** they render read-only with no create or edit controls, while the API still rejects writes. |
 | AC-20 | **Given** a `409` conflict during an edit, **when** the UI handles it, **then** the user's entered data is preserved, a clear conflict message appears, and a reload control is offered. |
 | AC-21 | **Given** a database from Lab 3, **when** the Lab 4 migration runs, **then** every existing row remains valid, legacy zero-action Tickets behave normally, and re-running the seed produces no duplicates. |
-| AC-22 | **Given** the full test suite, **when** it runs on `lab4-staging`, **then** all Lab 1–3 tests pass except the documented Development Requester retirement updates, and no test is skipped to achieve that result. |
+| AC-22 | **Given** the full test suite, **when** it runs on `lab4-staging`, **then** all Lab 1–3 tests pass with the documented contract updates in `tests.md` §5 and no test is skipped. Removed selector/reference-endpoint tests are documented deletions with replacement coverage, not skips. Header-only access answers `401 UNAUTHENTICATED` for Requester, IT Staff, and Administrator ids. |
 | AC-23 | **Given** an Administrator, **when** they open the Ticket Queue and record an action or change status, **then** it succeeds; **given** IT Staff, **when** they open User Management, **then** they receive `403`. |
 | AC-24 | **Given** keyboard or screen-reader use, **when** operating dashboards and Actions Taken, **then** focus is visible, controls have accessible names, and status/priority are conveyed without colour alone. |
 | AC-25 | **Given** 390 px, 768 px, and 1280 px viewports, **when** any Lab 4 screen is rendered, **then** there is no clipping, overlap, or horizontal page scroll. |
@@ -406,8 +426,10 @@ Lab 2–3 clients continue to parse responses.
   the handout's Administrator requirement unimplementable. Recorded as ADR-0010.
 - **D-23 (Version-based concurrency)**: A monotonically increasing integer `version`
   guards Ticket mutations; clients send `expectedVersion` and receive the new version
-  in every mutation response. *Beat*: `updatedAt` comparison, which is fragile across
-  serialization and cannot order same-millisecond writes.
+  in every mutation response, including Requester resolution indication. ActionTaken
+  writes and their conditional Ticket version update share one database transaction;
+  failure rolls both back (BR-12, BR-13). *Beat*: `updatedAt` comparison, which is
+  fragile across serialization and cannot order same-millisecond writes.
 - **D-24 (Action Date/Time = creation timestamp)**: The stakeholder asks for an
   Action Date/Time and the handout's UI section calls it "Action create date/time";
   a single immutable server timestamp satisfies both and cannot be back-dated by a
@@ -425,9 +447,13 @@ Lab 2–3 clients continue to parse responses.
   with truncation; E2E cleanup restores the full demo baseline. *Beat*: seeding only
   reference data and asking graders to create demo data by hand.
 - **D-28 (Development Requester retirement completed)**: The `/select-requester`
-  screen and `/api/requesters` endpoint are removed; Lab 2 E2E specs move to
-  authenticated login while preserving their ticket-behavior assertions. *Beat*:
-  leaving an unauthenticated identity selector in a fully authenticated product.
+  screen, `/api/requesters`, and `X-Requester-Id` fallback are removed in every
+  environment, with no test-only bypass. This includes middleware, attachment
+  content, client header injection, provider/storage state, selector navigation,
+  and guard redirects. Lab 2 API/UI/E2E evidence moves to authenticated sessions
+  while preserving Ticket assertions (`tests.md` §5, API-26, API-28). *Beat*:
+  retaining anonymous impersonation for legacy test compatibility. Supersedes
+  ADR-0009's fallback and unauthenticated-create exception.
 - **D-29 (Dashboards reverse Lab 3's KPI exclusion)**: Lab 3 explicitly excluded "KPI
   dashboards" because Lab 4 owns them; the Lab 4 handout (§4.6) now authorizes a
   small, fixed set of operational metrics. The dashboards remain summaries with

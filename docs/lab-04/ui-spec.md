@@ -125,6 +125,11 @@ Role navigation destinations (FR-16, BR-20):
 - The active item uses the existing `zen-nav-link active` treatment plus
   `aria-current="page"`.
 - The user name, role badge, avatar initials, and Logout menu are unchanged.
+- Remove the Development Requester selector route/link, `RequesterProvider`,
+  `RequesterContext`, and `STORAGE_KEY`; the API client no longer injects
+  `X-Requester-Id`. `RequireAuth`, `RequireRole`, and the old `RequesterGuard`
+  use session identity and the existing login/forbidden flow, with no redirect to
+  `/select-requester` (BR-30; retirement inventory in `tests.md` §5).
 
 ### 3.2 Dashboard (`/dashboard`)
 
@@ -136,10 +141,17 @@ One route, role-switched content. Page title reflects the role: "My Dashboard",
 1. Page heading and a one-line summary ("A quick look at your IT requests.").
 2. `MetricCard` grid: **Open Tickets** (count), **Waiting for You** (count), each
    drilling into the filtered My Tickets list.
-3. **Recently Updated** `DashboardList` (drill: `sortBy=updatedAt&sortOrder=desc`).
-4. **Recently Resolved** `DashboardList` (drill: `statusGroup=resolved`).
+3. **Recently Updated** `DashboardList` (drill: `/tickets?sort=updatedAt&order=desc`).
+4. **Recently Resolved** `DashboardList` (drill: `/tickets?statusGroup=resolved&sort=updatedAt&order=desc`).
 5. Empty state (no Tickets at all): the two cards show `0` and both lists show their
    empty copy, plus a **Create Ticket** button.
+
+`MyTickets.tsx` reads `statusGroup`, `sort`, and `order` from the URL and forwards
+them to `/api/tickets`; pagination retains the group and sorting. Selecting a
+single status clears the group, and selecting a group clears a single status, so
+the client does not send conflicting filters. Recent-list drill-downs show the full
+matching collection in recent-update order; individual rows still open Ticket
+Detail. API-19, UI-11, and E2E-03 verify the destination behavior (AC-15).
 
 #### IT Staff
 
@@ -156,12 +168,17 @@ One route, role-switched content. Page title reflects the role: "My Dashboard",
 #### Administrator
 
 - The IT Staff dashboard content, plus a final **Accounts** card group: Total,
-  Active, Inactive, and one card per role. Total and the per-role cards link to
-  `/admin/users?role=<ROLE>`; Active and Inactive are informational (the user list
-  API filters by role, not activation state), so they render without a link. If the
-  account metrics fail, only that group shows its error state; the ticket metrics
+  Active, Inactive, and one card per role. Total links to `/admin/users`; the
+  per-role cards link to `/admin/users?role=<ROLE>`. Active and Inactive are
+  informational (the user list API filters by role, not activation state), so they
+  render without a link. If the account metrics fail, only that group shows its
+  error state; the ticket metrics
   remain usable.
 - A short link "Manage users →" appears in the heading area.
+- `client/src/pages/admin/UserManagement.tsx` initializes its filter from the
+  `role` URL parameter and applies URL changes during navigation, so the linked
+  list fetches `/api/admin/users?role=<ROLE>` and displays the matching accounts.
+  The Total link clears the role filter. UI-12 and E2E-03 cover this behavior.
 
 #### Dashboard states
 
@@ -213,6 +230,10 @@ One route, role-switched content. Page title reflects the role: "My Dashboard",
 - Resolution indication banner (from Lab 3) remains visible and unchanged, worded as
   advisory: "Requester has indicated this problem appears resolved. IT Staff review
   the work and formally close the Ticket."
+- The Requester resolution-indication control submits the loaded Ticket's
+  `version` as `expectedVersion`. Success updates the local version from
+  `ticketVersion`; `409` renders `ConflictAlert` with reload instead of silently
+  applying the indication (FR-06, BR-12; UI-09, API-12).
 
 ---
 
