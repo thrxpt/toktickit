@@ -130,6 +130,7 @@ describe("API-10 — IT Staff queries Ticket Queue with filters and pagination (
     expect(res.body.items).toHaveLength(1);
     expect(res.body.items[0]).toEqual({
       id: ticket.id,
+      version: 0,
       ticketNumber: "TKT-2026-000001",
       summary: "Keyboard not responding",
       categoryName: category.name,

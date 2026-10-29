@@ -360,11 +360,13 @@ describe("API-09 — Requester indicates Problem Appears Resolved (AC-09, BR-24)
     // Requester posts to resolve-indication endpoint
     const resolveRes = await request(app)
       .post(`/api/tickets/${ticketId}/resolve-indication`)
-      .set("Cookie", requester.cookie);
+      .set("Cookie", requester.cookie)
+      .send({ expectedVersion: createRes.body.version });
 
     expect(resolveRes.status).toBe(200);
     expect(resolveRes.body).toEqual({
       id: ticketId,
+      ticketVersion: 1,
       resolvedByRequester: true,
       message: "Problem indicated as resolved. IT Staff will review and formally close the ticket.",
     });
@@ -396,7 +398,8 @@ describe("API-09 — Requester indicates Problem Appears Resolved (AC-09, BR-24)
 
     const resB = await request(app)
       .post(`/api/tickets/${ticketId}/resolve-indication`)
-      .set("Cookie", requesterB.cookie);
+      .set("Cookie", requesterB.cookie)
+      .send({ expectedVersion: createRes.body.version });
 
     expect(resB.status).toBe(404);
     expect(resB.body).toEqual({
@@ -431,7 +434,8 @@ describe("API-09 — Requester indicates Problem Appears Resolved (AC-09, BR-24)
 
     const closedRes = await request(app)
       .post(`/api/tickets/${ticketId}/resolve-indication`)
-      .set("Cookie", requester.cookie);
+      .set("Cookie", requester.cookie)
+      .send({ expectedVersion: createRes.body.version });
 
     expect(closedRes.status).toBe(400);
     expect(closedRes.body.error.code).toBe("VALIDATION_FAILED");
@@ -457,13 +461,15 @@ describe("API-09 — Requester indicates Problem Appears Resolved (AC-09, BR-24)
 
     const staffRes = await request(app)
       .post(`/api/tickets/${ticketId}/resolve-indication`)
-      .set("Cookie", staff.cookie);
+      .set("Cookie", staff.cookie)
+      .send({ expectedVersion: createRes.body.version });
     expect(staffRes.status).toBe(403);
     expect(staffRes.body.error.code).toBe("FORBIDDEN");
 
     const adminRes = await request(app)
       .post(`/api/tickets/${ticketId}/resolve-indication`)
-      .set("Cookie", admin.cookie);
+      .set("Cookie", admin.cookie)
+      .send({ expectedVersion: createRes.body.version });
     expect(adminRes.status).toBe(403);
     expect(adminRes.body.error.code).toBe("FORBIDDEN");
   });

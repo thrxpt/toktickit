@@ -90,3 +90,37 @@ be fully removed now rather than kept for convenience (D-28), and that the
 date window drags time zones and clock control into tests for no requirement's
 benefit. The model produced defensible arguments for several alternatives. Choosing
 between defensible alternatives is the job.
+
+## Issue 23 / GitHub #50 — Ticket version and conflict handling
+
+GPT-6.1 Sol via Codex in T3 Code implemented #50 against BR-11, BR-12, BR-27,
+AC-08, and AC-20. The user confirmed the REST API and Ticket Detail UI seams and
+starting commit `fc6ff38` for review. API tests demonstrated the missing version
+and unguarded resolution indication before implementation; UI tests demonstrated
+the missing Requester conflict recovery before implementation.
+
+The implementation uses a conditional PostgreSQL write with an atomic version
+increment. Conflict reload keeps the existing discussion editors mounted and
+retains the pending Staff choice for an explicit retry. Legacy tests gained the
+required version fields while retaining their behavior and authorization checks.
+A separate test container isolates all validation from development data. A manual
+upgrade of a populated Lab 3 schema preserved the Ticket and Comment and initialized
+the Ticket version to zero. Actions Taken, final lifecycle changes, Administrator
+ticket access, dashboards, and identity retirement remain with their later Issues.
+
+### Issue 23 review and validation
+
+- **Standards:** one documented finding fixed: ConflictAlert now overrides
+  Bootstrap's alert variables with `--zen-danger-bg` / `--zen-danger` in
+  `theme.css`. The pending-choice alert uses the corresponding warning tokens.
+  A rendered Chromium computed-style check confirmed the conflict colors. One
+  optional Repeated Switches heuristic was retained: the three explicit operations
+  remain small and do not need an operation-descriptor abstraction.
+- **Spec:** no findings against #50 and its Lab 4 contract requirements.
+- **Final automated validation:** 418 tests passed, zero skipped (149 client,
+  269 server); root typecheck and both package builds passed; existing Lab 3 Staff
+  E2E journey passed, including sequential owner/priority/status writes.
+- **Runtime:** the final full suite used Node 24.18.0 with
+  `NODE_OPTIONS=--no-experimental-webstorage` so jsdom supplies test storage.
+  Earlier Node 26 runs included a green full suite and intermittent unrelated
+  authentication-test failures; no authentication assertions were changed.

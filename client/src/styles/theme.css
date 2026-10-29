@@ -498,3 +498,16 @@ textarea.form-control {
   background-color: var(--zen-warning-bg);
   border: 1px solid color-mix(in srgb, var(--zen-warning) 25%, transparent);
 }
+
+/* Lab 4 AC-20: Bootstrap alert variables use the existing Zen Green tokens. */
+.zen-conflict-alert {
+  --bs-alert-color: var(--zen-danger);
+  --bs-alert-bg: var(--zen-danger-bg);
+  --bs-alert-border-color: var(--zen-danger);
+}
+
+.zen-pending-change {
+  --bs-alert-color: var(--zen-warning);
+  --bs-alert-bg: var(--zen-warning-bg);
+  --bs-alert-border-color: var(--zen-warning);
+}

@@ -35,9 +35,14 @@ export type ErrorCode =
   | "USER_NOT_FOUND"
   | "CANNOT_DEACTIVATE_SELF"
   | "CANNOT_DEACTIVATE_LAST_ADMIN"
-  | "INVALID_STATUS_TRANSITION";
+  | "INVALID_STATUS_TRANSITION"
+  | "STALE_UPDATE";
 
 const failures = {
+  STALE_UPDATE: {
+    status: 409,
+    message: "This ticket changed since you loaded it. Reload and try again.",
+  },
   DATABASE_UNAVAILABLE: {
     status: 500,
     message: "Unable to reach the database",

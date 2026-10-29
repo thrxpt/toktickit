@@ -78,6 +78,7 @@ export async function handleCreateTicket(req: Request, res: Response): Promise<v
     res.status(201).json({
       id: ticket.id,
       ticketNumber: ticket.ticketNumber,
+      version: ticket.version,
       summary: ticket.summary,
       description: ticket.description,
       requestedPriority: ticket.requestedPriority,

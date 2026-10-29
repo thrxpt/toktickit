@@ -32,6 +32,7 @@ const mockAssignees = [
 
 const mockNewUnassignedTicket: StaffTicketDetailDto = {
   id: 101,
+  version: 0,
   ticketNumber: "TKT-2026-000101",
   summary: "Laptop battery draining quickly",
   description: "Battery discharges from 100% to 0% in under 30 minutes.",
@@ -66,6 +67,7 @@ const mockNewUnassignedTicket: StaffTicketDetailDto = {
 
 const mockOpenAssignedTicket: StaffTicketDetailDto = {
   id: 102,
+  version: 0,
   ticketNumber: "TKT-2026-000102",
   summary: "VPN access denied from home",
   description: "Cannot connect to corporate VPN after network upgrade.",
@@ -120,6 +122,7 @@ describe("UI-07 — IT Staff clicks Claim on unassigned ticket (AC-11, BR-23)", 
 
       if (url.includes(`/api/staff/tickets/101/owner`) && init?.method === "PATCH") {
         const body = JSON.parse(init.body as string);
+        expect(body.expectedVersion).toBe(0);
         expect(body.ownerId).toBe(mockStaffUser.id);
         currentTicket = {
           ...currentTicket,
@@ -130,6 +133,7 @@ describe("UI-07 — IT Staff clicks Claim on unassigned ticket (AC-11, BR-23)", 
           ok: true,
           status: 200,
           json: async () => ({
+            ticketVersion: 1,
             ticketId: 101,
             ticketOwnerId: mockStaffUser.id,
             status: "OPEN",
@@ -201,6 +205,7 @@ describe("UI-07 — IT Staff clicks Claim on unassigned ticket (AC-11, BR-23)", 
 
       if (url.includes(`/api/staff/tickets/102/owner`) && init?.method === "PATCH") {
         const body = JSON.parse(init.body as string);
+        expect(body.expectedVersion).toBe(0);
         expect(body.ownerId).toBe(4); // David Lee
         currentTicket = {
           ...currentTicket,
@@ -210,6 +215,7 @@ describe("UI-07 — IT Staff clicks Claim on unassigned ticket (AC-11, BR-23)", 
           ok: true,
           status: 200,
           json: async () => ({
+            ticketVersion: 1,
             ticketId: 102,
             ticketOwnerId: 4,
             status: "OPEN",
@@ -268,6 +274,7 @@ describe("UI-08 — IT Staff modifies IT Priority and status dropdown (AC-12, AC
 
       if (url.includes(`/api/staff/tickets/102/priority`) && init?.method === "PATCH") {
         const body = JSON.parse(init.body as string);
+        expect(body.expectedVersion).toBe(0);
         expect(body.itPriority).toBe("CRITICAL");
         currentTicket = {
           ...currentTicket,
@@ -277,6 +284,7 @@ describe("UI-08 — IT Staff modifies IT Priority and status dropdown (AC-12, AC
           ok: true,
           status: 200,
           json: async () => ({
+            ticketVersion: 1,
             ticketId: 102,
             itPriority: "CRITICAL",
             message: "IT Priority updated.",
@@ -374,6 +382,7 @@ describe("UI-08 — IT Staff modifies IT Priority and status dropdown (AC-12, AC
 
       if (url.includes(`/api/staff/tickets/102/status`) && init?.method === "PATCH") {
         const body = JSON.parse(init.body as string);
+        expect(body.expectedVersion).toBe(0);
         expect(body.status).toBe("IN_PROGRESS");
         currentTicket = {
           ...currentTicket,
@@ -383,6 +392,7 @@ describe("UI-08 — IT Staff modifies IT Priority and status dropdown (AC-12, AC
           ok: true,
           status: 200,
           json: async () => ({
+            ticketVersion: 1,
             ticketId: 102,
             status: "IN_PROGRESS",
             message: "Status updated successfully.",

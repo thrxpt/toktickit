@@ -26,6 +26,7 @@ vi.mock("../../src/auth/useAuth", () => ({
 
 const mockUnresolvedTicket: TicketDetail = {
   id: 42,
+  version: 0,
   ticketNumber: "TKT-2026-000042",
   summary: "Laptop battery drains quickly",
   description: "My laptop battery is draining fast even in sleep mode.",
@@ -82,10 +83,12 @@ describe("UI-05 — Requester clicks Problem Appears Resolved (AC-09, FR-08)", (
       }
 
       if (url.includes("/api/tickets/42/resolve-indication") && init?.method === "POST") {
+        expect(JSON.parse(init.body as string)).toEqual({ expectedVersion: 0 });
         return Promise.resolve({
           ok: true,
           status: 200,
           json: async () => ({
+            ticketVersion: 1,
             id: 42,
             resolvedByRequester: true,
             message:

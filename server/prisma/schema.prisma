@@ -89,6 +89,7 @@ model Category {
 model Ticket {
   id           Int    @id @default(autoincrement())
   ticketNumber String @unique
+  version      Int    @default(0)
 
   requesterId     Int
   requester       User          @relation("TicketRequester", fields: [requesterId], references: [id])

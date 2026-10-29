@@ -69,6 +69,7 @@ describe("API-17 — Fetch an owned Ticket (AC-29)", () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       id: created.id,
+      version: 0,
       ticketNumber: "TKT-2026-000042",
       summary: "Laptop battery drains quickly",
       description:

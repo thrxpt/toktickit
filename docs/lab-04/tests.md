@@ -74,6 +74,18 @@ The `toktickit_test` database strategy from Lab 3 continues, with two additions:
 | API-07 | AC-07, BR-12, BR-13 | Two creates with the same `expectedVersion`, once concurrently and once sequentially | One `201`, one `409 STALE_UPDATE`; exactly one new action row and one Ticket version increment in each schedule |
 | API-27 | AC-07, AC-26, BR-12, BR-13 | Force an ActionTaken insert/update failure inside the database transaction after the conditional Ticket write | Safe error response; persisted action data and Ticket version both equal their pre-request values; retry with the original version can succeed |
 
+#### Issue 23 implementation — `ticket-version.api.test.ts`
+
+| Test ID | AC / BR | What It Tests | Expected Result |
+| --- | --- | --- | --- |
+| API-08, API-09 | AC-08, BR-11, BR-12 | Existing owner, priority, status, and resolution endpoints: current/stale/invalid versions; simultaneous writers including mixed operations | Success increments once; stale writes return safe `409 STALE_UPDATE`; missing/negative/fractional/string/null versions return field errors without writes |
+| API-09 | AC-08, BR-11 | Ticket creation, Requester detail/list, Staff detail/queue; Public Comments and Internal Notes | All Ticket payloads carry `version`; discussion writes leave it unchanged |
+| API-12 | AC-08, AC-11, BR-11, BR-12, BR-18 | Resolution indication on an `OPEN` Ticket followed by a Staff write with the old version | Indication increments version without changing status; Staff write returns `409` |
+
+The existing-operation portions of API-08/API-09/API-12 land in Issue 23. Actions
+Taken portions remain with Issue 24; lifecycle and operational-role rows below
+remain planned for the corresponding later Issues.
+
 #### `ticket-workflow.api.test.ts`
 
 | Test ID | AC / BR | What It Tests | Expected Result |
@@ -132,7 +144,7 @@ The `toktickit_test` database strategy from Lab 3 continues, with two additions:
 | UI-06 | AC-18, FR-19 | Rapid double submit | Submit disabled in flight; one request observed | `ActionsTaken.test.tsx` |
 | UI-07 | AC-19 | Requester Ticket Detail with actions | All actions render; no create/edit controls exist in the DOM | `ActionsTaken.test.tsx` |
 | UI-08 | AC-10, FR-07 | Status control renders only `permittedTransitions`; success refreshes badge; `CANCELLED` read-only | Options equal payload; no extra statuses; cancelled state explains and disables | `TicketWorkflow.test.tsx` |
-| UI-09 | AC-08, AC-20, FR-06, FR-20 | `409` during an action edit or Requester resolution indication; successful indication returns a new version | Conflict alert appears, entered text preserved, reload control present; indication sends `expectedVersion` and success refreshes the local version | `TicketWorkflow.test.tsx` |
+| UI-09 | AC-08, AC-20, FR-06, FR-20 | Issue 23: Staff edit and Requester indication conflict/reload/retry, successful mutation version reuse, and unsent discussion text; Issue 25 adds Action Taken edits | Conflict alert appears; pending choice and text survive reload; retry sends refreshed `expectedVersion`; later edits use returned `ticketVersion` | `TicketWorkflow.test.tsx` |
 | UI-10 | AC-24, FR-16 | Role navigation includes Dashboard with active indication | Each role sees its destinations; active item carries `aria-current="page"` | `StaffDashboard.test.tsx` |
 | UI-11 | AC-12, AC-15, BR-25 | Follow Requester cards/recent-list links into My Tickets; paginate and choose a single status | Links use `statusGroup` and `sort`/`order`; My Tickets forwards them to the API, retains them on pagination, and clears the group when a single status is chosen | `RequesterDashboard.test.tsx` |
 | UI-12 | AC-14, AC-15 | Follow Admin Total/per-role Accounts cards into User Management, then navigate between roles and back to Total | Total links to `/admin/users`; role links use `/admin/users?role=<ROLE>`; URL role changes update the selected filter and API request; Active/Inactive counts have no links | `StaffDashboard.test.tsx` |
