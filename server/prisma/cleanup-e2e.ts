@@ -4,7 +4,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client";
-import { seedReferenceData } from "./seed-data";
+import { demoTicketNumbers, seedReferenceData } from "./seed-data";
 
 async function main(): Promise<void> {
   const databaseUrl = process.env.DATABASE_URL;
@@ -75,16 +75,27 @@ async function main(): Promise<void> {
       );
     }
 
-    // 4. Delete throwaway E2E user accounts
-    const users = await prisma.user.deleteMany({
+    const temporaryUserFilter = {
+      OR: [
+        { email: { startsWith: "taylor.reed." } },
+        { email: { startsWith: "e2e." } },
+        { email: { startsWith: "temp.admin." } },
+      ],
+    };
+    // BR-26: restore demo work logs and remove E2E performers' dependents
+    // before deleting the temporary accounts (restrict FK).
+    await prisma.actionTaken.deleteMany({
       where: {
+        seedKey: null,
         OR: [
-          { email: { startsWith: "taylor.reed." } },
-          { email: { startsWith: "e2e." } },
-          { email: { startsWith: "temp.admin." } },
+          { ticket: { ticketNumber: { in: demoTicketNumbers } } },
+          { performedBy: temporaryUserFilter },
         ],
       },
     });
+
+    // 4. Delete throwaway E2E user accounts
+    const users = await prisma.user.deleteMany({ where: temporaryUserFilter });
     if (users.count > 0) {
       console.log(`Deleted ${users.count} throwaway E2E test users`);
     }

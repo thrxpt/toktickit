@@ -198,6 +198,8 @@ export async function seedReferenceData(
   };
 }
 
+export const demoTicketNumbers = Array.from({ length: 8 }, (_, index) => `TKT-2026-${900001 + index}`);
+
 // BR-26: descriptions are deliberately repeated; only seedKey identifies an action.
 async function seedDemoTickets(prisma: PrismaClient): Promise<void> {
   const requester = await prisma.user.findUniqueOrThrow({ where: { email: "jennifer.anderson@example.ac.th" } });
@@ -214,7 +216,7 @@ async function seedDemoTickets(prisma: PrismaClient): Promise<void> {
       requestedPriority: "MEDIUM" as const, itPriority: priorities[index % priorities.length], status,
       resolvedByRequester: status === "RESOLVED",
     };
-    const ticketNumber = `TKT-2026-${String(900001 + index).padStart(6, "0")}`;
+    const ticketNumber = demoTicketNumbers[index];
     const ticket = await prisma.ticket.upsert({ where: { ticketNumber }, update: data, create: { ticketNumber, ...data } });
     const count = index === 1 ? 1 : index === 2 ? 3 : 0;
     for (let actionIndex = 0; actionIndex < count; actionIndex++) {

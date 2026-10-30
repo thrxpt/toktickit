@@ -5,7 +5,10 @@ import { seedReferenceData } from "../../prisma/seed-data";
 import { prisma } from "../../src/prisma";
 import { truncateTransactionalData } from "../setup/truncate";
 
-beforeEach(truncateTransactionalData);
+beforeEach(async () => {
+  await truncateTransactionalData();
+  await prisma.user.deleteMany({ where: { email: "e2e.action-cleanup@example.test" } });
+});
 afterAll(() => prisma.$disconnect());
 describe("API-22 — AC-21, BR-26 demo seed", () => {
   it("converges on stable Ticket/action ids with all statuses, priorities, owners and zero/one/many actions", async () => {
@@ -38,12 +41,19 @@ describe("API-23 (Issue 24) — BR-26, BR-27 E2E cleanup baseline", () => {
       requestedPriority: "LOW", requesterId: demo.requesterId, categoryId: demo.categoryId, relatedSystemId: demo.relatedSystemId,
       actionsTaken: { create: { description: "E2E work", result: "Done", performedById: staff.id } },
     } });
+    const temporaryPerformer = await prisma.user.create({ data: {
+      name: "E2E temporary staff", email: "e2e.action-cleanup@example.test", passwordHash: "unused", role: "IT_STAFF",
+    } });
+    await prisma.actionTaken.create({ data: {
+      ticketId: demo.id, performedById: temporaryPerformer.id, description: "Checked demo Ticket", result: "E2E work",
+    } });
     await prisma.actionTaken.updateMany({ where: { seedKey: { not: null } }, data: { result: "Changed during E2E" } });
     execFileSync(fileURLToPath(new URL("../../node_modules/.bin/tsx", import.meta.url)), ["prisma/cleanup-e2e.ts"], {
       cwd: fileURLToPath(new URL("../..", import.meta.url)), env: process.env,
     });
     expect(await prisma.ticket.findUnique({ where: { id: e2e.id } })).toBeNull();
     expect(await prisma.actionTaken.count({ where: { ticketId: e2e.id } })).toBe(0);
+    expect(await prisma.user.findUnique({ where: { id: temporaryPerformer.id } })).toBeNull();
     expect(await prisma.ticket.count()).toBe(8);
     expect(await prisma.actionTaken.count()).toBe(4);
     expect(await prisma.actionTaken.count({ where: { result: "Changed during E2E" } })).toBe(0);
