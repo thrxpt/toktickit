@@ -37,7 +37,7 @@ docker compose up -d                 # starts PostgreSQL on :5432
 
 pnpm db:check                        # -> ✓ database reachable at localhost:5432
 pnpm db:migrate                      # applies migrations, creates the Lab 2 tables
-pnpm db:seed                         # seeds reference data (idempotent)
+pnpm db:seed                         # seeds reference data and Lab 4 demo Tickets/actions (idempotent)
 pnpm dev                             # client on :5173, API on :3000
 ```
 
@@ -80,7 +80,7 @@ Run from the repo root; each fans out to the workspace that owns it.
 | `pnpm db:down`   | Stops it                                                |
 | `pnpm db:check`  | Runs `SELECT 1` through Prisma and reports reachability |
 | `pnpm db:migrate`| Applies pending Prisma migrations (`migrate deploy`)    |
-| `pnpm db:seed`   | Upserts Categories, Systems, Users (idempotent)         |
+| `pnpm db:seed`   | Upserts reference data, Users, demo Tickets and Actions Taken         |
 | `pnpm db:cleanup-e2e` | Purges E2E test residue and resets DB state        |
 Per-package commands take a filter, e.g. `pnpm --filter server dev` or `pnpm --filter client test`.
 
@@ -114,3 +114,22 @@ compose.yaml            PostgreSQL 17
 The client fetches relative `/api/...` URLs, which the Vite dev server proxies
 to Express — so there is no CORS middleware and no API base URL to configure
 ([why](docs/adr/0002-vite-proxy-not-cors.md)).
+
+### Lab 4 Actions Taken demo data
+
+`pnpm db:migrate` applies the additive Actions Taken migration; existing Tickets
+remain valid with no Actions Taken (BR-27). Run `pnpm db:seed` afterward. Stable demo
+Ticket Numbers `TKT-2026-900001` through `TKT-2026-900008` cover all statuses and
+IT Priorities, unassigned ownership, Michael/Sarah ownership, and zero/one/three
+Actions Taken. Jennifer owns the demo Tickets; Marcus has none for the empty
+Requester dashboard. Actions use stable seed-only keys (BR-26). Re-running the
+seed restores demo fields and preserves fixture ids without touching ordinary
+Tickets. `pnpm db:cleanup-e2e` removes E2E actions before their Tickets and restores
+this full baseline.
+
+Before deployment, back up the database. To recover, restore the pre-migration
+dump and matching application revision. If explicitly rolling back only the
+Actions Taken migration, export its work log first, apply
+`server/prisma/rollback/20261030090000_actions_taken.sql`, then mark that migration
+rolled back with Prisma before reapplying it. The reverse drops Actions Taken
+records; it preserves Tickets, Users, Comments, Internal Notes and Attachments.

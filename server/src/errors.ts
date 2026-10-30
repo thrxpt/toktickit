@@ -36,9 +36,11 @@ export type ErrorCode =
   | "CANNOT_DEACTIVATE_SELF"
   | "CANNOT_DEACTIVATE_LAST_ADMIN"
   | "INVALID_STATUS_TRANSITION"
-  | "STALE_UPDATE";
+  | "STALE_UPDATE"
+  | "ACTION_TAKEN_NOT_FOUND";
 
 const failures = {
+  ACTION_TAKEN_NOT_FOUND: { status: 404, message: "Action taken not found" },
   STALE_UPDATE: {
     status: 409,
     message: "This ticket changed since you loaded it. Reload and try again.",

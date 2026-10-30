@@ -86,6 +86,18 @@ The existing-operation portions of API-08/API-09/API-12 land in Issue 23. Action
 Taken portions remain with Issue 24; lifecycle and operational-role rows below
 remain planned for the corresponding later Issues.
 
+#### Issue 24 implementation — Actions Taken foundation
+
+Implemented: `actions-taken.unit.test.ts` (UNIT-01),
+`actions-taken.api.test.ts` (API-01–API-07, API-27; action stale updates for API-09),
+`seed.api.test.ts` (API-22; API-23 cleanup/truncation baseline), and
+`actions-migration.api.test.ts` (API-23 additive ActionTaken migration, nullable
+unique seed keys, legacy Ticket preservation and reverse in an isolated schema).
+API-23 dashboard indexes remain with Issue 27. API-22's implementation lives in
+`seed.api.test.ts` rather than the planned dashboard test file so this foundation
+can be verified independently. Rollback failures are induced with a temporary
+CHECK constraint in the test database, exercising real transaction rollback.
+
 #### `ticket-workflow.api.test.ts`
 
 | Test ID | AC / BR | What It Tests | Expected Result |

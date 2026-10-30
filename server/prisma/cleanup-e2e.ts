@@ -1,4 +1,4 @@
-// Cleanup script for Lab 3 E2E test residue.
+// Cleanup script for Lab 4 E2E test residue.
 // Removes transactional records (tickets, attachments, comments, notes) and throwaway
 // accounts created by Playwright E2E specs, restoring the database to pristine seed state.
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -33,6 +33,7 @@ async function main(): Promise<void> {
 
     // 2. Child-first sequential deletion to satisfy FK restrict constraints
     if (ticketIds.length > 0) {
+      await prisma.actionTaken.deleteMany({ where: { ticketId: { in: ticketIds } } });
       const attachments = await prisma.attachment.deleteMany({
         where: { ticketId: { in: ticketIds } },
       });
@@ -88,7 +89,7 @@ async function main(): Promise<void> {
       console.log(`Deleted ${users.count} throwaway E2E test users`);
     }
 
-    // 5. Restore seeded reference accounts to exact documented state
+    // 5. Restore reference accounts and the full Lab 4 demo baseline
     await seedReferenceData(prisma);
     console.log("✓ Database restored to pristine seed state");
   } catch (error) {
