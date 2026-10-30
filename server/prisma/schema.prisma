@@ -118,6 +118,8 @@ model Ticket {
   actionsTaken  ActionTaken[]
 
   @@index([requesterId, createdAt(sort: Desc)])
+  @@index([requesterId, updatedAt(sort: Desc)])
+  @@index([updatedAt(sort: Desc)])
   @@index([categoryId])
   @@index([status])
   @@index([requestedPriority])

@@ -231,7 +231,7 @@ describe("UI-15 — Role-based navigation hides unauthorized links (FR-20)", () 
     ).not.toBeInTheDocument();
   });
 
-  it("Administrator sees Users, but NOT Ticket Queue or Create Ticket", async () => {
+  it("Administrator sees Dashboard, Ticket Queue and Users (Lab 4 BR-20)", async () => {
     const user: AuthenticatedUser = {
       id: 3,
       name: "Sarah Jenkins",
@@ -248,8 +248,8 @@ describe("UI-15 — Role-based navigation hides unauthorized links (FR-20)", () 
 
     expect(screen.getByRole("link", { name: "Users" })).toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: "Ticket Queue" }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("link", { name: "Ticket Queue" }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "My Tickets" }),
     ).not.toBeInTheDocument();

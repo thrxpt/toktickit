@@ -14,9 +14,9 @@ import {
 
 export const staffTicketDetailRouter = express.Router();
 
-// Guarded by authentication and role check (IT_STAFF only; Requesters and Administrators receive 403 Forbidden per BR-14 and ADR-0008).
+// Operational roles only (Lab 4 BR-20, ADR-0010).
 staffTicketDetailRouter.use(requireAuth);
-staffTicketDetailRouter.use(requireRole("IT_STAFF"));
+staffTicketDetailRouter.use(requireRole("IT_STAFF", "ADMINISTRATOR"));
 
 const ownerPatchSchema = z
   .object({

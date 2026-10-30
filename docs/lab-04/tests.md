@@ -354,3 +354,21 @@ Known limitations to carry into the release evidence:
 - Chromium-only Playwright matrix, as in Labs 2–3.
 - No notification delivery by design (handout §4.2).
 - Screenshots are committed evidence, not a cross-browser guarantee.
+
+### Issue 27 implementation evidence (#54)
+
+The dashboard test seams are the HTTP endpoints, rendered pages with URL
+navigation, and the headless Chromium journey. Metric boundaries are exercised
+through the HTTP seam rather than a separate client-side metric helper (FR-15).
+
+| Coverage | Implementation |
+| --- | --- |
+| API-16–API-19 | `server/tests/lab-04/requester-dashboard.api.test.ts`: session isolation including forged identity header, open/resolved boundaries, five-row recent ordering, zeros, RBAC, invalid/conflicting groups, full drill-down collections |
+| API-20, API-21, API-24, API-25 | `server/tests/lab-04/staff-dashboard.api.test.ts`: owner/status/priority counts, owner projection, all zero keys, Administrator accounts, omitted Staff accounts, demo performance budget, account-only and safe total failure |
+| UI-02, UI-10, UI-11 | `client/tests/lab-04/RequesterDashboard.test.tsx`: empty dashboard, group and sort forwarding, pagination retention, mutually exclusive filters, session required despite legacy browser storage |
+| UI-01, UI-03, UI-10, UI-12 | `client/tests/lab-04/StaffDashboard.test.tsx`: metric links, loading/retry/forbidden, account-only failure, active Dashboard navigation, URL-synchronized account role filters |
+| E2E-03 | `e2e/lab-04/dashboards.spec.ts`: all roles, Requester group/recent links, Staff and Administrator queue, account role/Total links, zero-Ticket Requester, mobile overflow |
+
+The existing Lab 2 routing and Lab 3 shell/login/password-change, authorization,
+and Administrator ticket-operation cases adopt FR-16 and ADR-0010. No tests are
+skipped. Dashboard indexes have additive migration and rollback SQL.

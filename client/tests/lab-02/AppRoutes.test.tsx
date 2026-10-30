@@ -14,6 +14,8 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
     localStorage.setItem('toktickit_requester_id', '1')
     globalThis.fetch = vi.fn().mockImplementation((input: string | URL | Request) => {
       const url = typeof input === 'string' ? input : input.toString()
+      if (url === '/api/auth/me') return Promise.resolve({ ok: true, json: async () => ({ user: { id: 1, name: 'Jennifer Anderson', email: 'jennifer.anderson@example.ac.th', role: 'REQUESTER', mustChangePassword: false } }) } as Response)
+      if (url === '/api/dashboard/requester') return Promise.resolve({ ok: true, json: async () => ({ openTickets: 0, waitingForRequester: 0, recentlyUpdated: [], recentlyResolved: [] }) } as Response)
       if (url === '/api/requesters') {
         return Promise.resolve({
           ok: true,
@@ -51,7 +53,7 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
     vi.restoreAllMocks()
   })
 
-  it('redirects / to /tickets and renders My Tickets screen', async () => {
+  it('redirects / to /dashboard (Lab 4 FR-16)', async () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <App />
@@ -60,11 +62,11 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole('heading', { name: 'My Tickets' }),
+        screen.getByRole('heading', { name: 'My Dashboard' }),
       ).toBeInTheDocument()
     })
     expect(
-      screen.getByText(/View and track all of your support requests/i),
+      screen.getByText(/A quick look at your IT requests/i),
     ).toBeInTheDocument()
   })
 

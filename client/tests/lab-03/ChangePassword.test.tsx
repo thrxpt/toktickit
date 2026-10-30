@@ -56,6 +56,7 @@ function renderAppWithGuards(
     <MemoryRouter initialEntries={[initialEntry]}>
       <AuthProvider>
         <Routes>
+          <Route path="/dashboard" element={<div>Dashboard Screen</div>} />
           <Route path="/login" element={<div>Login Screen</div>} />
           <Route
             path="/change-password"
@@ -113,7 +114,7 @@ describe("UI-02 — User with mustChangePassword forced to Change Password scree
     });
 
     await waitFor(() => {
-      expect(screen.getByText("My Tickets Screen")).toBeInTheDocument();
+      expect(screen.getByText("Dashboard Screen")).toBeInTheDocument();
     });
     expect(
       screen.queryByRole("heading", { name: "Change Your Password" }),
@@ -258,7 +259,7 @@ describe("UI-03 — Password change form checklist criteria validation (AC-03, B
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(screen.getByText("My Tickets Screen")).toBeInTheDocument();
+      expect(screen.getByText("Dashboard Screen")).toBeInTheDocument();
     });
   });
 });

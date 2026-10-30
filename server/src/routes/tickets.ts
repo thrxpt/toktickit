@@ -1,3 +1,4 @@
+import { STATUS_GROUPS } from "../dashboard/status-groups";
 import express, { type Request, type Response } from "express";
 import { z } from "zod";
 
@@ -62,6 +63,7 @@ const listTicketsQuerySchema = z
         },
       )
       .optional(),
+    statusGroup: z.enum(["open", "resolved"]).optional(),
     sort: z
       .enum(["createdAt", "ticketNumber", "updatedAt"], {
         message: "Sort field must be createdAt, ticketNumber, or updatedAt",
@@ -89,7 +91,8 @@ const listTicketsQuerySchema = z
         val !== undefined ? (parseInt(val, 10) as 10 | 20 | 50) : 10,
       ),
   })
-  .strict();
+  .strict()
+  .refine(data => !(data.status && data.statusGroup), { path: ["statusGroup"], message: "Status and statusGroup are mutually exclusive" });
 
 export const ticketsRouter = express.Router();
 ticketsRouter.use(requireRequesterContext);
@@ -112,6 +115,7 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
     categoryId,
     requestedPriority,
     status,
+    statusGroup,
     sort,
     order,
     page,
@@ -161,6 +165,8 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
     if (status !== undefined) {
       where.status = status;
     }
+
+    if (statusGroup) where.status = { in: [...STATUS_GROUPS[statusGroup]] };
 
     // Sorting always carries id: 'desc' as a stable secondary tiebreak (BR-28, AC-28)
     const orderBy: Prisma.TicketOrderByWithRelationInput[] = [

@@ -1,3 +1,4 @@
+import { dashboardRouter } from "./dashboard/dashboard.router";
 import { actionsTakenRouter } from "./routes/actions-taken";
 import cookieParser from "cookie-parser";
 import express, { type Response } from "express";
@@ -81,6 +82,7 @@ app.get("/api/requesters", async (_req, res) => {
 
 // Authentication routes (Lab 3 foundation).
 app.use("/api/auth", authRouter);
+app.use("/api/dashboard", dashboardRouter);
 
 app.use("/api/tickets", actionsTakenRouter);
 
@@ -100,7 +102,7 @@ app.use("/api/admin/users", usersAdminRouter);
 app.get(
   "/api/staff/assignees",
   requireAuth,
-  requireRole("IT_STAFF"),
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
   async (_req, res) => {
     try {
       const staff = await prisma.user.findMany({

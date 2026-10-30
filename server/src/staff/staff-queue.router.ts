@@ -117,11 +117,11 @@ const staffQueueQuerySchema = z
 export const staffQueueRouter = express.Router();
 
 // GET /api/staff/tickets (FR-09, AC-10, BR-14, BR-15, BR-18, BR-20, BR-21)
-// Guarded by authentication and role check (IT_STAFF only; Requesters and Administrators receive 403 Forbidden per BR-14 and ADR-0008).
+// Operational roles only (Lab 4 BR-20, ADR-0010).
 staffQueueRouter.get(
   "/",
   requireAuth,
-  requireRole("IT_STAFF"),
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
   async (req: Request, res: Response) => {
   const parseResult = staffQueueQuerySchema.safeParse(req.query);
 
