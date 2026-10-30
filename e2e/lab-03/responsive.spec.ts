@@ -4,12 +4,14 @@ import { login, TEST_USERS } from "./helpers";
 
 async function loginAsStaff(page: Page): Promise<void> {
   await login(page, TEST_USERS.staff.email, TEST_USERS.staff.password);
-  await page.waitForURL("**/staff/queue");
+  await page.waitForURL("**/dashboard");
+    await page.goto("/staff/queue");
 }
 
 async function loginAsAdmin(page: Page): Promise<void> {
   await login(page, TEST_USERS.admin.email, TEST_USERS.admin.password);
-  await page.waitForURL("**/admin/users");
+  await page.waitForURL("**/dashboard");
+    await page.goto("/admin/users");
 }
 
 async function assertNoHorizontalScroll(page: Page): Promise<void> {

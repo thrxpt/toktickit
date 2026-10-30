@@ -124,3 +124,29 @@ ticket access, dashboards, and identity retirement remain with their later Issue
   `NODE_OPTIONS=--no-experimental-webstorage` so jsdom supplies test storage.
   Earlier Node 26 runs included a green full suite and intermittent unrelated
   authentication-test failures; no authentication assertions were changed.
+
+## Issue 27 — Role dashboards (#54)
+
+Implemented against the four Lab 4 contract documents: session-scoped Requester
+metrics, shared operational metrics with Administrator accounts, dashboard
+navigation and landing routes, reusable MetricCard/DashboardList components,
+Requester grouped-status drill-downs, URL-synchronized User Management filters,
+and additive recent-read indexes with rollback SQL. The Administrator queue and
+Ticket Detail guards adopt ADR-0010 so dashboard drill-downs work end to end.
+Legacy identity retirement and Actions Taken UI remain with their owning Issues.
+
+TDD used the contract's HTTP, rendered-component/navigation, and Chromium seams.
+Separate Standards and Spec reviewers inspected the staged implementation against
+starting commit `26cc067`. Findings were corrected: sessionless dashboard redirect
+when legacy storage survives, role-shaped loading sections, retained unavailable
+metric frames with retries, and 44 px recent-list drill-down targets. The reviews
+reported no unrelated scope additions or further smell findings.
+
+Validation: `NODE_OPTIONS=--no-experimental-webstorage pnpm test` passed 461 tests
+(159 client, 302 server), zero skipped. `pnpm typecheck`, `pnpm build`, and
+`pnpm test:e2e:lab4` passed. The Chromium journey includes all three roles,
+Requester grouped/recent list destinations, Administrator account-role and Total
+links, Administrator queue access, a zero-Ticket Requester, and mobile overflow.
+Desktop and 390 px mobile dashboard screenshots were visually inspected. The
+Impeccable mechanical detector returned no findings. Verification used a separate
+local PostgreSQL container; API tests used `toktickit_test`, never development data.

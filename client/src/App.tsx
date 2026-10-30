@@ -1,3 +1,4 @@
+import Dashboard from "./pages/Dashboard";
 import { Link, Navigate, Route, Routes } from "react-router-dom";
 
 import { AuthProvider } from "./auth/AuthContext";
@@ -36,7 +37,9 @@ export function AppRoutes() {
   return (
     <Routes>
       {/* Root redirects to /tickets */}
-      <Route path="/" element={<Navigate to="/tickets" replace />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      <Route path="/dashboard" element={<RequireRole roles={["REQUESTER", "IT_STAFF", "ADMINISTRATOR"]}><AppShell><Dashboard /></AppShell></RequireRole>} />
 
       {/* Authentication screens (Lab 3) */}
       <Route path="/login" element={<Login />} />
@@ -100,7 +103,7 @@ export function AppRoutes() {
       <Route
         path="/staff/queue"
         element={
-          <RequireRole roles={["IT_STAFF"]}>
+          <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
             <AppShell>
               <StaffTicketQueue />
             </AppShell>
@@ -110,7 +113,7 @@ export function AppRoutes() {
       <Route
         path="/staff/tickets/:id"
         element={
-          <RequireRole roles={["IT_STAFF"]}>
+          <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
             <AppShell
               breadcrumbs={[
                 { label: "My Queue", to: "/staff/queue" },

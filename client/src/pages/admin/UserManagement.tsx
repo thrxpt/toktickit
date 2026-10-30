@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 
 import apiFetch from "../../api/client";
@@ -18,7 +19,13 @@ export function UserManagement() {
   // Filters
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const roleFilter = searchParams.get("role") || "";
+  const setRoleFilter = (role: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (role) next.set("role", role); else next.delete("role");
+    setSearchParams(next);
+  };
 
   // Debounce search input to prevent rapid UI flashes (ui-spec.md §4.7)
   useEffect(() => {

@@ -158,7 +158,7 @@ describe("GET /api/staff/tickets/:id (FR-10, BR-14, BR-15)", () => {
     expect(res.body.ticketOwner).toBeNull();
   });
 
-  it("rejects Administrator with 403 Forbidden (BR-14, ADR-0008)", async () => {
+  it("permits Administrator Ticket Detail (Lab 4 BR-20, ADR-0010)", async () => {
     const admin = await loginAs("admin@toktickit.com");
     const ticket = await createTicket();
 
@@ -166,8 +166,8 @@ describe("GET /api/staff/tickets/:id (FR-10, BR-14, BR-15)", () => {
       .get(`/api/staff/tickets/${ticket.id}`)
       .set("Cookie", admin.cookie);
 
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe("FORBIDDEN");
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: ticket.id, summary: ticket.summary });
   });
 
   it("returns 404 for nonexistent ticket ID", async () => {
@@ -402,7 +402,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     expect(res.body.error.code).toBe("FORBIDDEN");
   });
 
-  it("rejects Administrator caller with 403 Forbidden (BR-14, ADR-0008)", async () => {
+  it("permits Administrator caller (Lab 4 BR-20, ADR-0010)", async () => {
     const admin = await loginAs("admin@toktickit.com");
     const ticket = await createTicket();
 
@@ -411,8 +411,8 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
       .set("Cookie", admin.cookie)
       .send({ ownerId: admin.user.id, expectedVersion: ticket.version });
 
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe("FORBIDDEN");
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ticketId: ticket.id, ticketOwnerId: admin.user.id, ticketVersion: ticket.version + 1 });
   });
 });
 
@@ -508,7 +508,7 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
     expect(res.body.error.code).toBe("FORBIDDEN");
   });
 
-  it("rejects Administrator caller with 403 Forbidden (BR-14, ADR-0008)", async () => {
+  it("permits Administrator caller (Lab 4 BR-20, ADR-0010)", async () => {
     const admin = await loginAs("admin@toktickit.com");
     const ticket = await createTicket();
 
@@ -517,8 +517,8 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
       .set("Cookie", admin.cookie)
       .send({ itPriority: "HIGH", expectedVersion: ticket.version });
 
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe("FORBIDDEN");
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ticketId: ticket.id, itPriority: "HIGH", ticketVersion: ticket.version + 1 });
   });
 });
 
@@ -632,7 +632,7 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
     expect(res.body.error.code).toBe("FORBIDDEN");
   });
 
-  it("rejects Administrator caller with 403 Forbidden (BR-14, ADR-0008)", async () => {
+  it("permits Administrator caller (Lab 4 BR-20, ADR-0010)", async () => {
     const admin = await loginAs("admin@toktickit.com");
     const ticket = await createTicket({ status: "OPEN" });
 
@@ -641,7 +641,7 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
       .set("Cookie", admin.cookie)
       .send({ status: "IN_PROGRESS", expectedVersion: ticket.version });
 
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe("FORBIDDEN");
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ticketId: ticket.id, status: "IN_PROGRESS", ticketVersion: ticket.version + 1 });
   });
 });

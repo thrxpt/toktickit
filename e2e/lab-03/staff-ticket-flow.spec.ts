@@ -17,7 +17,8 @@ test.describe("IT Staff Ticket Queue and Operational Flow (AC-10 to AC-15)", () 
       TEST_USERS.requester.email,
       TEST_USERS.requester.password,
     );
-    await page.waitForURL("**/tickets");
+    await page.waitForURL("**/dashboard");
+    await page.goto("/tickets");
 
     await page.goto("/tickets/new");
     await expect(page.locator("#categoryId")).not.toBeDisabled();
@@ -44,7 +45,8 @@ test.describe("IT Staff Ticket Queue and Operational Flow (AC-10 to AC-15)", () 
 
     // 2. Log in as IT Staff
     await login(page, TEST_USERS.staff.email, TEST_USERS.staff.password);
-    await page.waitForURL("**/staff/queue");
+    await page.waitForURL("**/dashboard");
+    await page.goto("/staff/queue");
 
     // Capture Desktop Queue screenshot (1280px)
     await expect(page.locator('h1:has-text("Ticket Queue")')).toBeVisible();
@@ -161,7 +163,8 @@ test.describe("IT Staff Ticket Queue and Operational Flow (AC-10 to AC-15)", () 
       TEST_USERS.requester.email,
       TEST_USERS.requester.password,
     );
-    await page.waitForURL("**/tickets");
+    await page.waitForURL("**/dashboard");
+    await page.goto("/tickets");
 
     await page.locator(`table a:has-text("${ticketNumber}")`).click();
     await page.waitForURL(/\/tickets\/\d+/);
