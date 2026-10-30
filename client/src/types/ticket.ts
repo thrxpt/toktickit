@@ -178,3 +178,16 @@ export interface StaffTicketDetailDto {
   publicCommentsCount: number;
   internalNotesCount: number;
 }
+
+export interface ActionTakenDto {
+  id: number;
+  ticketId: number;
+  description: string;
+  result: string;
+  performedBy: CommentAuthor;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

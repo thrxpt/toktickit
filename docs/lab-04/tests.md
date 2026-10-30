@@ -354,3 +354,28 @@ Known limitations to carry into the release evidence:
 - Chromium-only Playwright matrix, as in Labs 2–3.
 - No notification delivery by design (handout §4.2).
 - Screenshots are committed evidence, not a cross-browser guarantee.
+
+### Issue 25 implementation — Actions Taken UI (#52)
+
+- `client/tests/lab-04/ActionsTaken.test.tsx`: UI-04–UI-07 and the Actions Taken
+  portion of UI-09. Covers loading, empty, retry, forbidden/unavailable, required
+  Follow-up Note, duplicate submission locking, immutable display fields,
+  conflict/reload with preserved text and refreshed version, network failure,
+  omission of inactive follow-up notes, Enter keyboard toggling, and focus return.
+- `client/tests/lab-04/style/actions.style.test.tsx`: STYLE-02 and the Actions Taken
+  portion of STYLE-01 (text-labelled follow-up badge and no hex in new components).
+- `e2e/lab-04/actions-taken-flow.spec.ts`: E2E-01 plus the Actions Taken portion of
+  RESP-01: Staff creates and edits, owning Requester reads without write controls,
+  direct Requester write gets `403`, and no horizontal overflow at 1280/768/390 px.
+- `pnpm test:e2e:lab4` uses `playwright.lab4.config.ts`; existing Lab 3 E2E defaults
+  remain available. Use an explicitly configured test `DATABASE_URL` for both the
+  application and cleanup scripts to keep browser verification isolated.
+- Screenshots: `artifacts/lab-04/screenshots/actions-taken/` (create, validation,
+  edit, desktop/tablet/mobile lists, and Requester mobile read-only section).
+
+Verification (2026-10-31): 296 server and 158 client tests passed, zero skips;
+`pnpm build` and root typechecking passed. Headless Chromium E2E-01 passed.
+The host requires `NODE_OPTIONS=--no-experimental-webstorage` for jsdom storage.
+PostgreSQL credentials were resolved from the existing running test container for
+this run; no credentials were written to tracked files. Existing routing/workflow
+mocks gained explicit empty `/actions` responses without weakening assertions.

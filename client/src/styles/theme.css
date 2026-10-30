@@ -511,3 +511,34 @@ textarea.form-control {
   --bs-alert-bg: var(--zen-warning-bg);
   --bs-alert-border-color: var(--zen-warning);
 }
+
+/* Actions Taken keeps full work-log text readable without page overflow. */
+.actions-table {
+  table-layout: fixed;
+  width: 100%;
+}
+.actions-table th,
+.actions-table td {
+  overflow-wrap: anywhere;
+}
+.actions-table time {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+@media (max-width: 767.98px) {
+  .actions-taken .btn,
+  .actions-taken .form-check-label {
+    min-height: 44px;
+  }
+}
+.actions-text {
+  white-space: pre-wrap;
+}
+.actions-taken .form-check-input:checked {
+  background-color: var(--zen-primary);
+  border-color: var(--zen-primary);
+}
+.actions-taken .form-check-input:focus {
+  border-color: var(--zen-secondary);
+  box-shadow: none;
+}

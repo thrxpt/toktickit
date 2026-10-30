@@ -124,3 +124,23 @@ ticket access, dashboards, and identity retirement remain with their later Issue
   `NODE_OPTIONS=--no-experimental-webstorage` so jsdom supplies test storage.
   Earlier Node 26 runs included a green full suite and intermittent unrelated
   authentication-test failures; no authentication assertions were changed.
+
+## Issue 25 — Actions Taken UI (#52)
+
+User prompt: `$implement #52`, using the supplied implement skill (TDD at the
+contract's UI/E2E seams, code review, and commit). Implemented by GPT-6.1 Sol in
+T3 Code. Work started from merged `origin/lab4-staging` at `26cc067` on
+`feature/25-actions-taken-ui` because integration branches accept reviewed PRs only.
+
+The first read-only UI test failed for the missing panel, then passed; the next
+create/edit tests failed for missing controls before implementation. Tests exercise
+rendered forms and HTTP payloads, not reducers or Prisma internals. The existing
+API enforces ownership, role restrictions, and duplicate retry rejection.
+
+Parallel Standards and Spec reviews found focus restoration before the React
+commit, missing Enter switch handling, the collapsed Attachment Notes preview,
+and timestamp wrapping. All were corrected. Render inspection also caught the
+existing multiline read-only class applying block layout and minimum height to
+work-log table cells; a scoped whitespace class preserves table semantics and
+compact mobile text. These automated reviews supplement the required human peer
+review; they do not certify it. No new runtime dependency was added.

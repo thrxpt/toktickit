@@ -24,6 +24,7 @@ describe("UI-09 — conflict recovery (AC-20, FR-20)", () => {
     let version = 0;
     const writes: object[] = [];
     vi.stubGlobal("fetch", vi.fn(async (input: string, init?: RequestInit) => {
+      if (input.endsWith("/actions")) return response([]);
       if (input.endsWith("/assignees") || input.endsWith("/comments")) return response([]);
       if (init?.method === "PATCH") {
         writes.push(JSON.parse(init.body as string));
@@ -64,6 +65,7 @@ describe("UI-09 — Requester resolution indication (AC-08, AC-20, FR-06)", () =
     let version = 0;
     const writes: object[] = [];
     vi.stubGlobal("fetch", vi.fn(async (input: string, init?: RequestInit) => {
+      if (input.endsWith("/actions")) return response([]);
       if (input.endsWith("/comments")) return response([]);
       if (input.endsWith("/resolve-indication") && init?.method === "POST") {
         writes.push(JSON.parse(init.body as string));
@@ -103,6 +105,7 @@ describe("UI-09 — Staff mutation versions (AC-08, AC-20, FR-06)", () => {
     let version = 0;
     const writes: object[] = [];
     vi.stubGlobal("fetch", vi.fn(async (input: string, init?: RequestInit) => {
+      if (input.endsWith("/actions")) return response([]);
       if (input.endsWith("/assignees")) return response([{ ...user }]);
       if (init?.method === "PATCH") {
         writes.push(JSON.parse(init.body as string));
@@ -134,6 +137,7 @@ describe("UI-09 — Staff mutation versions (AC-08, AC-20, FR-06)", () => {
   it("uses the returned ticketVersion for the next mutation without requiring a reload", async () => {
     const writes: object[] = [];
     vi.stubGlobal("fetch", vi.fn(async (input: string, init?: RequestInit) => {
+      if (input.endsWith("/actions")) return response([]);
       if (input.endsWith("/assignees")) return response([]);
       if (init?.method === "PATCH") {
         const payload = JSON.parse(init.body as string);

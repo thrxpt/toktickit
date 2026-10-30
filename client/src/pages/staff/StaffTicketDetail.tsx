@@ -1,3 +1,4 @@
+import ActionsTakenPanel from "../../components/tickets/ActionsTakenPanel";
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -57,13 +58,25 @@ export function StaffTicketDetail() {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"comments" | "notes" | "attachments">("attachments");
+  const [activeTab, setActiveTab] = useState<"comments" | "notes" | "attachments" | "actions">("attachments");
   const [saving, setSaving] = useState(false);
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
   const [needsReload, setNeedsReload] = useState(false);
   const [showConflict, setShowConflict] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [actionsCount, setActionsCount] = useState<number | null>(null);
+  const updateActionVersion = useCallback((version: number) => {
+    setTicket(prev => prev ? { ...prev, version } : prev);
+  }, []);
+  const reloadForActions = async () => {
+    const res = await apiFetch(`/api/staff/tickets/${id}`);
+    if (!res.ok) throw new Error('Unable to reload Ticket.');
+    setTicket(await res.json());
+    setNeedsReload(false);
+    setShowConflict(false);
+  };
 
   const showFeedback = (msg: string) => {
     setFeedbackMessage(msg);
@@ -454,6 +467,9 @@ export function StaffTicketDetail() {
               </button>
             </li>
             <li className="nav-item" role="presentation">
+              <button type="button" className={`nav-link ${activeTab === "actions" ? "active fw-bold" : ""}`} id="actions-tab" aria-controls="actions-panel" onClick={() => setActiveTab("actions")} role="tab" aria-selected={activeTab === "actions"}>Actions Taken{actionsCount !== null ? ` (${actionsCount})` : ''}</button>
+            </li>
+            <li className="nav-item" role="presentation">
               <button
                 type="button"
                 className={`nav-link ${activeTab === "comments" ? "active fw-bold" : ""}`}
@@ -479,6 +495,9 @@ export function StaffTicketDetail() {
         </div>
 
         <div className="card-body">
+          <div id="actions-panel" role="tabpanel" aria-labelledby="actions-tab" hidden={activeTab !== "actions"}>
+            <ActionsTakenPanel key={ticket.id} ticketId={ticket.id} version={ticket.version} canWrite disabled={saving || needsReload} onVersionChange={updateActionVersion} onCountChange={setActionsCount} onReload={reloadForActions} />
+          </div>
           {/* Attachments Tab */}
           {activeTab === "attachments" && (
             <div>

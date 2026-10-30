@@ -74,7 +74,7 @@ describe("UI-05 — Requester clicks Problem Appears Resolved (AC-09, FR-08)", (
     globalThis.fetch = vi.fn().mockImplementation((input: string | URL | Request, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
 
-      if (url.includes("/api/tickets/42/comments")) {
+      if (url.includes("/api/tickets/42/comments") || url.endsWith("/actions")) {
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -157,7 +157,7 @@ describe("UI-05 — Requester clicks Problem Appears Resolved (AC-09, FR-08)", (
     globalThis.fetch = vi.fn().mockImplementation((input: string | URL | Request) => {
       const url = typeof input === "string" ? input : input.toString();
 
-      if (url.includes("/api/tickets/42/comments")) {
+      if (url.includes("/api/tickets/42/comments") || url.endsWith("/actions")) {
         return Promise.resolve({
           ok: true,
           status: 200,
