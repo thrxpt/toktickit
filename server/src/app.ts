@@ -1,3 +1,4 @@
+import { actionsTakenRouter } from "./routes/actions-taken";
 import cookieParser from "cookie-parser";
 import express, { type Response } from "express";
 
@@ -80,6 +81,8 @@ app.get("/api/requesters", async (_req, res) => {
 
 // Authentication routes (Lab 3 foundation).
 app.use("/api/auth", authRouter);
+
+app.use("/api/tickets", actionsTakenRouter);
 
 // Public Comments & Internal Notes (BR-04, AC-08, AC-14, AC-15).
 app.use("/api/tickets", commentsNotesRouter);
