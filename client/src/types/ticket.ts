@@ -147,6 +147,7 @@ export interface InternalNoteDto {
 
 export interface StaffTicketDetailDto {
   version: number;
+  permittedTransitions: TicketStatus[];
   id: number;
   ticketNumber: string;
   summary: string;

@@ -100,18 +100,18 @@ app.use("/api/admin/users", usersAdminRouter);
 app.get(
   "/api/staff/assignees",
   requireAuth,
-  requireRole("IT_STAFF"),
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
   async (_req, res) => {
     try {
-      const staff = await prisma.user.findMany({
+      const assignees = await prisma.user.findMany({
         where: {
-          role: "IT_STAFF",
+          role: { in: ["IT_STAFF", "ADMINISTRATOR"] },
           isActive: true,
         },
         orderBy: { name: "asc" },
         select: { id: true, name: true, role: true },
       });
-      res.status(200).json(staff);
+      res.status(200).json(assignees);
     } catch {
       sendError(res, "DATABASE_UNAVAILABLE");
     }

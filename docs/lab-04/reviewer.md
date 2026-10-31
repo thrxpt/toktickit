@@ -9,6 +9,7 @@
 | --- | --- | --- |
 | [#56](https://github.com/thrxpt/toktickit/pull/56) | feature/22-lab4-contract | Changes requested; follow-up awaiting re-review |
 | [#59](https://github.com/thrxpt/toktickit/pull/59) | feature/25-actions-taken-ui | Commented: fix focus and duplicate-submit coverage before merge; follow-up awaiting re-review |
+| [#61](https://github.com/thrxpt/toktickit/pull/61) | feature/26-ticket-workflow | Changes requested: assignment reachability and UNIT-02 evidence; follow-up awaiting re-review |
 
 ---
 
@@ -97,3 +98,25 @@ nits. The lost-response retry limitation is documented. Rendered Chromium checks
 exercise focus in both switch states, a double-click with one POST/action, and
 failure recovery. Approval and merge remain pending; this record does not claim a
 new reviewer verdict.
+
+### feature/26-ticket-workflow #61
+
+[@fahsai-02's review, 2026-10-31](https://github.com/thrxpt/toktickit/pull/61#pullrequestreview-5723714879)
+on `698fbdd` requested changes after independently passing all 485 unit/API/UI/style
+tests. The reviewer did not verify Chromium because the disposable database
+configuration was undocumented.
+
+| Item | Fact-check and response |
+| --- | --- |
+| 1 — Administrator ownership | **VALID.** The owner API accepted Administrators but the assignee list excluded them. The API contract and endpoint now list active IT Staff and Administrators, matching BR-20/ADR-0010. API and Chromium prove Staff assignment to Administrator and Administrator takeover of an already-owned Ticket. Inactive users and Requesters remain excluded. |
+| 2 — UNIT-02 traceability | **VALID.** Restored the original planned file `server/tests/lab-04/status-matrix.unit.test.ts`, named for Lab 4 AC-09/BR-15/BR-16, and restored its test-plan path. Lab 3 tests remain regression coverage. |
+| 3 — Cancelled owner/priority | **CONTRACT-CONFORMING.** BR-15 makes status terminal; it does not freeze other Ticket-owned fields. UI contract now states that owner and IT Priority remain version-guarded and editable by operational roles. No new server restriction added. |
+| 4 — E2E configuration | **VALID.** `tests.md` §6 and README document sourcing/exporting `.env.test` in a subshell, initializing its database with the server harness, and `CI=1` to prevent reusing a development server. |
+| 5 — Silent status guard | **VALID hardening.** An unavailable submission now displays recovery text and sends no write; the rendered UI regression first failed for the silent return. Existing conflict/reload feedback remains. |
+| 6 — Issue closure | **VALID.** PR description uses `Refs #53` because the target is `lab4-staging`, not the default branch. |
+| 7 — Human E2E verification | **VERIFICATION LIMITATION.** The documented command was rerun successfully against newly created `toktickit_review_test`, distinct from `server/.env`, applying all migrations before both Chromium journeys and teardown. Human re-verification and a new review verdict remain pending. |
+
+This record describes verified changes and their evidence. It is not a posted
+GitHub reply, approval, or claim that the reviewer has rerun Chromium. The review's
+minor observations about version-check precedence and existing feedback timers did
+not identify a new contract defect and remain unchanged.

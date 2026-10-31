@@ -633,7 +633,7 @@ describe("API-10 — IT Staff queries Ticket Queue with filters and pagination (
   });
 
   describe("GET /api/staff/assignees", () => {
-    it("returns list of active staff members", async () => {
+    it("AC-23, ADR-0010 — returns active IT Staff and Administrator assignment targets", async () => {
       const staff = await loginAs("michael.brown@toktickit.com");
 
       const res = await request(app)
@@ -646,7 +646,7 @@ describe("API-10 — IT Staff queries Ticket Queue with filters and pagination (
       expect(res.body[0]).toMatchObject({
         id: expect.any(Number),
         name: expect.any(String),
-        role: "IT_STAFF",
+        role: expect.stringMatching(/^(IT_STAFF|ADMINISTRATOR)$/),
       });
     });
   });

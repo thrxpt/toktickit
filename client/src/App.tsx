@@ -100,7 +100,7 @@ export function AppRoutes() {
       <Route
         path="/staff/queue"
         element={
-          <RequireRole roles={["IT_STAFF"]}>
+          <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
             <AppShell>
               <StaffTicketQueue />
             </AppShell>
@@ -110,7 +110,7 @@ export function AppRoutes() {
       <Route
         path="/staff/tickets/:id"
         element={
-          <RequireRole roles={["IT_STAFF"]}>
+          <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
             <AppShell
               breadcrumbs={[
                 { label: "My Queue", to: "/staff/queue" },

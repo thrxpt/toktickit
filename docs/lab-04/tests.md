@@ -117,7 +117,7 @@ finding was reproduced and fixed with regression coverage.
 | API-10 | AC-09, BR-15, BR-16 | Matrix through the endpoint: permitted edge, invalid edge, same-status, post-`CANCELLED` | `200` / `400 INVALID_STATUS_TRANSITION` respectively |
 | API-11 | AC-10, BR-15 | `GET /api/staff/tickets/:id` payload | Contains `version` and `permittedTransitions` equal to the matrix for the current status |
 | API-12 | AC-08, AC-11, BR-11, BR-12, BR-18 | Owning Requester sends current `expectedVersion` on an `OPEN` Ticket; Staff then writes with the pre-indication version | Indication answers `200`, returns incremented `ticketVersion`, sets `resolvedByRequester: true`, and leaves status unchanged; the Staff write answers `409 STALE_UPDATE` and changes nothing |
-| API-13 | AC-23, BR-20 | Administrator claims, prioritises, transitions, and records an action | All succeed, superseding ADR-0008 in the ticket direction only |
+| API-13 | AC-23, BR-20 | Administrator claims, prioritises, transitions, and records an action; both operational roles list active Staff/Admin targets and reassign an already-owned Ticket to Administrator | All succeed; inactive users and Requesters excluded from assignment targets; supersedes ADR-0008 in the ticket direction only |
 | API-14 | AC-23 | IT Staff calls `GET /api/admin/users` | `403 FORBIDDEN` |
 | API-15 | AC-11, BR-17 | Requester calls `PATCH /api/staff/tickets/:id/status` | `403 FORBIDDEN` |
 
@@ -332,6 +332,36 @@ pnpm build
 A `test:e2e:lab4` script is added alongside the existing `test:e2e:lab3` /
 `test:e2e:lab2` scripts.
 
+### Reproduce Lab 4 E2E against a disposable database
+
+Complete the normal setup, including `server/.env`, then copy
+`server/.env.test.example` to `server/.env.test` and configure its `DATABASE_URL`
+for a disposable database whose name ends in `_test`. The development launcher
+still reads `server/.env`; the exported URL below takes precedence for the API,
+Prisma, and both Playwright cleanup hooks. `toktickit_workflow_test` was the
+database used for Issue 26 verification; `toktickit_test` is equally valid.
+
+Run from the repository root, with PostgreSQL running and Chromium installed:
+
+```bash
+(
+  set -a
+  . ./server/.env.test
+  set +a
+  pnpm --filter server test tests/lab-04/status-matrix.unit.test.ts &&
+    CI=1 pnpm test:e2e:lab4 e2e/lab-04/ticket-resolution.spec.ts
+)
+```
+
+The server test harness first rejects non-test database names, creates the test
+database if needed, applies migrations, and seeds it. Playwright then starts the
+app and runs setup/teardown with that same exported URL; no development migration
+is needed. `CI=1` prevents reuse of a server that may be serving another database;
+stop anything already listening on ports 3000/5173 before running. The subshell
+keeps this database override local to the verification commands. Unqualified
+`pnpm test:e2e:lab4` uses the ordinary app configuration; use the explicit override
+above when verifying against a disposable database.
+
 ---
 
 ## 7. Final Results
@@ -404,3 +434,68 @@ Review-fix verification (2026-10-31): 161 client and 296 server tests passed, ze
 skips, using the isolated `toktickit_test` database. `pnpm build` (including root
 typechecking) and headless Chromium E2E-01 passed. The computed focus outline is
 solid and at least 2 px for both switch states; rendered screenshots were inspected.
+
+### Issue 26 implementation — Final Ticket workflow (#53)
+
+- `server/tests/lab-04/ticket-workflow.api.test.ts`: API-10/API-11 exercise all
+  64 source/target pairs for each operational role against the final BR-15
+  matrix. Rejections leave the entire Ticket response unchanged. API-12/API-15
+  verify direct Requester status attempts are forbidden, the advisory indication
+  leaves status unchanged, and both Staff and Administrator stale writes conflict.
+  API-13/API-14 verify Administrator queue/assignees/claim/priority/Actions Taken
+  access and the unchanged IT Staff exclusion from User Management. A simultaneous
+  Staff/Admin status race yields exactly one success and one `409`.
+- `client/tests/lab-04/TicketWorkflow.test.tsx`: UI-08 uses a deliberately narrower
+  server payload to prove the client does not derive the matrix. Covers current
+  option disabled, response-driven badge/options/version updates, `CLOSED` →
+  `REOPENED`, terminal read-only copy, and Administrator owner display. UI-09
+  preserves status and comment drafts through conflict/reload; retry uses the new
+  version and becomes unavailable when the reloaded matrix forbids the choice.
+- `e2e/lab-04/ticket-resolution.spec.ts`: E2E-02 creates through the Requester UI,
+  then an Administrator claims and advances the Ticket, the Requester indicates
+  resolution, and a stale Administrator resolves only after explicit reload/retry.
+  Covers closure, reopening, cancellation from `REOPENED` and from unassigned
+  `NEW`, Requester-visible outcomes, and direct invalid/same-status rejections.
+- Existing Lab 3 tests now assert permitted Administrator operations, including
+  attachment bytes, while retaining Requester and IT Staff role boundaries.
+  `AppRoutes.test.tsx` and `AppShell.test.tsx` cover Administrator queue access
+  and navigation. Detail fixtures include the new server transition field.
+- `server/tests/lab-04/status-matrix.unit.test.ts` implements the originally
+  planned UNIT-02 with Lab 4 BR-15/BR-16 traceability. The Lab 3 pure-matrix tests
+  remain regression evidence. The exhaustive HTTP test keeps one listener for its requests;
+  opening hundreds of transient listeners exposed host Node 26 socket failures.
+- Screenshots: `artifacts/lab-04/screenshots/workflow/` contains conflict at
+  1280 px, resolved controls at 768 px, and terminal read-only state at 390 px.
+
+Issue 26 verification (2026-10-31): full `pnpm test` passed with 317 server and
+168 client tests, zero skips, under Node 24.18.0 and
+`NODE_OPTIONS=--no-experimental-webstorage`. `pnpm build`, root typechecking,
+server typechecking, and headless Chromium E2E-02 passed. All verification used
+`toktickit_workflow_test`; the development database was not used. Rendered
+screenshots were inspected at the recorded three widths; the mobile page has no
+horizontal overflow. The UI detector reported no findings.
+
+### Issue 26 review follow-up — #61
+
+- Restored planned `status-matrix.unit.test.ts` (UNIT-02), with eight source-status
+  cases covering every pair, same-status rejection and terminal cancellation under
+  Lab 4 AC-09/BR-15/BR-16. Lab 3 matrix tests remain unchanged.
+- API-13 now proves both callers receive active Staff/Admin assignment targets,
+  excludes inactive Staff and Requesters, and reassigns an already-owned Ticket to
+  Administrator. Updated earlier assignee assertions match this explicit contract
+  correction; User Management boundaries remain intact.
+- UI-08 checks visible recovery feedback when a modified/delayed status submission
+  falls outside the latest server choices, with no write or status change.
+- E2E-02 now has a second journey proving Staff-to-Administrator reassignment and
+  Administrator takeover from Staff through the owner dropdown, including reload
+  and persisted version checks.
+- Reproduced the §6 command against fresh `toktickit_review_test`, a different
+  database from `server/.env`: harness created it, applied all five migrations,
+  seeded it, then both Chromium journeys and cleanup passed. This is agent
+  verification; human re-verification is still pending.
+
+Review-fix verification (2026-10-31): full suite passed with 326 server and
+169 client tests (495 total), zero skips, under Node 24.18.0 with the jsdom storage
+flag. `pnpm build` (root E2E typecheck plus both package builds), `git diff --check`,
+and both headless Chromium E2E-02 journeys passed. Updated workflow screenshots
+were regenerated during that isolated run.

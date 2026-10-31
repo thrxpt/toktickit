@@ -359,9 +359,12 @@ API-19, UI-11, UI-12, and E2E-03 cover the links and their destinations.
 
 Every `/api/staff/*` endpoint in Lab 3 (queue, assignees, detail, owner, priority,
 status) now permits `IT_STAFF` **and** `ADMINISTRATOR` (ADR-0010, BR-20). Requesters
-remain `403 FORBIDDEN`. `GET /api/staff/assignees` is unchanged: it lists active IT
-Staff as assignment targets, while an Administrator remains a valid owner under the
-existing owner validation rule.
+remain `403 FORBIDDEN`. `GET /api/staff/assignees` lists active `IT_STAFF` and
+`ADMINISTRATOR` users as assignment targets, ordered by name, with the existing
+`id`, `name`, and `role` fields. This matches the owner endpoint's validation and
+makes ADR-0010 reassignment reachable from the UI: either operational role may
+assign an already-owned Ticket to an active Administrator, including themselves.
+Inactive users and Requesters are never assignment targets.
 
 ### GET /api/staff/tickets/:id
 
@@ -385,7 +388,7 @@ Administrator. The Requester Ticket detail payload adds `version` but no
 { "ownerId": 2, "expectedVersion": 4 }
 ```
 
-- **200**: `{ "ticketId": 12, "ticketOwnerId": 2, "status": "OPEN", "ticketVersion": 5, "message": "Ticket ownership updated." }`
+- **200**: `{ "ticketId": 12, "ticketOwnerId": 2, "status": "OPEN", "permittedTransitions": ["IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"], "ticketVersion": 5, "message": "Ticket ownership updated." }`
 - **400**: invalid/inactive owner.
 - **409 STALE_UPDATE**.
 
@@ -405,10 +408,15 @@ Administrator. The Requester Ticket detail payload adds `version` but no
 { "status": "RESOLVED", "expectedVersion": 6 }
 ```
 
-- **200**: `{ "ticketId": 12, "status": "RESOLVED", "ticketVersion": 7, "message": "Status updated successfully." }`
+- **200**: `{ "ticketId": 12, "status": "RESOLVED", "permittedTransitions": ["CLOSED", "REOPENED"], "ticketVersion": 7, "message": "Status updated successfully." }`
 - **400 INVALID_STATUS_TRANSITION**: invalid, same-status, or terminal-source
   transition (BR-15, BR-16).
 - **409 STALE_UPDATE**.
+
+Owner and status mutation responses also return `permittedTransitions` for the
+resulting status. This keeps the badge, choices, and version in sync immediately
+after a status change or the `NEW` → `OPEN` assignment rule, without duplicating
+the matrix in the client (FR-07, BR-19).
 
 ### POST /api/tickets/:id/resolve-indication
 

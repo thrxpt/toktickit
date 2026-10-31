@@ -577,18 +577,14 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
     expect(downloadRes.header["content-type"]).toBe("image/png");
     expect(downloadRes.body).toBeDefined();
 
-    // Administrator attempts to download attachment -> 403 FORBIDDEN (BR-14, ADR-0008)
+    // AC-23, ADR-0010: Administrators share operational attachment reads.
     const admin = await loginAs("admin@toktickit.com");
     const adminDownloadRes = await request(app)
       .get(`/api/attachments/${attachmentId}/content`)
       .set("Cookie", admin.cookie);
-    expect(adminDownloadRes.status).toBe(403);
-    expect(adminDownloadRes.body).toEqual({
-      error: {
-        code: "FORBIDDEN",
-        message: expect.any(String),
-      },
-    });
+    expect(adminDownloadRes.status).toBe(200);
+    expect(adminDownloadRes.header["content-type"]).toBe("image/png");
+    expect(adminDownloadRes.body).toEqual(downloadRes.body);
   });
 
   it("returns 401 UNAUTHENTICATED on anonymous requests to protected routes without session or header", async () => {
@@ -633,7 +629,7 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
     });
   });
 
-  it("API-30 — rejects Requester and Administrator requesting /api/staff/tickets and /api/staff/assignees with 403 FORBIDDEN (BR-14, BR-15, ADR-0008)", async () => {
+  it("API-30 — Requester remains forbidden; Administrator may read queue and assignees (AC-23, ADR-0010)", async () => {
     const requester = await loginAs("jennifer.anderson@example.ac.th");
     const admin = await loginAs("admin@toktickit.com");
 
@@ -653,15 +649,10 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
       .get("/api/staff/tickets")
       .set("Cookie", admin.cookie);
 
-    expect(adminRes.status).toBe(403);
-    expect(adminRes.body).toEqual({
-      error: {
-        code: "FORBIDDEN",
-        message: expect.any(String),
-      },
-    });
+    expect(adminRes.status).toBe(200);
+    expect(adminRes.body.items).toEqual([]);
 
-    // Verify /api/staff/assignees also rejects Requester and Administrator with 403
+    // AC-23, ADR-0010: Requester is forbidden; both operational roles are assignment targets.
     const requesterAssigneesRes = await request(app)
       .get("/api/staff/assignees")
       .set("Cookie", requester.cookie);
@@ -671,8 +662,10 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
     const adminAssigneesRes = await request(app)
       .get("/api/staff/assignees")
       .set("Cookie", admin.cookie);
-    expect(adminAssigneesRes.status).toBe(403);
-    expect(adminAssigneesRes.body.error.code).toBe("FORBIDDEN");
+    expect(adminAssigneesRes.status).toBe(200);
+    expect(adminAssigneesRes.body.length).toBeGreaterThan(0);
+    expect(adminAssigneesRes.body.every((user: { role: string }) => ["IT_STAFF", "ADMINISTRATOR"].includes(user.role))).toBe(true);
+    expect(adminAssigneesRes.body).toContainEqual({ id: admin.user.id, name: admin.user.name, role: "ADMINISTRATOR" });
   });
 
   it("API-17 — IT Staff and Requester attempts to access Admin User Management routes rejected with 403 FORBIDDEN (BR-14, BR-15, ADR-0008)", async () => {
