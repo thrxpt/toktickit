@@ -59,6 +59,10 @@ Credentials come from `server/.env`. Copy `server/.env.test.example` to
 `server/.env.test` only if the test database needs different credentials; that file is
 git-ignored exactly like `server/.env`.
 
+For Lab 4 browser verification, use the [disposable-database E2E command](docs/lab-04/tests.md#reproduce-lab-4-e2e-against-a-disposable-database).
+It exports `server/.env.test` for the API and cleanup hooks, initializes that
+database, and prevents reuse of an existing development server.
+
 ### Uploads directory
 
 Attachment file bytes are stored on disk in git-ignored `server/uploads/` under UUID

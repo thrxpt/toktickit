@@ -359,9 +359,12 @@ API-19, UI-11, UI-12, and E2E-03 cover the links and their destinations.
 
 Every `/api/staff/*` endpoint in Lab 3 (queue, assignees, detail, owner, priority,
 status) now permits `IT_STAFF` **and** `ADMINISTRATOR` (ADR-0010, BR-20). Requesters
-remain `403 FORBIDDEN`. `GET /api/staff/assignees` is unchanged: it lists active IT
-Staff as assignment targets, while an Administrator remains a valid owner under the
-existing owner validation rule.
+remain `403 FORBIDDEN`. `GET /api/staff/assignees` lists active `IT_STAFF` and
+`ADMINISTRATOR` users as assignment targets, ordered by name, with the existing
+`id`, `name`, and `role` fields. This matches the owner endpoint's validation and
+makes ADR-0010 reassignment reachable from the UI: either operational role may
+assign an already-owned Ticket to an active Administrator, including themselves.
+Inactive users and Requesters are never assignment targets.
 
 ### GET /api/staff/tickets/:id
 

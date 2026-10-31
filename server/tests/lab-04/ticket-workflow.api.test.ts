@@ -75,6 +75,35 @@ describe.each(operators)("API-10, API-11 — final matrix for %s (AC-09, AC-10, 
 });
 
 describe("API-13, API-14 — operational-role access (AC-23, BR-20, ADR-0010)", () => {
+  it("lists active operational owners so Staff can assign an already-owned Ticket to an Administrator", async () => {
+    const requester = await login("jennifer.anderson@example.ac.th");
+    const staff = await login("michael.brown@toktickit.com");
+    const admin = await login("admin@toktickit.com");
+    const ticket = await createTicket(requester.cookie);
+    const claimed = await request(server).patch(`/api/staff/tickets/${ticket.id}/owner`).set("Cookie", staff.cookie)
+      .send({ ownerId: staff.user.id, expectedVersion: 0 });
+    expect(claimed.status).toBe(200);
+    for (const operator of [staff, admin]) {
+      const assignees = await request(server).get("/api/staff/assignees").set("Cookie", operator.cookie);
+      expect(assignees.status).toBe(200);
+      expect(assignees.body).toEqual(expect.arrayContaining([
+        { id: staff.user.id, name: staff.user.name, role: "IT_STAFF" },
+        { id: admin.user.id, name: admin.user.name, role: "ADMINISTRATOR" },
+      ]));
+      expect(assignees.body.every((user: { role: string }) => ["IT_STAFF", "ADMINISTRATOR"].includes(user.role))).toBe(true);
+      expect(assignees.body.map((user: { name: string }) => user.name)).toEqual(
+        assignees.body.map((user: { name: string }) => user.name).toSorted((a: string, b: string) => a.localeCompare(b)),
+      );
+      const inactive = await prisma.user.findFirstOrThrow({ where: { isActive: false, role: "IT_STAFF" } });
+      expect(assignees.body).not.toContainEqual(expect.objectContaining({ id: inactive.id }));
+    }
+    const assigned = await request(server).patch(`/api/staff/tickets/${ticket.id}/owner`).set("Cookie", staff.cookie)
+      .send({ ownerId: admin.user.id, expectedVersion: 1 });
+    expect(assigned.status).toBe(200);
+    const detail = await request(server).get(`/api/staff/tickets/${ticket.id}`).set("Cookie", admin.cookie);
+    expect(detail.body).toMatchObject({ ticketOwner: { id: admin.user.id, name: admin.user.name }, status: "OPEN", version: 2 });
+  });
+
   it("allows an Administrator to find, claim, prioritise and work a Ticket while IT Staff cannot manage Users", async () => {
     const requester = await login("jennifer.anderson@example.ac.th");
     const admin = await login("admin@toktickit.com");
@@ -86,7 +115,7 @@ describe("API-13, API-14 — operational-role access (AC-23, BR-20, ADR-0010)", 
     const assignees = await request(server).get("/api/staff/assignees").set("Cookie", admin.cookie);
     expect(assignees.status).toBe(200);
     expect(assignees.body.length).toBeGreaterThan(0);
-    expect(assignees.body.every((user: { role: string }) => user.role === "IT_STAFF")).toBe(true);
+    expect(assignees.body.every((user: { role: string }) => ["IT_STAFF", "ADMINISTRATOR"].includes(user.role))).toBe(true);
     const claim = await request(server).patch(`/api/staff/tickets/${ticket.id}/owner`).set("Cookie", admin.cookie)
       .send({ ownerId: admin.user.id, expectedVersion: 0 });
     expect(claim.status).toBe(200);

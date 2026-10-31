@@ -27,7 +27,7 @@ function renderStaff() {
 }
 
 describe("UI-08 — server-owned workflow choices (AC-10, FR-07)", () => {
-  it("displays an Administrator Ticket Owner even though assignment targets list only IT Staff (AC-23)", async () => {
+  it("displays a current Ticket Owner absent from the active assignment targets (AC-23)", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: string) => {
       if (input.endsWith("/actions") || input.endsWith("/assignees")) return response([]);
       return response({ ...ticket, ticketOwner: { id: 9, name: "Administrator" } });
@@ -36,6 +36,25 @@ describe("UI-08 — server-owned workflow choices (AC-10, FR-07)", () => {
     const owner = await screen.findByRole("combobox", { name: "Ticket Owner" });
     expect(owner).toHaveValue("9");
     expect(within(owner).getByRole("option", { name: "Administrator" })).toBeDisabled();
+  });
+
+  it("explains an unavailable status submission without sending a write (AC-20)", async () => {
+    const writes: object[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (input: string, init?: RequestInit) => {
+      if (input.endsWith("/actions") || input.endsWith("/assignees")) return response([]);
+      if (init?.method === "PATCH") writes.push(JSON.parse(init.body as string));
+      return response(ticket);
+    }));
+    renderStaff();
+    const status = await screen.findByRole("combobox", { name: "Current Status" });
+    // A delayed or modified client event must still receive useful feedback.
+    const unavailable = document.createElement("option");
+    unavailable.value = "CLOSED";
+    status.append(unavailable);
+    fireEvent.change(status, { target: { value: "CLOSED" } });
+    await screen.findByText("This status change is no longer permitted. Choose one of the available transitions.");
+    expect(writes).toEqual([]);
+    expect(screen.getByText("Open", { selector: ".badge" })).toBeInTheDocument();
   });
 
   it("renders only server-supplied transitions, with the current status non-selectable", async () => {

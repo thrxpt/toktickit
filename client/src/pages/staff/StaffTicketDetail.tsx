@@ -136,7 +136,10 @@ export function StaffTicketDetail() {
 
   const saveChange = async (change: PendingChange) => {
     if (!ticket || saving || needsReload) return;
-    if (change.field === "status" && !ticket.permittedTransitions?.includes(change.value)) return;
+    if (change.field === "status" && !ticket.permittedTransitions?.includes(change.value)) {
+      setErrorMessage("This status change is no longer permitted. Choose one of the available transitions.");
+      return;
+    }
     setSaving(true);
     setPendingChange(change);
     setErrorMessage(null);

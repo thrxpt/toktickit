@@ -652,7 +652,7 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
     expect(adminRes.status).toBe(200);
     expect(adminRes.body.items).toEqual([]);
 
-    // Requester is still forbidden; Administrator gets active IT Staff assignment targets.
+    // AC-23, ADR-0010: Requester is forbidden; both operational roles are assignment targets.
     const requesterAssigneesRes = await request(app)
       .get("/api/staff/assignees")
       .set("Cookie", requester.cookie);
@@ -664,7 +664,8 @@ describe("Role segregation & attachment download permissions (BR-14, BR-15, FR-2
       .set("Cookie", admin.cookie);
     expect(adminAssigneesRes.status).toBe(200);
     expect(adminAssigneesRes.body.length).toBeGreaterThan(0);
-    expect(adminAssigneesRes.body.every((user: { role: string }) => user.role === "IT_STAFF")).toBe(true);
+    expect(adminAssigneesRes.body.every((user: { role: string }) => ["IT_STAFF", "ADMINISTRATOR"].includes(user.role))).toBe(true);
+    expect(adminAssigneesRes.body).toContainEqual({ id: admin.user.id, name: admin.user.name, role: "ADMINISTRATOR" });
   });
 
   it("API-17 — IT Staff and Requester attempts to access Admin User Management routes rejected with 403 FORBIDDEN (BR-14, BR-15, ADR-0008)", async () => {

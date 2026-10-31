@@ -195,3 +195,28 @@ requirements for #53. The full unit/API/UI/style suite passed: 317 server and
 headless Chromium E2E-02 passed. Three workflow screenshots were inspected after
 fixing Administrator owner display; the UI detector reported no findings. These
 are automated checks, not the human peer-review verdict tracked in reviewer.md.
+
+### Issue 26 human review follow-up — #61
+
+User prompt: "Check request changes comment. If it's valid, just fix it."
+Fact-checked @fahsai-02's review on `698fbdd` against the API, UI and contract.
+Confirmed the Administrator reassignment gap and replaced the narrower assignee
+contract with active operational-role targets. The new API test failed for the
+missing Administrator before the endpoint change. Both Staff assignment and Admin
+takeover of an already-owned Ticket now pass in Chromium. Restored the originally
+planned Lab 4 UNIT-02 file instead of repointing it to Lab 3 evidence.
+
+A rendered test reproduced the silent unpermitted-status return; the guard now
+gives recovery feedback without writing. Cancellation remains terminal for status
+only, as BR-15 specifies. Documented the full disposable-database E2E override and
+ran it against fresh `toktickit_review_test` while leaving `server/.env` unchanged;
+all migrations, both journeys and cleanup succeeded. The review exposed gaps that
+the earlier automated reviews missed. These fixes do not imply a new human review
+verdict, and no reviewer reply was posted.
+
+Review-fix validation (2026-10-31): 326 server and 169 client tests passed (495
+in total, zero skips), as did the production build/typechecks and both Chromium
+E2E-02 journeys. The disposable-database reproduction applied all five migrations
+from an empty database. Review feedback and classifications are recorded in
+reviewer.md; the PR retains its existing Changes Requested verdict pending a new
+human review.

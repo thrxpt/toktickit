@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { login, TEST_USERS } from "../lab-03/helpers";
+import { login, logout, TEST_USERS } from "../lab-03/helpers";
 
 test("E2E-02 — AC-08–AC-11, AC-23: creation, advisory resolution, conflict, closure, reopening and cancellation", async ({ page, browser }) => {
   test.setTimeout(90_000);
@@ -110,4 +110,47 @@ test("E2E-02 — AC-08–AC-11, AC-23: creation, advisory resolution, conflict, 
   } finally {
     await adminContext.close();
   }
+});
+
+test("E2E-02 — AC-23, ADR-0010: Staff assigns an owned Ticket to Administrator; Administrator takes over from Staff", async ({ page }) => {
+  await login(page, TEST_USERS.requester.email, TEST_USERS.requester.password);
+  await page.waitForURL("**/tickets");
+  const categories = await (await page.request.get("/api/categories")).json();
+  const systems = await (await page.request.get("/api/related-systems")).json();
+  const created = await page.request.post("/api/tickets", { data: {
+    summary: `E2E Administrator reassignment ${Date.now()}`,
+    description: "An already-owned Ticket must remain assignable to either operational role.",
+    categoryId: categories[0].id, relatedSystemId: systems[0].id, requestedPriority: "MEDIUM",
+  } });
+  expect(created.status()).toBe(201);
+  const ticket = await created.json();
+  await logout(page);
+  await login(page, TEST_USERS.staff.email, TEST_USERS.staff.password);
+  await page.waitForURL("**/staff/queue");
+  await page.goto(`/staff/tickets/${ticket.id}`);
+  await page.getByRole("button", { name: "Claim", exact: true }).click();
+  const owner = page.getByRole("combobox", { name: "Ticket Owner" });
+  await expect(owner.locator("option:checked")).toHaveText(TEST_USERS.staff.name);
+  await expect(owner).toBeEnabled();
+  await owner.selectOption({ label: TEST_USERS.admin.name });
+  await expect(owner.locator("option:checked")).toHaveText(TEST_USERS.admin.name);
+  await expect(owner).toBeEnabled();
+  await page.reload();
+  await expect(owner.locator("option:checked")).toHaveText(TEST_USERS.admin.name);
+  await owner.selectOption({ label: TEST_USERS.staff.name });
+  await expect(owner.locator("option:checked")).toHaveText(TEST_USERS.staff.name);
+  await expect(owner).toBeEnabled();
+  await logout(page);
+  await login(page, TEST_USERS.admin.email, TEST_USERS.admin.password);
+  await page.waitForURL("**/admin/users");
+  await page.goto(`/staff/tickets/${ticket.id}`);
+  await expect(owner.locator("option:checked")).toHaveText(TEST_USERS.staff.name);
+  await expect(page.getByRole("button", { name: "Claim", exact: true })).toHaveCount(0);
+  await owner.selectOption({ label: TEST_USERS.admin.name });
+  await expect(owner.locator("option:checked")).toHaveText(TEST_USERS.admin.name);
+  await expect(owner).toBeEnabled();
+  await page.reload();
+  await expect(owner.locator("option:checked")).toHaveText(TEST_USERS.admin.name);
+  const stored = await (await page.request.get(`/api/staff/tickets/${ticket.id}`)).json();
+  expect(stored).toMatchObject({ status: "OPEN", version: 4, ticketOwner: { name: TEST_USERS.admin.name } });
 });
