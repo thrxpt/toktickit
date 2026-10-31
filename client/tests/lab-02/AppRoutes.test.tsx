@@ -14,6 +14,7 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
     localStorage.setItem('toktickit_requester_id', '1')
     globalThis.fetch = vi.fn().mockImplementation((input: string | URL | Request) => {
       const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/actions')) return Promise.resolve(new Response('[]'))
       if (url === '/api/requesters') {
         return Promise.resolve({
           ok: true,

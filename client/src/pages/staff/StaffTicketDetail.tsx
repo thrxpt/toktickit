@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import ActionsTakenPanel from "../../components/tickets/ActionsTakenPanel";
 import apiFetch from "../../api/client";
 import { useAuth } from "../../auth/useAuth";
 import Badge from "../../components/Badge";
@@ -57,7 +58,7 @@ export function StaffTicketDetail() {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"comments" | "notes" | "attachments">("attachments");
+  const [activeTab, setActiveTab] = useState<"comments" | "notes" | "attachments" | "actions">("attachments");
   const [saving, setSaving] = useState(false);
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
   const [needsReload, setNeedsReload] = useState(false);
@@ -65,6 +66,10 @@ export function StaffTicketDetail() {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [actionsCount, setActionsCount] = useState<number | null>(null);
+  const updateActionVersion = useCallback((version: number) => {
+    setTicket(prev => prev ? { ...prev, version } : prev);
+  }, []);
   const showFeedback = (msg: string) => {
     setFeedbackMessage(msg);
     setTimeout(() => {
@@ -106,6 +111,7 @@ export function StaffTicketDetail() {
         const assigneesData = (await assigneesRes.json()) as AssigneeOption[];
         setAssignees(assigneesData);
       }
+      return true;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unable to reach server";
       if (preserveEditors) setErrorMessage(message);
@@ -114,6 +120,10 @@ export function StaffTicketDetail() {
       setLoading(false);
     }
   }, [id]);
+
+  const reloadForActions = async () => {
+    if (!await loadData(true)) throw new Error("Unable to reload Ticket.");
+  };
 
   useEffect(() => {
     loadData();
@@ -454,6 +464,9 @@ export function StaffTicketDetail() {
               </button>
             </li>
             <li className="nav-item" role="presentation">
+              <button type="button" className={`nav-link ${activeTab === "actions" ? "active fw-bold" : ""}`} id="actions-tab" aria-controls="actions-panel" onClick={() => setActiveTab("actions")} role="tab" aria-selected={activeTab === "actions"}>Actions Taken{actionsCount !== null ? ` (${actionsCount})` : ''}</button>
+            </li>
+            <li className="nav-item" role="presentation">
               <button
                 type="button"
                 className={`nav-link ${activeTab === "comments" ? "active fw-bold" : ""}`}
@@ -479,6 +492,9 @@ export function StaffTicketDetail() {
         </div>
 
         <div className="card-body">
+          <div id="actions-panel" role="tabpanel" aria-labelledby="actions-tab" hidden={activeTab !== "actions"}>
+            <ActionsTakenPanel key={ticket.id} ticketId={ticket.id} version={ticket.version} canWrite disabled={saving || needsReload} onVersionChange={updateActionVersion} onCountChange={setActionsCount} onReload={reloadForActions} />
+          </div>
           {/* Attachments Tab */}
           {activeTab === "attachments" && (
             <div>

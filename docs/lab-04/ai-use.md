@@ -124,3 +124,38 @@ ticket access, dashboards, and identity retirement remain with their later Issue
   `NODE_OPTIONS=--no-experimental-webstorage` so jsdom supplies test storage.
   Earlier Node 26 runs included a green full suite and intermittent unrelated
   authentication-test failures; no authentication assertions were changed.
+
+## Issue 25 — Actions Taken UI (#52)
+
+User prompt: `$implement #52`, using the supplied implement skill (TDD at the
+contract's UI/E2E seams, code review, and commit). Implemented by GPT-6.1 Sol in
+T3 Code. Work started from merged `origin/lab4-staging` at `26cc067` on
+`feature/25-actions-taken-ui` because integration branches accept reviewed PRs only.
+
+The first read-only UI test failed for the missing panel, then passed; the next
+create/edit tests failed for missing controls before implementation. Tests exercise
+rendered forms and HTTP payloads, not reducers or Prisma internals. The existing
+API enforces ownership, role restrictions, and duplicate retry rejection.
+
+Parallel Standards and Spec reviews found focus restoration before the React
+commit, missing Enter switch handling, the collapsed Attachment Notes preview,
+and timestamp wrapping. All were corrected. Render inspection also caught the
+existing multiline read-only class applying block layout and minimum height to
+work-log table cells; a scoped whitespace class preserves table semantics and
+compact mobile text. These automated reviews supplement the required human peer
+review; they do not certify it. No new runtime dependency was added.
+
+### Issue 25 human review follow-up (#59)
+
+User prompt: `Push fixes.` Verified the peer review against the PR head. Corrected
+Bootstrap specificity hiding the switch focus ring and its unchecked blue focus
+knob, strengthened duplicate-submit and counter assertions, matched API validation
+copy, and made network/non-JSON save failures use safe recovery text. The focused
+network and HTML-500 tests failed with raw browser/parser messages before the fix.
+Keyboard focus is restored after unsuccessful saves, without overriding focus the
+user moved elsewhere. Chromium checks both switch states and failed-save focus.
+
+The Actions Taken reload now reuses the Ticket Detail loader, including assignees
+and not-found handling. Requester section ordering, import placement, conflict
+style assertions, and test source-path resolution were adjusted. The lost-response
+retry boundary is documented in tests.md. No reviewer reply or merge was performed.

@@ -17,7 +17,8 @@
     "db:check": "pnpm --filter server db:check",
     "db:migrate": "pnpm --filter server db:migrate",
     "db:seed": "pnpm --filter server db:seed",
-    "db:cleanup-e2e": "pnpm --filter server db:cleanup-e2e"
+    "db:cleanup-e2e": "pnpm --filter server db:cleanup-e2e",
+    "test:e2e:lab4": "playwright test --config playwright.lab4.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

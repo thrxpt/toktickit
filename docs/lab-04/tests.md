@@ -354,3 +354,53 @@ Known limitations to carry into the release evidence:
 - Chromium-only Playwright matrix, as in Labs 2–3.
 - No notification delivery by design (handout §4.2).
 - Screenshots are committed evidence, not a cross-browser guarantee.
+
+### Issue 25 implementation — Actions Taken UI (#52)
+
+- `client/tests/lab-04/ActionsTaken.test.tsx`: UI-04–UI-07 and the Actions Taken
+  portion of UI-09. Covers loading, empty, retry, forbidden/unavailable, required
+  Follow-up Note, duplicate submission locking, immutable display fields,
+  conflict/reload with preserved text and refreshed version, network failure,
+  omission of inactive follow-up notes, Enter keyboard toggling, and focus return.
+- `client/tests/lab-04/style/actions.style.test.tsx`: STYLE-02 and the Actions Taken
+  portion of STYLE-01 (text-labelled follow-up badge and no hex in new components).
+- `e2e/lab-04/actions-taken-flow.spec.ts`: E2E-01 plus the Actions Taken portion of
+  RESP-01: Staff creates and edits, owning Requester reads without write controls,
+  direct Requester write gets `403`, and no horizontal overflow at 1280/768/390 px.
+- `pnpm test:e2e:lab4` uses `playwright.lab4.config.ts`; existing Lab 3 E2E defaults
+  remain available. Use an explicitly configured test `DATABASE_URL` for both the
+  application and cleanup scripts to keep browser verification isolated.
+- Screenshots: `artifacts/lab-04/screenshots/actions-taken/` (create, validation,
+  edit, desktop/tablet/mobile lists, and Requester mobile read-only section).
+
+Verification (2026-10-31): 296 server and 158 client tests passed, zero skips;
+`pnpm build` and root typechecking passed. Headless Chromium E2E-01 passed.
+The host requires `NODE_OPTIONS=--no-experimental-webstorage` for jsdom storage.
+PostgreSQL credentials were resolved from the existing running test container for
+this run; no credentials were written to tracked files. Existing routing/workflow
+mocks gained explicit empty `/actions` responses without weakening assertions.
+
+### Issue 25 review follow-up — #59
+
+UI-06 now clicks Save again while the POST is pending, submits the form a second
+time, and asserts exactly one POST. UI-04 asserts live Description/Result counters
+and matches the API's validation copy. FR-20/AC-24 regression cases cover network
+and non-JSON `500` failures with a fixed safe message, preserved text, and focus
+return. STYLE-02 now asserts the conflict surface and its recovery text; source
+scans resolve paths from the test file rather than the working directory.
+
+E2E-01 now double-clicks Save against a held request and checks one POST and one
+persisted action. It also verifies keyboard focus styles on the checked and
+unchecked Follow-Up switch, and focus/draft recovery after an HTML `500` before a
+successful retry. Focus screenshots are committed alongside the existing evidence.
+
+Known retry limitation: if a create commits but its response is lost, retrying with
+that same version returns `409 STALE_UPDATE`. After reloading, inspect the work log
+before saving the preserved draft: another save with the refreshed version is a
+new write and can duplicate the earlier content. BR-13 provides version-based
+retry rejection; it does not supply a persistent idempotency key across reloads.
+
+Review-fix verification (2026-10-31): 161 client and 296 server tests passed, zero
+skips, using the isolated `toktickit_test` database. `pnpm build` (including root
+typechecking) and headless Chromium E2E-01 passed. The computed focus outline is
+solid and at least 2 px for both switch states; rendered screenshots were inspected.
