@@ -1,7 +1,7 @@
-import ActionsTakenPanel from "../components/tickets/ActionsTakenPanel";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import ActionsTakenPanel from "../components/tickets/ActionsTakenPanel";
 import apiFetch from "../api/client";
 import AttachmentSection from "../components/AttachmentSection";
 import Badge from "../components/Badge";
@@ -345,6 +345,11 @@ export function RequesterTicketDetail() {
         </div>
       </div>
 
+      <section className="mt-4" aria-labelledby="work-log-heading">
+        <h2 id="work-log-heading" className="h4 mb-3">What IT has done</h2>
+        <ActionsTakenPanel key={ticket.id} ticketId={ticket.id} />
+      </section>
+
       {/* Attachment Panel (FR-11, FR-12, FR-13, FR-14, BR-35, BR-38, BR-39, ui-spec.md §5.4) */}
       <AttachmentSection
         ticketId={ticket.id}
@@ -376,11 +381,6 @@ export function RequesterTicketDetail() {
           });
         }}
       />
-
-      <section className="mt-4" aria-labelledby="work-log-heading">
-        <h2 id="work-log-heading" className="h4 mb-3">What IT has done</h2>
-        <ActionsTakenPanel key={ticket.id} ticketId={ticket.id} />
-      </section>
 
       {/* Public Comments Section (FR-07, AC-14, ui-spec.md §4.6) */}
       {user && (

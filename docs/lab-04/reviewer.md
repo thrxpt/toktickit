@@ -8,6 +8,7 @@
 | PR | Branch | Reviewer verdict |
 | --- | --- | --- |
 | [#56](https://github.com/thrxpt/toktickit/pull/56) | feature/22-lab4-contract | Changes requested; follow-up awaiting re-review |
+| [#59](https://github.com/thrxpt/toktickit/pull/59) | feature/25-actions-taken-ui | Commented: fix focus and duplicate-submit coverage before merge; follow-up awaiting re-review |
 
 ---
 
@@ -83,3 +84,16 @@ the new rows remain planned implementation evidence.
 _This record is extended as each Lab 4 Issue's PR is reviewed. A PR is recorded as
 Approved only after the reviewer has posted that verdict; an open PR is never
 self-certified._
+
+
+### feature/25-actions-taken-ui #59
+
+[@fahsai-02's review, 2026-10-31](https://github.com/thrxpt/toktickit/pull/59#pullrequestreview-5721594365)
+on `16da3db` was submitted as `COMMENTED`, with two requested pre-merge fixes:
+visible Follow-Up switch focus and explicit duplicate-submit coverage. Both were
+verified and corrected. The update also addresses safe error copy, API validation
+wording, failed-save focus, shared reload behavior, and the small presentation/test
+nits. The lost-response retry limitation is documented. Rendered Chromium checks
+exercise focus in both switch states, a double-click with one POST/action, and
+failure recovery. Approval and merge remain pending; this record does not claim a
+new reviewer verdict.

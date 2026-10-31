@@ -144,3 +144,18 @@ existing multiline read-only class applying block layout and minimum height to
 work-log table cells; a scoped whitespace class preserves table semantics and
 compact mobile text. These automated reviews supplement the required human peer
 review; they do not certify it. No new runtime dependency was added.
+
+### Issue 25 human review follow-up (#59)
+
+User prompt: `Push fixes.` Verified the peer review against the PR head. Corrected
+Bootstrap specificity hiding the switch focus ring and its unchecked blue focus
+knob, strengthened duplicate-submit and counter assertions, matched API validation
+copy, and made network/non-JSON save failures use safe recovery text. The focused
+network and HTML-500 tests failed with raw browser/parser messages before the fix.
+Keyboard focus is restored after unsuccessful saves, without overriding focus the
+user moved elsewhere. Chromium checks both switch states and failed-save focus.
+
+The Actions Taken reload now reuses the Ticket Detail loader, including assignees
+and not-found handling. Requester section ordering, import placement, conflict
+style assertions, and test source-path resolution were adjusted. The lost-response
+retry boundary is documented in tests.md. No reviewer reply or merge was performed.

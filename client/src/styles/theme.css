@@ -542,3 +542,11 @@ textarea.form-control {
   border-color: var(--zen-secondary);
   box-shadow: none;
 }
+.actions-taken .form-check-input:focus-visible {
+  outline: 2px solid var(--zen-secondary);
+  outline-offset: 3px;
+}
+.actions-taken .form-switch .form-check-input:not(:checked):focus {
+  --bs-form-switch-bg: radial-gradient(circle, var(--zen-secondary) 35%, transparent 40%);
+  background-size: 1em 1em;
+}

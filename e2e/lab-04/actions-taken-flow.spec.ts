@@ -29,21 +29,73 @@ test("E2E-01, RESP-01 — AC-01, AC-02, AC-03, AC-18, AC-19: staff records and e
     .getByLabel("Description *", { exact: true })
     .fill("Replaced battery");
   await page.getByLabel("Result *", { exact: true }).fill("Charge restored");
-  await page.getByRole("switch", { name: "Follow-Up Required" }).check();
-  await page.screenshot({ path: "artifacts/lab-04/screenshots/actions-taken/create.png", fullPage: true });
+  const followUpSwitch = page.getByRole("switch", {
+    name: "Follow-Up Required",
+  });
+  await page.getByLabel("Result *", { exact: true }).focus();
+  await page.keyboard.press("Tab");
+  await expect(followUpSwitch).toBeFocused();
+  for (const checked of [false, true]) {
+    if (checked) await page.keyboard.press("Space");
+    const focusStyle = await followUpSwitch.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        outline: style.outlineStyle,
+        width: parseFloat(style.outlineWidth),
+        knob: style.backgroundImage,
+      };
+    });
+    expect(focusStyle.outline).toBe("solid");
+    expect(focusStyle.width).toBeGreaterThanOrEqual(2);
+    expect(focusStyle.knob).not.toContain("86b7fe");
+    await page.screenshot({
+      path: `artifacts/lab-04/screenshots/actions-taken/follow-up-focus-${checked ? "checked" : "unchecked"}.png`,
+      fullPage: true,
+    });
+  }
+  await page.screenshot({
+    path: "artifacts/lab-04/screenshots/actions-taken/create.png",
+    fullPage: true,
+  });
   await page.getByRole("button", { name: "Save Action" }).click();
-  await expect(page.getByText("Follow-up Note is required.")).toBeVisible();
-  await page.screenshot({ path: "artifacts/lab-04/screenshots/actions-taken/validation.png", fullPage: true });
+  await expect(
+    page.getByText(
+      "Supply a follow-up note exactly when follow-up is required.",
+    ),
+  ).toBeVisible();
+  await page.screenshot({
+    path: "artifacts/lab-04/screenshots/actions-taken/validation.png",
+    fullPage: true,
+  });
   await page
     .getByLabel("Follow-up Note *", { exact: true })
     .fill("Monitor charge tomorrow");
   await page
     .getByLabel("Attachment Notes", { exact: true })
     .fill("battery-old.jpg");
-  await page.getByRole("button", { name: "Save Action" }).click();
+  let actionPosts = 0;
+  let releasePost!: () => void;
+  const pendingPost = new Promise<void>((resolve) => {
+    releasePost = resolve;
+  });
+  await page.route(`**/api/tickets/${ticket.id}/actions`, async (route) => {
+    if (route.request().method() === "POST") {
+      actionPosts += 1;
+      await pendingPost;
+    }
+    await route.continue();
+  });
+  await page.getByRole("button", { name: "Save Action" }).dblclick();
+  await expect(page.getByRole("button", { name: "Saving…" })).toBeDisabled();
+  await expect.poll(() => actionPosts).toBe(1);
+  releasePost();
   await expect(
     page.getByRole("status").filter({ hasText: "Action saved." }),
   ).toBeVisible();
+  await page.unroute(`**/api/tickets/${ticket.id}/actions`);
+  expect(
+    await (await page.request.get(`/api/tickets/${ticket.id}/actions`)).json(),
+  ).toHaveLength(1);
   await expect(
     page.getByRole("tab", { name: "Actions Taken (1)" }),
   ).toBeVisible();
@@ -54,10 +106,31 @@ test("E2E-01, RESP-01 — AC-01, AC-02, AC-03, AC-18, AC-19: staff records and e
   await expect(page.locator("#action-performer")).toHaveText(
     TEST_USERS.staff.name,
   );
-  await page.screenshot({ path: "artifacts/lab-04/screenshots/actions-taken/edit.png", fullPage: true });
+  await page.screenshot({
+    path: "artifacts/lab-04/screenshots/actions-taken/edit.png",
+    fullPage: true,
+  });
   await page
     .getByLabel("Result *", { exact: true })
     .fill("Charge holds after testing");
+  await page.route(
+    `**/api/tickets/${ticket.id}/actions/*`,
+    (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: "text/html",
+        body: "upstream failed",
+      }),
+    { times: 1 },
+  );
+  await page.getByRole("button", { name: "Save Action" }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Unable to save Action Taken. Please try again.",
+  );
+  await expect(page.getByRole("button", { name: "Save Action" })).toBeFocused();
+  await expect(page.getByLabel("Result *", { exact: true })).toHaveValue(
+    "Charge holds after testing",
+  );
   await page.getByRole("button", { name: "Save Action" }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "Action saved." }),
@@ -90,7 +163,10 @@ test("E2E-01, RESP-01 — AC-01, AC-02, AC-03, AC-18, AC-19: staff records and e
   await expect(panel.getByText("Replaced battery")).toBeVisible();
   await expect(panel.getByText("Charge holds after testing")).toBeVisible();
   await expect(panel.getByRole("button")).toHaveCount(0);
-  await page.screenshot({ path: "artifacts/lab-04/screenshots/actions-taken/requester-390.png", fullPage: true });
+  await page.screenshot({
+    path: "artifacts/lab-04/screenshots/actions-taken/requester-390.png",
+    fullPage: true,
+  });
   expect(
     (
       await page.request.post(`/api/tickets/${ticket.id}/actions`, {

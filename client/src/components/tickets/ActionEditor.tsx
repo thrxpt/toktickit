@@ -45,6 +45,14 @@ export default function ActionEditor({
   const [reloading, setReloading] = useState(false);
   const inFlight = useRef(false);
   const firstField = useRef<HTMLTextAreaElement>(null);
+  const recoveryFocus = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!saving && !reloading && recoveryFocus.current) {
+      if (document.activeElement === document.body)
+        recoveryFocus.current.focus();
+      recoveryFocus.current = null;
+    }
+  }, [saving, reloading]);
   useEffect(() => {
     firstField.current?.focus();
   }, []);
@@ -66,20 +74,27 @@ export default function ActionEditor({
     event.preventDefault();
     if (inFlight.current || needsReload || disabled) return;
     const validation: Record<string, string> = {};
-    for (const [key, label, value, max, required] of [
-      ["description", "Description", description, 2000, true],
-      ["result", "Result", result, 2000, true],
-      ["followUpNote", "Follow-up Note", followUpNote, 2000, followUpRequired],
-      ["attachmentNotes", "Attachment Notes", attachmentNotes, 1000, false],
+    for (const [key, value, max, required] of [
+      ["description", description, 2000, true],
+      ["result", result, 2000, true],
+      ["followUpNote", followUpNote, 2000, followUpRequired],
+      ["attachmentNotes", attachmentNotes, 1000, false],
     ] as const) {
       if (key === "followUpNote" && !followUpRequired) continue;
-      if (required && !value.trim()) validation[key] = `${label} is required.`;
+      if (required && !value.trim())
+        validation[key] =
+          key === "followUpNote"
+            ? "Supply a follow-up note exactly when follow-up is required."
+            : "Too small: expected string to have >=1 characters";
       else if (value.trim().length > max)
         validation[key] =
-          `${label} cannot exceed ${max.toLocaleString()} characters.`;
+          `Too big: expected string to have <=${max} characters`;
     }
     setErrors(validation);
     if (Object.keys(validation).length) return;
+    recoveryFocus.current = event.currentTarget.contains(document.activeElement)
+      ? (document.activeElement as HTMLElement)
+      : null;
     inFlight.current = true;
     setSaving(true);
     setError(null);
@@ -99,23 +114,27 @@ export default function ActionEditor({
           }),
         },
       );
-      const data = await res.json();
-      if (res.status === 409 && data.error?.code === "STALE_UPDATE") {
+      const data = await res.json().catch(() => null);
+      if (res.status === 409 && data?.error?.code === "STALE_UPDATE") {
         setNeedsReload(true);
         setConflict(true);
         return;
       }
       if (!res.ok) {
-        setErrors(data.error?.fields ?? {});
-        throw new Error(data.error?.message || "Unable to save Action Taken.");
+        setErrors(data?.error?.fields ?? {});
+        setError(
+          data?.error?.message ||
+            "Unable to save Action Taken. Please try again.",
+        );
+        return;
+      }
+      if (!Number.isInteger(data?.ticketVersion)) {
+        setError("Unable to save Action Taken. Please try again.");
+        return;
       }
       onSaved(data.ticketVersion);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to save Action Taken. Please try again.",
-      );
+    } catch {
+      setError("Unable to save Action Taken. Please try again.");
     } finally {
       inFlight.current = false;
       setSaving(false);

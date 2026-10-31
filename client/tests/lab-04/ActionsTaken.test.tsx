@@ -60,20 +60,34 @@ describe("UI-04, UI-05, UI-06, UI-09 — FR-17, FR-19, FR-20", () => {
     fireEvent.change(screen.getByLabelText("Description *"), {
       target: { value: "Replaced battery" },
     });
+    expect(screen.getByLabelText("Description *")).toHaveAccessibleDescription(
+      /16 \/ 2,000 characters/,
+    );
     fireEvent.change(screen.getByLabelText("Result *"), {
       target: { value: "Charge restored" },
     });
+    expect(screen.getByLabelText("Result *")).toHaveAccessibleDescription(
+      /15 \/ 2,000 characters/,
+    );
     fireEvent.click(screen.getByLabelText("Follow-Up Required"));
     fireEvent.click(screen.getByRole("button", { name: "Save Action" }));
     expect(
-      await screen.findByText("Follow-up Note is required."),
+      await screen.findByText(
+        "Supply a follow-up note exactly when follow-up is required.",
+      ),
     ).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledTimes(1);
     fireEvent.change(screen.getByLabelText("Follow-up Note *"), {
       target: { value: "Monitor charge" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save Action" }));
-    expect(screen.getByRole("button", { name: /Saving/ })).toBeDisabled();
+    const saving = screen.getByRole("button", { name: /Saving/ });
+    expect(saving).toBeDisabled();
+    fireEvent.click(saving);
+    fireEvent.submit(saving.closest("form")!);
+    expect(
+      fetch.mock.calls.filter(([, init]) => init?.method === "POST"),
+    ).toHaveLength(1);
     expect(JSON.parse(fetch.mock.calls[1][1].body)).toEqual({
       description: "Replaced battery",
       result: "Charge restored",
@@ -204,3 +218,37 @@ it("AC-24: Enter toggles follow-up without submitting; cancel restores keyboard 
   fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
   expect(screen.getByRole("button", { name: "Record Action" })).toHaveFocus();
 });
+
+it.each(["network", "non-JSON 500"])(
+  "FR-20, AC-24: %s failures keep text, safe copy, and keyboard focus",
+  async (failure) => {
+    const fetch = vi.fn().mockResolvedValueOnce(response([]));
+    if (failure === "network")
+      fetch.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    else
+      fetch.mockResolvedValueOnce(
+        new Response("<html>upstream failed</html>", { status: 500 }),
+      );
+    vi.stubGlobal("fetch", fetch);
+    render(<ActionsTakenPanel ticketId={101} version={1} canWrite />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record Action" }),
+    );
+    fireEvent.change(screen.getByLabelText("Description *"), {
+      target: { value: "Checked VPN" },
+    });
+    fireEvent.change(screen.getByLabelText("Result *"), {
+      target: { value: "Connected" },
+    });
+    const save = screen.getByRole("button", { name: "Save Action" });
+    save.focus();
+    fireEvent.click(save);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Unable to save Action Taken. Please try again.",
+    );
+    expect(screen.getByLabelText("Description *")).toHaveValue("Checked VPN");
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Save Action" })).toHaveFocus(),
+    );
+  },
+);

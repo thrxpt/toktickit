@@ -1,7 +1,7 @@
-import ActionsTakenPanel from "../../components/tickets/ActionsTakenPanel";
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import ActionsTakenPanel from "../../components/tickets/ActionsTakenPanel";
 import apiFetch from "../../api/client";
 import { useAuth } from "../../auth/useAuth";
 import Badge from "../../components/Badge";
@@ -70,14 +70,6 @@ export function StaffTicketDetail() {
   const updateActionVersion = useCallback((version: number) => {
     setTicket(prev => prev ? { ...prev, version } : prev);
   }, []);
-  const reloadForActions = async () => {
-    const res = await apiFetch(`/api/staff/tickets/${id}`);
-    if (!res.ok) throw new Error('Unable to reload Ticket.');
-    setTicket(await res.json());
-    setNeedsReload(false);
-    setShowConflict(false);
-  };
-
   const showFeedback = (msg: string) => {
     setFeedbackMessage(msg);
     setTimeout(() => {
@@ -119,6 +111,7 @@ export function StaffTicketDetail() {
         const assigneesData = (await assigneesRes.json()) as AssigneeOption[];
         setAssignees(assigneesData);
       }
+      return true;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unable to reach server";
       if (preserveEditors) setErrorMessage(message);
@@ -127,6 +120,10 @@ export function StaffTicketDetail() {
       setLoading(false);
     }
   }, [id]);
+
+  const reloadForActions = async () => {
+    if (!await loadData(true)) throw new Error("Unable to reload Ticket.");
+  };
 
   useEffect(() => {
     loadData();
