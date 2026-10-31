@@ -42,7 +42,10 @@ function getNavLinksForRole(
     case "IT_STAFF":
       return [{ to: "/staff/queue", label: "Ticket Queue", end: false }];
     case "ADMINISTRATOR":
-      return [{ to: "/admin/users", label: "Users", end: false }];
+      return [
+        { to: "/staff/queue", label: "Ticket Queue", end: false },
+        { to: "/admin/users", label: "Users", end: false },
+      ];
     default:
       return [
         { to: "/tickets", label: "My Tickets", end: true },

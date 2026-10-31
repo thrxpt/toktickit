@@ -385,7 +385,7 @@ Administrator. The Requester Ticket detail payload adds `version` but no
 { "ownerId": 2, "expectedVersion": 4 }
 ```
 
-- **200**: `{ "ticketId": 12, "ticketOwnerId": 2, "status": "OPEN", "ticketVersion": 5, "message": "Ticket ownership updated." }`
+- **200**: `{ "ticketId": 12, "ticketOwnerId": 2, "status": "OPEN", "permittedTransitions": ["IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"], "ticketVersion": 5, "message": "Ticket ownership updated." }`
 - **400**: invalid/inactive owner.
 - **409 STALE_UPDATE**.
 
@@ -405,10 +405,15 @@ Administrator. The Requester Ticket detail payload adds `version` but no
 { "status": "RESOLVED", "expectedVersion": 6 }
 ```
 
-- **200**: `{ "ticketId": 12, "status": "RESOLVED", "ticketVersion": 7, "message": "Status updated successfully." }`
+- **200**: `{ "ticketId": 12, "status": "RESOLVED", "permittedTransitions": ["CLOSED", "REOPENED"], "ticketVersion": 7, "message": "Status updated successfully." }`
 - **400 INVALID_STATUS_TRANSITION**: invalid, same-status, or terminal-source
   transition (BR-15, BR-16).
 - **409 STALE_UPDATE**.
+
+Owner and status mutation responses also return `permittedTransitions` for the
+resulting status. This keeps the badge, choices, and version in sync immediately
+after a status change or the `NEW` → `OPEN` assignment rule, without duplicating
+the matrix in the client (FR-07, BR-19).
 
 ### POST /api/tickets/:id/resolve-indication
 

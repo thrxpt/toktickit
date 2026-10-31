@@ -6,7 +6,7 @@ import { requireAuth, requireRole } from "../middleware/auth";
 import { prisma } from "../prisma";
 import { serializeActiveAttachment } from "../tickets/attachment-serializer";
 import { parseTicketId } from "../tickets/parse-ticket-id";
-import { isValidStatusTransition } from "../tickets/status-machine";
+import { getPermittedTransitions, isValidStatusTransition } from "../tickets/status-machine";
 import {
   expectedVersionSchema,
   updateTicketAtVersion,
@@ -14,9 +14,9 @@ import {
 
 export const staffTicketDetailRouter = express.Router();
 
-// Guarded by authentication and role check (IT_STAFF only; Requesters and Administrators receive 403 Forbidden per BR-14 and ADR-0008).
+// BR-17, BR-20; ADR-0010 widens ticket operations to Administrators.
 staffTicketDetailRouter.use(requireAuth);
-staffTicketDetailRouter.use(requireRole("IT_STAFF"));
+staffTicketDetailRouter.use(requireRole("IT_STAFF", "ADMINISTRATOR"));
 
 const ownerPatchSchema = z
   .object({
@@ -115,6 +115,7 @@ staffTicketDetailRouter.get("/:id", async (req: Request, res: Response) => {
       requestedPriority: ticket.requestedPriority,
       itPriority: ticket.itPriority,
       status: ticket.status,
+      permittedTransitions: getPermittedTransitions(ticket.status),
       resolvedByRequester: ticket.resolvedByRequester,
       createdAt: ticket.createdAt.toISOString(),
       updatedAt: ticket.updatedAt.toISOString(),
@@ -204,6 +205,7 @@ staffTicketDetailRouter.patch(
         ticketVersion: updated.version,
         ticketOwnerId: updated.ticketOwnerId,
         status: updated.status,
+        permittedTransitions: getPermittedTransitions(updated.status),
         message: "Ticket ownership updated.",
       });
     } catch {
@@ -330,6 +332,7 @@ staffTicketDetailRouter.patch(
         ticketId: updated.id,
         ticketVersion: updated.version,
         status: updated.status,
+        permittedTransitions: getPermittedTransitions(updated.status),
         message: "Status updated successfully.",
       });
     } catch {

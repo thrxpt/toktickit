@@ -56,7 +56,7 @@ The `toktickit_test` database strategy from Lab 3 continues, with two additions:
 | Test ID | AC / BR | What It Tests | Expected Result | File |
 | --- | --- | --- | --- | --- |
 | UNIT-01 | AC-03, BR-04, BR-05, BR-06 | Action Taken validation: required description/result, trimming, 2,000/1,000 bounds, follow-up-note conditional in both directions | Valid payload accepted; each invalid variant names its field | `actions-taken.unit.test.ts` |
-| UNIT-02 | AC-09, BR-15, BR-16 | Final matrix: every permitted edge accepted; invalid, same-status, and post-`CANCELLED` edges rejected | `isValidStatusTransition` returns true/false exactly per matrix; `CANCELLED` has no outgoing edge | `status-matrix.unit.test.ts` |
+| UNIT-02 | AC-09, BR-15, BR-16 | Final matrix: every permitted edge accepted; invalid, same-status, and post-`CANCELLED` edges rejected | `isValidStatusTransition` returns true/false exactly per matrix; `CANCELLED` has no outgoing edge | Existing `server/tests/lab-03/status-transitions.unit.test.ts` (UNIT-03/UNIT-04), retained without duplicating the pure-matrix tests |
 | UNIT-03 | AC-12, AC-13, BR-21, BR-22 | Metric boundary helpers: open-status set, recently-updated ordering, zero-data behavior | Sets and ordering match the documented definitions; zero input yields zeros/empty | `dashboard-metrics.unit.test.ts` |
 
 ### API — `server/tests/lab-04/*.api.test.ts`
@@ -404,3 +404,43 @@ Review-fix verification (2026-10-31): 161 client and 296 server tests passed, ze
 skips, using the isolated `toktickit_test` database. `pnpm build` (including root
 typechecking) and headless Chromium E2E-01 passed. The computed focus outline is
 solid and at least 2 px for both switch states; rendered screenshots were inspected.
+
+### Issue 26 implementation — Final Ticket workflow (#53)
+
+- `server/tests/lab-04/ticket-workflow.api.test.ts`: API-10/API-11 exercise all
+  64 source/target pairs for each operational role against the final BR-15
+  matrix. Rejections leave the entire Ticket response unchanged. API-12/API-15
+  verify direct Requester status attempts are forbidden, the advisory indication
+  leaves status unchanged, and both Staff and Administrator stale writes conflict.
+  API-13/API-14 verify Administrator queue/assignees/claim/priority/Actions Taken
+  access and the unchanged IT Staff exclusion from User Management. A simultaneous
+  Staff/Admin status race yields exactly one success and one `409`.
+- `client/tests/lab-04/TicketWorkflow.test.tsx`: UI-08 uses a deliberately narrower
+  server payload to prove the client does not derive the matrix. Covers current
+  option disabled, response-driven badge/options/version updates, `CLOSED` →
+  `REOPENED`, terminal read-only copy, and Administrator owner display. UI-09
+  preserves status and comment drafts through conflict/reload; retry uses the new
+  version and becomes unavailable when the reloaded matrix forbids the choice.
+- `e2e/lab-04/ticket-resolution.spec.ts`: E2E-02 creates through the Requester UI,
+  then an Administrator claims and advances the Ticket, the Requester indicates
+  resolution, and a stale Administrator resolves only after explicit reload/retry.
+  Covers closure, reopening, cancellation from `REOPENED` and from unassigned
+  `NEW`, Requester-visible outcomes, and direct invalid/same-status rejections.
+- Existing Lab 3 tests now assert permitted Administrator operations, including
+  attachment bytes, while retaining Requester and IT Staff role boundaries.
+  `AppRoutes.test.tsx` and `AppShell.test.tsx` cover Administrator queue access
+  and navigation. Detail fixtures include the new server transition field.
+- The unchanged pure matrix is already exhaustively tested in Lab 3; UNIT-02
+  traces to those tests. The confirmed new seams are HTTP, rendered Ticket Detail,
+  and Chromium. The exhaustive HTTP test keeps one listener for its requests;
+  opening hundreds of transient listeners exposed host Node 26 socket failures.
+- Screenshots: `artifacts/lab-04/screenshots/workflow/` contains conflict at
+  1280 px, resolved controls at 768 px, and terminal read-only state at 390 px.
+
+Issue 26 verification (2026-10-31): full `pnpm test` passed with 317 server and
+168 client tests, zero skips, under Node 24.18.0 and
+`NODE_OPTIONS=--no-experimental-webstorage`. `pnpm build`, root typechecking,
+server typechecking, and headless Chromium E2E-02 passed. All verification used
+`toktickit_workflow_test`; the development database was not used. Rendered
+screenshots were inspected at the recorded three widths; the mobile page has no
+horizontal overflow. The UI detector reported no findings.

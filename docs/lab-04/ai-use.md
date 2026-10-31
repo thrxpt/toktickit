@@ -159,3 +159,39 @@ The Actions Taken reload now reuses the Ticket Detail loader, including assignee
 and not-found handling. Requester section ordering, import placement, conflict
 style assertions, and test source-path resolution were adjusted. The lost-response
 retry boundary is documented in tests.md. No reviewer reply or merge was performed.
+
+## Issue 26 — Final Ticket workflow (#53)
+
+User prompt: `$implement #53`. GPT-6.1 Sol through Codex in T3 Code implemented
+against FR-07–FR-09, AC-08–AC-11, AC-20, AC-23, and ADR-0010. The user confirmed
+HTTP, rendered Ticket Detail, and Chromium as the test seams, and starting commit
+`1575620a44cb559f080c8ddbec421877d263b2bb` as the review base.
+
+Tests first demonstrated the missing server transition payload, Administrator
+role denial, client-derived choices, stale options after status success, missing
+terminal explanation, invalid retry after reload, and incorrect Administrator
+owner display. The final matrix was already correct server-side; implementation
+keeps that authority and removes the duplicate client matrix. Owner/status
+responses add permitted transitions so the UI updates choices immediately along
+with status and version. The API/spec contract records that additive response.
+
+Chromium exercised creation, advisory resolution, a real two-session stale write,
+reload with preserved discussion draft, formal resolution/closure, reopening,
+and cancellation. Screenshot inspection caught the Administrator owner missing
+from the IT-Staff-only assignment options. A disabled current-owner option fixes
+the display without widening assignment targets. Stable discussion count callbacks
+also keep preserved editors from repeatedly fetching their threads during status
+changes. Local verification uses an isolated `_test` database and git-ignored
+configuration; no credentials are tracked. Automated review supplements human peer
+review and does not certify a peer verdict.
+
+### Issue 26 review and validation
+
+Parallel Standards and Spec reviews compared the implementation to starting commit
+`1575620a44cb559f080c8ddbec421877d263b2bb`. Standards: zero documented violations
+and zero actionable smell findings. Spec: zero missing, incorrect, or out-of-scope
+requirements for #53. The full unit/API/UI/style suite passed: 317 server and
+168 client tests, zero skips. Production build, root/server typechecking, and
+headless Chromium E2E-02 passed. Three workflow screenshots were inspected after
+fixing Administrator owner display; the UI detector reported no findings. These
+are automated checks, not the human peer-review verdict tracked in reviewer.md.

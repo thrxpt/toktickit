@@ -100,7 +100,7 @@ app.use("/api/admin/users", usersAdminRouter);
 app.get(
   "/api/staff/assignees",
   requireAuth,
-  requireRole("IT_STAFF"),
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
   async (_req, res) => {
     try {
       const staff = await prisma.user.findMany({
