@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import ActionsTakenPanel from "../../components/tickets/ActionsTakenPanel";
-import apiFetch from "../../api/client";
+import apiFetch, { apiErrorMessage } from "../../api/client";
 import { useAuth } from "../../auth/useAuth";
 import Badge from "../../components/Badge";
 import ReadOnlyField from "../../components/ReadOnlyField";
 import StateBlock from "../../components/StateBlock";
+import ActionsTakenPanel from "../../components/tickets/ActionsTakenPanel";
 import ConflictAlert from "../../components/tickets/ConflictAlert";
 import InternalNotes from "../../components/tickets/InternalNotes";
 import PublicComments from "../../components/tickets/PublicComments";
@@ -59,6 +59,7 @@ export function StaffTicketDetail() {
 
   const [activeTab, setActiveTab] = useState<"comments" | "notes" | "attachments" | "actions">("attachments");
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
   const [needsReload, setNeedsReload] = useState(false);
   const [showConflict, setShowConflict] = useState(false);
@@ -135,11 +136,13 @@ export function StaffTicketDetail() {
   }, [loadData]);
 
   const saveChange = async (change: PendingChange) => {
+    if (savingRef.current) return;
     if (!ticket || saving || needsReload) return;
     if (change.field === "status" && !ticket.permittedTransitions?.includes(change.value)) {
       setErrorMessage("This status change is no longer permitted. Choose one of the available transitions.");
       return;
     }
+    savingRef.current = true;
     setSaving(true);
     setPendingChange(change);
     setErrorMessage(null);
@@ -162,7 +165,10 @@ export function StaffTicketDetail() {
         setShowConflict(true);
         return;
       }
-      if (!res.ok) throw new Error(data?.error?.message || "Failed to update Ticket.");
+      if (!res.ok) {
+        setErrorMessage(apiErrorMessage(data, "Unable to update Ticket. Please try again."));
+        return;
+      }
 
       setTicket(prev => {
         if (!prev) return prev;
@@ -185,8 +191,9 @@ export function StaffTicketDetail() {
         ? (change.value === user?.id ? "Ticket claimed successfully." : change.value ? "Owner updated." : "Ticket unassigned.")
         : change.field === "priority" ? "IT Priority updated." : "Ticket status updated.");
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "Failed to update Ticket.");
+      setErrorMessage("Unable to update Ticket. Please try again.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -492,9 +499,6 @@ export function StaffTicketDetail() {
               </button>
             </li>
             <li className="nav-item" role="presentation">
-              <button type="button" className={`nav-link ${activeTab === "actions" ? "active fw-bold" : ""}`} id="actions-tab" aria-controls="actions-panel" onClick={() => setActiveTab("actions")} role="tab" aria-selected={activeTab === "actions"}>Actions Taken{actionsCount !== null ? ` (${actionsCount})` : ''}</button>
-            </li>
-            <li className="nav-item" role="presentation">
               <button
                 type="button"
                 className={`nav-link ${activeTab === "comments" ? "active fw-bold" : ""}`}
@@ -515,6 +519,9 @@ export function StaffTicketDetail() {
               >
                 Internal Notes ({ticket.internalNotesCount})
               </button>
+            </li>
+            <li className="nav-item" role="presentation">
+              <button type="button" className={`nav-link ${activeTab === "actions" ? "active fw-bold" : ""}`} id="actions-tab" aria-controls="actions-panel" onClick={() => setActiveTab("actions")} role="tab" aria-selected={activeTab === "actions"}>Actions Taken{actionsCount !== null ? ` (${actionsCount})` : ''}</button>
             </li>
           </ul>
         </div>

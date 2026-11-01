@@ -106,8 +106,21 @@ test("E2E-03 — AC-12–AC-16: role dashboards drill into filtered collections"
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+  const emptyEmail = `e2e.empty.${Date.now()}@toktickit.com`;
+  const account = await page.request.post("/api/admin/users", { data: {
+    name: "E2E Empty Requester", email: emptyEmail, role: "REQUESTER",
+    initialPassword: TEST_USERS.requester.password,
+  } });
+  expect(account.status()).toBe(201);
   await logout(page);
-  await login(page, "marcus.chen@example.ac.th", TEST_USERS.requester.password);
+  await login(page, emptyEmail, TEST_USERS.requester.password);
+  await page.waitForURL("**/change-password");
+  const changed = await page.request.post("/api/auth/change-password", { data: {
+    currentPassword: TEST_USERS.requester.password,
+    newPassword: "UpdatedPassword123!", confirmPassword: "UpdatedPassword123!",
+  } });
+  expect(changed.status()).toBe(200);
+  await page.goto("/dashboard");
   await expect(
     page.getByRole("link", { name: "Open Tickets, 0, view list" }),
   ).toBeVisible();

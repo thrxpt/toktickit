@@ -60,6 +60,7 @@ export function UserEditDrawer({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   // Reset password sub-flow in Edit mode (UI-14, AC-20)
   const [showResetModal, setShowResetModal] = useState(false);
@@ -71,6 +72,7 @@ export function UserEditDrawer({
     null,
   );
   const [resetSubmitting, setResetSubmitting] = useState(false);
+  const resetSubmittingRef = useRef(false);
 
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const resetModalRef = useRef<HTMLDivElement | null>(null);
@@ -180,6 +182,7 @@ export function UserEditDrawer({
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     setFieldErrors({});
     setGeneralError(null);
 
@@ -208,6 +211,7 @@ export function UserEditDrawer({
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       if (isEditMode && user) {
@@ -291,12 +295,14 @@ export function UserEditDrawer({
     } catch {
       setGeneralError("Network error. Please try again.");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
 
   const handleResetPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (resetSubmittingRef.current) return;
     if (!user) return;
 
     const passErr = validateInitialPassword(resetPasswordInput);
@@ -305,6 +311,7 @@ export function UserEditDrawer({
       return;
     }
 
+    resetSubmittingRef.current = true;
     setResetSubmitting(true);
     setResetPasswordError(null);
     try {
@@ -330,6 +337,7 @@ export function UserEditDrawer({
     } catch {
       setResetPasswordError("Network error. Please try again.");
     } finally {
+      resetSubmittingRef.current = false;
       setResetSubmitting(false);
     }
   };

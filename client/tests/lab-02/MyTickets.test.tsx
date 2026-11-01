@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { RequesterProvider } from '../../src/context/RequesterContext'
+import { RequesterSession } from "../helpers/RequesterSession";
 import MyTickets from '../../src/pages/MyTickets'
 
 const mockRequesters = [
@@ -53,13 +53,13 @@ const mockTicketsData = {
 function renderMyTickets(initialEntry = '/tickets') {
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
-      <RequesterProvider>
+      <RequesterSession>
         <Routes>
           <Route path="/tickets" element={<MyTickets />} />
           <Route path="/tickets/new" element={<div>Create Ticket Page</div>} />
           <Route path="/tickets/:id" element={<div>Ticket Detail Page</div>} />
         </Routes>
-      </RequesterProvider>
+      </RequesterSession>
     </MemoryRouter>,
   )
 }
@@ -79,10 +79,10 @@ describe('My Tickets Screen', () => {
       globalThis.fetch = vi.fn().mockImplementation((input: unknown) => {
         const url =
           typeof input === 'string' ? input : (input as Request)?.url || String(input)
-        if (url.includes('/api/requesters')) {
+        if (url.includes('/api/auth/me')) {
           return Promise.resolve({
             ok: true,
-            json: async () => mockRequesters,
+            json: async () => ({ user: mockRequesters[0] }),
           } as Response)
         }
         if (url.includes('/api/categories')) {
@@ -124,10 +124,10 @@ describe('My Tickets Screen', () => {
       globalThis.fetch = vi.fn().mockImplementation((input: unknown) => {
         const url =
           typeof input === 'string' ? input : (input as Request)?.url || String(input)
-        if (url.includes('/api/requesters')) {
+        if (url.includes('/api/auth/me')) {
           return Promise.resolve({
             ok: true,
-            json: async () => mockRequesters,
+            json: async () => ({ user: mockRequesters[0] }),
           } as Response)
         }
         if (url.includes('/api/categories')) {
@@ -176,10 +176,10 @@ describe('My Tickets Screen', () => {
       globalThis.fetch = vi.fn().mockImplementation((input: unknown) => {
         const url =
           typeof input === 'string' ? input : (input as Request)?.url || String(input)
-        if (url.includes('/api/requesters')) {
+        if (url.includes('/api/auth/me')) {
           return Promise.resolve({
             ok: true,
-            json: async () => mockRequesters,
+            json: async () => ({ user: mockRequesters[0] }),
           } as Response)
         }
         if (url.includes('/api/categories')) {
@@ -235,10 +235,10 @@ describe('My Tickets Screen', () => {
       globalThis.fetch = vi.fn().mockImplementation((input: unknown) => {
         const url =
           typeof input === 'string' ? input : (input as Request)?.url || String(input)
-        if (url.includes('/api/requesters')) {
+        if (url.includes('/api/auth/me')) {
           return Promise.resolve({
             ok: true,
-            json: async () => mockRequesters,
+            json: async () => ({ user: mockRequesters[0] }),
           } as Response)
         }
         if (url.includes('/api/categories')) {
@@ -294,10 +294,10 @@ describe('My Tickets Screen', () => {
       globalThis.fetch = vi.fn().mockImplementation((input: unknown) => {
         const url =
           typeof input === 'string' ? input : (input as Request)?.url || String(input)
-        if (url.includes('/api/requesters')) {
+        if (url.includes('/api/auth/me')) {
           return Promise.resolve({
             ok: true,
-            json: async () => mockRequesters,
+            json: async () => ({ user: mockRequesters[0] }),
           } as Response)
         }
         if (url.includes('/api/categories')) {

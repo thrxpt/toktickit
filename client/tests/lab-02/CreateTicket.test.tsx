@@ -2,10 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  RequesterProvider,
-  STORAGE_KEY,
-} from "../../src/context/RequesterContext";
+import { RequesterSession } from "../helpers/RequesterSession";
 import CreateTicket from "../../src/pages/CreateTicket";
 
 const mockRequesters = [
@@ -29,20 +26,19 @@ const mockRelatedSystems = [
 function renderCreateTicket() {
   return render(
     <MemoryRouter initialEntries={["/tickets/new"]}>
-      <RequesterProvider>
+      <RequesterSession>
         <Routes>
           <Route path="/tickets/new" element={<CreateTicket />} />
           <Route path="/tickets" element={<div>My Tickets Page</div>} />
           <Route path="/tickets/:id" element={<div>Ticket Detail Page</div>} />
         </Routes>
-      </RequesterProvider>
+      </RequesterSession>
     </MemoryRouter>,
   );
 }
 
 describe("Create Ticket Screen", () => {
   beforeEach(() => {
-    localStorage.setItem(STORAGE_KEY, "1");
   });
 
   afterEach(() => {
@@ -59,10 +55,10 @@ describe("Create Ticket Screen", () => {
         (input: string | URL | Request, init?: RequestInit) => {
           const url = typeof input === "string" ? input : input.toString();
 
-          if (url === "/api/requesters") {
+          if (url === "/api/auth/me") {
             return Promise.resolve({
               ok: true,
-              json: async () => mockRequesters,
+              json: async () => ({ user: mockRequesters[0] }),
             } as Response);
           }
           if (url === "/api/categories") {
@@ -86,6 +82,7 @@ describe("Create Ticket Screen", () => {
               status: 201,
               json: async () => ({
                 id: 42,
+  version: 0,
                 ticketNumber: "TKT-2026-000042",
                 summary: "Laptop battery drains quickly",
                 description:
@@ -399,10 +396,10 @@ describe("Create Ticket Screen", () => {
           (input: string | URL | Request, init?: RequestInit) => {
             const url = typeof input === "string" ? input : input.toString();
 
-            if (url === "/api/requesters") {
+            if (url === "/api/auth/me") {
               return Promise.resolve({
                 ok: true,
-                json: async () => mockRequesters,
+                json: async () => ({ user: mockRequesters[0] }),
               } as Response);
             }
             if (url === "/api/categories") {

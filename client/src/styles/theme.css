@@ -77,7 +77,10 @@ body {
 }
 
 /* Focus Indicators (AC-45, ui-spec.md §3) */
-:focus-visible {
+:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.btn:focus-visible {
   outline: 2px solid var(--zen-secondary);
   outline-offset: 2px;
 }
@@ -476,14 +479,26 @@ textarea.form-control {
 /* Touch targets */
 @media (max-width: 767.98px) {
   .btn,
+  .btn-close,
+  .zen-brand,
+  .zen-nav-link,
+  .dropdown-item,
   .nav-link,
   .navbar-toggler,
   .form-control,
   .form-select {
     min-height: 44px;
   }
-  .navbar-toggler {
+  .btn,
+  .navbar-toggler,
+  .btn-close {
     min-width: 44px;
+  }
+  .form-switch .form-check-label,
+  .actions-taken summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 }
 
@@ -549,4 +564,18 @@ textarea.form-control {
 .actions-taken .form-switch .form-check-input:not(:checked):focus {
   --bs-form-switch-bg: radial-gradient(circle, var(--zen-secondary) 35%, transparent 40%);
   background-size: 1em 1em;
+}
+/* Keep work-log headings intact while the seven columns condense on tablets. */
+.actions-table th {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .actions-table {
+    font-size: 0.8125rem;
+  }
+  .actions-table th,
+  .actions-table td {
+    padding: 0.5rem 0.25rem;
+  }
 }

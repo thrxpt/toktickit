@@ -4,7 +4,7 @@ import {
   createTicket,
   REQUESTER_A,
   REQUESTER_B,
-  selectRequester,
+  loginRequester,
   switchRequester,
   VALID_PDF_BUFFER,
 } from "./helpers";
@@ -15,20 +15,20 @@ test.describe("Requester Ticket Flow", () => {
     await context.clearCookies();
   });
 
-  test("E2E-01 — Select Requester → create Ticket → find it in My Tickets (AC-08, AC-19)", async ({
+  test("E2E-01 — Log in → create Ticket → find it in My Tickets (AC-08, AC-19)", async ({
     page,
   }) => {
-    // 1. Navigate to /tickets without context -> redirected to /select-requester (FR-04, AC-02)
+    // 1. Navigate to /tickets without context -> redirected to /login (FR-04, AC-02)
     await page.goto("/tickets");
-    await expect(page).toHaveURL(/.*\/select-requester/);
+    await expect(page).toHaveURL(/.*\/login/);
 
     // 2. Select Requester A
-    await selectRequester(page, REQUESTER_A);
+    await loginRequester(page, REQUESTER_A);
     await expect(page).toHaveURL(/.*\/tickets/);
 
     // Verify shell displays Requester A
     await expect(
-      page.locator('button[aria-label="Requester profile"]'),
+      page.locator("header"),
     ).toContainText(REQUESTER_A);
 
     // 3. Create Ticket (AC-08)
@@ -69,8 +69,8 @@ test.describe("Requester Ticket Flow", () => {
     page,
   }) => {
     // 1. Establish context as Requester A and create an owned Ticket
-    await selectRequester(page, REQUESTER_A);
-    const summaryA = `Requester A Private Issue ${Date.now()}`;
+    await loginRequester(page, REQUESTER_A);
+    const summaryA = `E2E Requester A Private Issue ${Date.now()}`;
     const { ticketNumber: ticketNumberA } = await createTicket(page, {
       summary: summaryA,
       description:
@@ -86,7 +86,7 @@ test.describe("Requester Ticket Flow", () => {
     // 2. Switch from Requester A to Requester B (BR-09, AC-04)
     await switchRequester(page, REQUESTER_B);
     await expect(
-      page.locator('button[aria-label="Requester profile"]'),
+      page.locator("header"),
     ).toContainText(REQUESTER_B);
 
     // 3. Verify Requester A's Ticket is completely absent from Requester B's list (AC-20)
@@ -107,9 +107,9 @@ test.describe("Requester Ticket Flow", () => {
     page,
   }) => {
     // 1. Establish context as Requester A and create a ticket
-    await selectRequester(page, REQUESTER_A);
+    await loginRequester(page, REQUESTER_A);
     const { ticketId } = await createTicket(page, {
-      summary: `Attachment Lifecycle Verification ${Date.now()}`,
+      summary: `E2E Attachment Lifecycle Verification ${Date.now()}`,
       description:
         "Testing upload, download, and soft removal through a real browser.",
     });
@@ -205,10 +205,7 @@ test.describe("Requester Ticket Flow", () => {
 
     // 6. Direct request to removed attachment content URL is refused (404) (AC-37)
     const contentStatus = await page.evaluate(async (url) => {
-      const storedId = localStorage.getItem("toktickit_requester_id");
-      const res = await fetch(url, {
-        headers: storedId ? { "X-Requester-Id": storedId } : {},
-      });
+      const res = await fetch(url, { credentials: "same-origin" });
       return res.status;
     }, `/api/attachments/${attachmentId}/content`);
     expect(contentStatus).toBe(404);
@@ -218,8 +215,8 @@ test.describe("Requester Ticket Flow", () => {
     page,
   }) => {
     // 1. Establish context as Requester A and create a confidential Ticket
-    await selectRequester(page, REQUESTER_A);
-    const confidentialSummary = `Confidential Ticket A for E2E-05 ${Date.now()}`;
+    await loginRequester(page, REQUESTER_A);
+    const confidentialSummary = `E2E Confidential Ticket A for E2E-05 ${Date.now()}`;
     const { ticketId: ticketIdA, ticketNumber: ticketNumberA } =
       await createTicket(page, {
         summary: confidentialSummary,

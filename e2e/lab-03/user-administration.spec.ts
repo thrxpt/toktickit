@@ -112,16 +112,18 @@ test.describe("Administrator User Management and Safety Rules (AC-16 to AC-20)",
     await secondAdminRow.locator('button:has-text("Edit")').click();
     await expect(page.locator("#userName")).toBeVisible();
     await page.click('button[data-testid="btn-toggle-deactivate"]');
-    await page.click('button:has-text("Confirm Deactivation")');
+    await expect(page.locator("#userActive")).not.toBeChecked();
     await page.click('button[data-testid="btn-save-user"]');
     await expect(page.locator("#userName")).not.toBeVisible();
+
+    await expect(secondAdminRow.locator(".zen-badge-user-inactive")).toBeVisible();
 
     // 5c. AC-19: Verify sole active admin deactivation is prevented
     await adminRow.locator('button:has-text("Edit")').click();
     await expect(page.locator("#userName")).toBeVisible();
     await expect(page.locator("#userActive")).toBeDisabled();
     await expect(page.locator('button[data-testid="btn-toggle-deactivate"]')).toBeDisabled();
-    await expect(page.locator('[data-testid="deactivate-tooltip-text"]')).toContainText("sole active Administrator");
+    await expect(page.locator('[data-testid="deactivate-tooltip-text"]')).toContainText("last active Administrator");
     await page.click('button[data-testid="btn-cancel-drawer"]');
     await expect(page.locator("#userName")).not.toBeVisible();
     // 6. Reset initial password (AC-20, BR-33, FR-19)

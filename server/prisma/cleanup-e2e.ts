@@ -3,6 +3,7 @@
 // accounts created by Playwright E2E specs, restoring the database to pristine seed state.
 import { PrismaPg } from "@prisma/adapter-pg";
 
+import { deleteAttachmentFile } from "../src/attachments/storage";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { demoTicketNumbers, seedReferenceData } from "./seed-data";
 
@@ -34,6 +35,9 @@ async function main(): Promise<void> {
     // 2. Child-first sequential deletion to satisfy FK restrict constraints
     if (ticketIds.length > 0) {
       await prisma.actionTaken.deleteMany({ where: { ticketId: { in: ticketIds } } });
+      const files = await prisma.attachment.findMany({
+        where: { ticketId: { in: ticketIds } }, select: { storageKey: true },
+      });
       const attachments = await prisma.attachment.deleteMany({
         where: { ticketId: { in: ticketIds } },
       });
@@ -46,6 +50,7 @@ async function main(): Promise<void> {
       const tickets = await prisma.ticket.deleteMany({
         where: { id: { in: ticketIds } },
       });
+      for (const file of files) await deleteAttachmentFile(file.storageKey);
       console.log(
         `Deleted ${tickets.count} E2E tickets (${attachments.count} attachments, ` +
           `${comments.count} comments, ${notes.count} notes)`,

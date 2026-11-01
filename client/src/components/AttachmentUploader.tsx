@@ -13,7 +13,7 @@ export interface AttachmentUploaderProps {
   selectedFiles?: File[];
   onFilesSelected?: (files: File[]) => void;
   onRemoveSelectedFile?: (index: number) => void;
-  onUploadDirect?: (file: File) => Promise<void>;
+  onUploadDirect?: (file: File) => Promise<boolean | void>;
   fileErrors?: Record<string, string>;
   onDismissError?: (filename: string) => void;
 }
@@ -32,7 +32,9 @@ export function AttachmentUploader({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
   const [isDragging, setIsDragging] = useState(false);
+  const [failedFiles, setFailedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const isUploadingRef = useRef(false);
 
   const fileErrors = { ...clientErrors, ...externalFileErrors };
   const isLimitReached = activeCount >= maxCount;
@@ -44,10 +46,12 @@ export function AttachmentUploader({
       delete next[filename];
       return next;
     });
+    setFailedFiles(prev => prev.filter(file => file.name !== filename));
     externalOnDismissError?.(filename);
   };
 
   const processFiles = async (fileList: FileList | File[]) => {
+    if (isUploadingRef.current) return;
     const rawFiles = Array.from(fileList);
     if (rawFiles.length === 0) return;
 
@@ -83,12 +87,17 @@ export function AttachmentUploader({
 
     if (validFilesToAdd.length > 0) {
       if (onUploadDirect) {
+        isUploadingRef.current = true;
         setIsUploading(true);
         try {
           for (const file of validFilesToAdd) {
-            await onUploadDirect(file);
+            const success = await onUploadDirect(file);
+            setFailedFiles(prev => success === false
+              ? [...prev.filter(item => item.name !== file.name), file]
+              : prev.filter(item => item !== file));
           }
         } finally {
+          isUploadingRef.current = false;
           setIsUploading(false);
         }
       } else if (onFilesSelected) {
@@ -225,6 +234,12 @@ export function AttachmentUploader({
                   <strong>{fileName}</strong>: {errorMsg}
                 </span>
               </div>
+              {failedFiles.find(file => file.name === fileName) && (
+                <button type="button" className="btn btn-outline-danger btn-sm ms-2"
+                  disabled={isUploaderDisabled}
+                  onClick={() => processFiles(failedFiles.filter(file => file.name === fileName))}
+                  aria-label={`Retry ${fileName}`}>Retry</button>
+              )}
               <button
                 type="button"
                 className="btn-close btn-sm"

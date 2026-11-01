@@ -1,10 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import request from "supertest";
+import { requesterSession } from "../setup/requester-session";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { UPLOADS_DIR } from "../../src/attachments/storage";
-import app from "../../src/app";
+import app from "../setup/test-app";
 import { prisma } from "../../src/prisma";
 import { truncateTransactionalData } from "../setup/truncate";
 
@@ -40,7 +41,7 @@ afterAll(async () => {
 
 async function getTestFixtures() {
   const requesters = await prisma.requester.findMany({
-    where: { isActive: true },
+    where: { role: "REQUESTER", mustChangePassword: false, isActive: true },
     orderBy: { email: "asc" },
   });
   const requesterA = requesters[0];
@@ -98,7 +99,7 @@ describe("API-19 — Upload a valid PNG (AC-31)", () => {
 
     const response = await request(app)
       .post(`/api/tickets/${ticketA.id}/attachments`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .attach("file", PNG_HEADER, "screenshot.png");
 
     expect(response.status).toBe(201);
@@ -146,7 +147,7 @@ describe("API-19 — Upload a valid PNG (AC-31)", () => {
 
     const response = await request(app)
       .post(`/api/tickets/${ticketA.id}/attachments`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .field("requesterId", "99")
       .attach("file", PNG_HEADER, "screenshot.png");
 
@@ -167,7 +168,7 @@ describe("API-20 — Upload a 6 MB file (AC-32, BR-34)", () => {
 
     const response = await request(app)
       .post(`/api/tickets/${ticketA.id}/attachments`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .attach("file", oversizedBuffer, "large-document.pdf");
 
     expect(response.status).toBe(413);
@@ -200,7 +201,7 @@ describe("API-21 — Upload a disguised file (AC-33, BR-33)", () => {
 
     const response = await request(app)
       .post(`/api/tickets/${ticketA.id}/attachments`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .attach("file", disguisedBytes, {
         filename: "photo.png",
         contentType: "image/png",
@@ -237,7 +238,7 @@ describe("API-22 — Sixth active upload, then remove one and retry (AC-34, AC-3
     for (let i = 1; i <= 5; i++) {
       const res = await request(app)
         .post(`/api/tickets/${ticketA.id}/attachments`)
-        .set("X-Requester-Id", String(requesterA.id))
+        .set("Cookie", await requesterSession(requesterA.id))
         .attach("file", PNG_HEADER, `screenshot-${i}.png`);
 
       expect(res.status).toBe(201);
@@ -247,7 +248,7 @@ describe("API-22 — Sixth active upload, then remove one and retry (AC-34, AC-3
     // Attempt 6th upload -> 409 ATTACHMENT_LIMIT_REACHED
     const sixthRes = await request(app)
       .post(`/api/tickets/${ticketA.id}/attachments`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .attach("file", PNG_HEADER, "screenshot-6.png");
 
     expect(sixthRes.status).toBe(409);
@@ -261,7 +262,7 @@ describe("API-22 — Sixth active upload, then remove one and retry (AC-34, AC-3
     // Soft-remove one attachment
     const removeRes = await request(app)
       .post(`/api/attachments/${uploadedIds[0]}/removal`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .send({ reason: "Freeing a slot for another screenshot" });
 
     expect(removeRes.status).toBe(200);
@@ -269,7 +270,7 @@ describe("API-22 — Sixth active upload, then remove one and retry (AC-34, AC-3
     // 6th upload should now succeed (AC-39: removal frees a slot)
     const retryRes = await request(app)
       .post(`/api/tickets/${ticketA.id}/attachments`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .attach("file", PNG_HEADER, "screenshot-retry.png");
 
     expect(retryRes.status).toBe(201);
@@ -294,7 +295,7 @@ describe("API-23 — Soft removal with and without a reason (AC-36, AC-38, BR-22
 
     const uploadRes = await request(app)
       .post(`/api/tickets/${ticketA.id}/attachments`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .attach("file", PNG_HEADER, "evidence.png");
 
     const attachmentId = uploadRes.body.id;
@@ -302,7 +303,7 @@ describe("API-23 — Soft removal with and without a reason (AC-36, AC-38, BR-22
     // Removal without reason -> 400
     const noReasonRes = await request(app)
       .post(`/api/attachments/${attachmentId}/removal`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .send({});
 
     expect(noReasonRes.status).toBe(400);
@@ -311,7 +312,7 @@ describe("API-23 — Soft removal with and without a reason (AC-36, AC-38, BR-22
     // Removal with whitespace-only reason -> 400
     const blankReasonRes = await request(app)
       .post(`/api/attachments/${attachmentId}/removal`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .send({ reason: "     " });
 
     expect(blankReasonRes.status).toBe(400);
@@ -326,7 +327,7 @@ describe("API-23 — Soft removal with and without a reason (AC-36, AC-38, BR-22
     // Soft removal with valid reason -> 200
     const successRes = await request(app)
       .post(`/api/attachments/${attachmentId}/removal`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .send({ reason: "Uploaded the wrong file" });
 
     expect(successRes.status).toBe(200);
@@ -354,7 +355,7 @@ describe("API-23 — Soft removal with and without a reason (AC-36, AC-38, BR-22
     // Second removal of the same attachment must return 404 (non-idempotent)
     const secondRemovalRes = await request(app)
       .post(`/api/attachments/${attachmentId}/removal`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .send({ reason: "Trying to remove again" });
 
     expect(secondRemovalRes.status).toBe(404);
@@ -375,7 +376,7 @@ describe("API-24 — Content of a removed Attachment, and of another Requester's
     // Upload attachment to Ticket A
     const uploadARes = await request(app)
       .post(`/api/tickets/${ticketA.id}/attachments`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .attach("file", PNG_HEADER, "ticket-a.png");
 
     const attachmentAId = uploadARes.body.id;
@@ -383,7 +384,7 @@ describe("API-24 — Content of a removed Attachment, and of another Requester's
     // Upload attachment to Ticket B
     const uploadBRes = await request(app)
       .post(`/api/tickets/${ticketB.id}/attachments`)
-      .set("X-Requester-Id", String(requesterB.id))
+      .set("Cookie", await requesterSession(requesterB.id))
       .attach("file", PNG_HEADER, "ticket-b.png");
 
     const attachmentBId = uploadBRes.body.id;
@@ -391,23 +392,23 @@ describe("API-24 — Content of a removed Attachment, and of another Requester's
     // Soft remove attachment A
     await request(app)
       .post(`/api/attachments/${attachmentAId}/removal`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .send({ reason: "Removed by requester" });
 
     // 1. Requester A requests removed attachment A (AC-37)
     const removedRes = await request(app)
       .get(`/api/attachments/${attachmentAId}/content`)
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     // 2. Requester A requests Requester B's attachment (AC-40)
     const unownedRes = await request(app)
       .get(`/api/attachments/${attachmentBId}/content`)
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     // 3. Nonexistent attachment id
     const missingRes = await request(app)
       .get("/api/attachments/999999/content")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(removedRes.status).toBe(404);
     expect(unownedRes.status).toBe(404);
@@ -433,7 +434,7 @@ describe("API-25 — Download an active Attachment (AC-35)", () => {
     // Upload image
     const imageUpload = await request(app)
       .post(`/api/tickets/${ticketA.id}/attachments`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .attach("file", PNG_HEADER, "my screenshot.png");
 
     const imageId = imageUpload.body.id;
@@ -441,7 +442,7 @@ describe("API-25 — Download an active Attachment (AC-35)", () => {
     // Download image
     const imageDownload = await request(app)
       .get(`/api/attachments/${imageId}/content`)
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(imageDownload.status).toBe(200);
     expect(imageDownload.headers["content-type"]).toBe("image/png");
@@ -458,7 +459,7 @@ describe("API-25 — Download an active Attachment (AC-35)", () => {
     // Upload PDF with semicolon in filename to verify header sanitization
     const pdfUpload = await request(app)
       .post(`/api/tickets/${ticketA.id}/attachments`)
-      .set("X-Requester-Id", String(requesterA.id))
+      .set("Cookie", await requesterSession(requesterA.id))
       .attach("file", PDF_HEADER, "report;version=2.pdf");
 
     const pdfId = pdfUpload.body.id;
@@ -466,7 +467,7 @@ describe("API-25 — Download an active Attachment (AC-35)", () => {
     // Download PDF
     const pdfDownload = await request(app)
       .get(`/api/attachments/${pdfId}/content`)
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(pdfDownload.status).toBe(200);
     expect(pdfDownload.headers["content-type"]).toBe("application/pdf");

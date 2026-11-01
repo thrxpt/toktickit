@@ -14,9 +14,6 @@ import type { z } from "zod";
 
 export type ErrorCode =
   | "DATABASE_UNAVAILABLE"
-  | "REQUESTER_CONTEXT_MISSING"
-  | "REQUESTER_CONTEXT_INVALID"
-  | "REQUESTER_INACTIVE"
   | "REQUESTER_ID_IN_BODY"
   | "INVALID_QUERY_PARAMETER"
   | "VALIDATION_FAILED"
@@ -48,18 +45,6 @@ const failures = {
   DATABASE_UNAVAILABLE: {
     status: 500,
     message: "Unable to reach the database",
-  },
-  REQUESTER_CONTEXT_MISSING: {
-    status: 400,
-    message: "Development Requester context header is missing",
-  },
-  REQUESTER_CONTEXT_INVALID: {
-    status: 400,
-    message: "Development Requester context is invalid or unknown",
-  },
-  REQUESTER_INACTIVE: {
-    status: 400,
-    message: "Development Requester is inactive",
   },
   REQUESTER_ID_IN_BODY: {
     status: 400,

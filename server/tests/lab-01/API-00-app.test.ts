@@ -1,7 +1,7 @@
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
-import app from "../../src/app";
+import app from "../setup/test-app";
 
 // API-00 proves the Supertest harness and the app/server split, without
 // touching GET /api/health — that endpoint and API-01 belong to Issue 2.

@@ -286,15 +286,21 @@ Additional rules:
 
 Rendered in `artifacts/lab-04/screenshots/` at 1280 px, 768 px, and 390 px:
 
-- [ ] Requester Dashboard: populated and empty.
-- [ ] IT Staff Dashboard: populated, including all eight status cards and four
+- [x] Requester Dashboard: populated and empty.
+- [x] IT Staff Dashboard: populated, including all eight status cards and four
       priority cards.
-- [ ] Administrator Dashboard: staff metrics plus account counts.
-- [ ] Actions Taken: list, create mode, edit mode with read-only Performed by and
+- [x] Administrator Dashboard: staff metrics plus account counts.
+- [x] Actions Taken: list, create mode, edit mode with read-only Performed by and
       Action Date/Time, Follow-Up Required with note, validation error.
-- [ ] Ticket Detail: permitted transitions only; cancelled Ticket read-only state.
-- [ ] Conflict alert with preserved form data.
-- [ ] Requester Ticket Detail: read-only Actions Taken.
-- [ ] No clipped text, overlapping controls, or horizontal page scroll at any width.
-- [ ] Focus ring visible on nav, metric cards, and editor controls (captured in at
+- [x] Ticket Detail: permitted transitions only; cancelled Ticket read-only state.
+- [x] Conflict alert with preserved form data.
+- [x] Requester Ticket Detail: read-only Actions Taken.
+- [x] No clipped text, overlapping controls, or horizontal page scroll at any width.
+- [x] Focus ring visible on nav, metric cards, and editor controls (captured in at
       least one screenshot per screen).
+
+Issue 28 evidence: [`screenshots/release/`](../../artifacts/lab-04/screenshots/release/)
+contains each listed screen/state at 1280, 768, and 390 px, with keyboard focus.
+The accompanying [release record](release.md) distinguishes automated/rendered
+verification from pending human peer review. Submission recovery also retains
+failed Files with a Retry control on both Ticket creation outcomes and Detail.

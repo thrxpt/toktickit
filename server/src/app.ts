@@ -25,15 +25,8 @@ app.get("/api/health", (_req, res) => {
   res.status(200).json({ status: "ok", service: "TokTickIT API" });
 });
 
-// The three reference reads. None requires a Development Requester context
-// (api-spec.md, "Requester context") — /api/requesters is the route that
-// establishes it. All three return active rows only, because reference data
-// belongs to the server and is never hard-coded in the client (BR-45).
-//
-// They differ only in what they read, so the response and the failure they
-// share live here: an empty array is a valid 200 that drives the client's
-// empty state (AC-07), never an error, and an unreachable database is the one
-// failure any of them can have.
+// Public reference reads return active rows, including an empty collection.
+// Database failures share the safe error envelope.
 async function sendReferenceData<T>(
   res: Response,
   read: () => Promise<T[]>,
@@ -67,19 +60,6 @@ app.get("/api/related-systems", async (_req, res) => {
   );
 });
 
-app.get("/api/requesters", async (_req, res) => {
-  // Inactive Requesters never appear (BR-05): the selector must never offer
-  // an identity the API would reject the moment it was used.
-  // Role is restricted to REQUESTER.
-  await sendReferenceData(res, () =>
-    prisma.user.findMany({
-      where: { isActive: true, role: "REQUESTER" },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, email: true },
-    }),
-  );
-});
-
 // Authentication routes (Lab 3 foundation).
 app.use("/api/auth", authRouter);
 app.use("/api/dashboard", dashboardRouter);
@@ -89,7 +69,7 @@ app.use("/api/tickets", actionsTakenRouter);
 // Public Comments & Internal Notes (BR-04, AC-08, AC-14, AC-15).
 app.use("/api/tickets", commentsNotesRouter);
 
-// Ticket routes require requester context (BR-04, ADR-0003).
+// BR-30: Ticket ownership comes only from authenticated Requester sessions.
 app.use("/api/tickets", ticketsRouter);
 app.use("/api/attachments", attachmentsRouter);
 

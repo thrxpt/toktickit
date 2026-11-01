@@ -7,6 +7,6 @@ export default async function globalTeardown(): Promise<void> {
     execSync("pnpm db:cleanup-e2e", { stdio: "inherit" });
   } catch (error) {
     console.error("Failed to cleanup database during E2E globalTeardown:", error);
-    // Non-fatal in teardown to allow test reports to generate
+    throw error;
   }
 }

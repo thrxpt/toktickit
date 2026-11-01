@@ -3,7 +3,6 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
 import { StateBlock } from "../components/StateBlock";
-import { RequesterContext } from "../context/RequesterContext";
 import type { UserRole } from "../types/auth";
 
 export function RequireRole({
@@ -13,12 +12,10 @@ export function RequireRole({
   roles: UserRole[];
   children?: React.ReactNode;
 }) {
-  const { user, loading: authLoading, isLegacyTest } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const location = useLocation();
 
-  const reqCtx = React.useContext(RequesterContext);
-
-  if (authLoading || (isLegacyTest && reqCtx?.loading)) {
+  if (authLoading) {
     return <StateBlock variant="loading" message="Verifying permissions…" />;
   }
 
@@ -39,21 +36,6 @@ export function RequireRole({
       );
     }
     return children ? <>{children}</> : <Outlet />;
-  }
-
-  // 2. Lab 2 legacy test compatibility for requester routes
-  if (
-    roles.includes("REQUESTER") &&
-    (isLegacyTest || localStorage.getItem("toktickit_requester_id"))
-  ) {
-    if (reqCtx?.selectedRequester) {
-      return children ? (
-        <React.Fragment key={reqCtx.contextKey}>{children}</React.Fragment>
-      ) : (
-        <Outlet />
-      );
-    }
-    return <Navigate to="/select-requester" replace />;
   }
 
   // 3. Unauthenticated visitor
