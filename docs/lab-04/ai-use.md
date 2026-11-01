@@ -268,3 +268,22 @@ Verification: 23 focused client tests, the production build/root typecheck, and
 isolated headless Chromium E2E-03 passed. Screenshot inspection and the UI detector
 found no new layout or mechanical issues. No GitHub reply was posted; the human
 Changes Requested verdict still requires human re-review.
+
+### Issue 27 re-review follow-up — #60 (R1)
+
+User prompt: "Check reviewer comment. If it's valid, you can fix."
+Checked @fahsai-02's re-review on `abe67f7` against the current contract and code.
+Reproduced the Requester login timeout in E2E-01, then updated all eight outdated
+post-login waits in E2E-01/E2E-02 to the shared `/dashboard` landing page. Existing
+journey assertions remain intact. Adopted the account-label casing suggestion;
+UI-12 failed first, then passed with title-case captions and unchanged role URLs.
+Updated E2E-03's caption locator and regenerated the two dashboard screenshots.
+
+All four Lab 4 Chromium journeys passed against the exported test-database URL,
+along with ten focused dashboard client tests, eight UNIT-02 setup-probe cases,
+and the production build/root typecheck. Visually inspected the dashboard evidence.
+The alleged fixture residue is already handled by existing teardown: five Tickets
+and one Attachment were deleted, and direct queries confirmed no E2E Tickets or
+Attachments remained. No cleanup code change was necessary. Legacy E2E was not
+rerun; Issue 28's retirement inventory remains intact. Recorded classifications
+and a draft reply in reviewer.md; no new GitHub reply or approval was posted.

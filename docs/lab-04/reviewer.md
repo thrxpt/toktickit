@@ -158,3 +158,33 @@ Proposed reply (not posted):
 
 This record and draft do not constitute a GitHub reply or a new reviewer verdict.
 The human Changes Requested verdict remains pending human re-review.
+
+### feature/27-role-dashboards #60 — re-review on `abe67f7`
+
+[@fahsai-02's re-review, 2026-11-01](https://github.com/thrxpt/toktickit/pull/60#pullrequestreview-5727527291)
+confirmed the earlier findings resolved or rebutted and requested changes on R1.
+
+| Item | Fact-check and response |
+| --- | --- |
+| R1 — Lab 4 post-login waits | **VALID.** Reproduced E2E-01 timing out on `/tickets` after navigation to `/dashboard`. Updated all eight outdated Requester/Staff/Administrator waits in E2E-01 and both E2E-02 journeys to assert the FR-16 landing destination. The entire Lab 4 suite now passes, with existing behavioral assertions preserved. |
+| R2 — Development Requester retirement | **WITHDRAWN by reviewer.** `tests.md` §5 retains the complete retirement inventory for Issue 28. No retirement changes belong to this follow-up. |
+| N1 — Account label casing | **SUBJECTIVE / OPTIONAL NIT; adopted.** Account cards now show Requester, IT Staff, and Administrator, matching the existing loading captions. UI-12 checks all three labels and role URLs; the new assertion first failed against the uppercase captions. Updated E2E-03 and regenerated/inspected both dashboard screenshots. |
+| N2 — Dashboard fixture cleanup | **INCORRECT as a persistent-residue claim.** The existing setup/teardown hooks run `cleanup-e2e.ts`, whose `E2E ` prefix matches this fixture and deletes child rows before Tickets. Full-suite teardown deleted five Tickets and one Attachment; direct post-run queries confirmed zero E2E Tickets and zero Attachment rows. Screenshots capture the fixture before teardown. No additional cleanup is needed. |
+
+Verification: all four headless Chromium Lab 4 tests, ten focused dashboard client
+tests, eight UNIT-02 setup-probe cases, and `pnpm build` (root typecheck plus both
+packages) passed on the isolated `toktickit_test` database. Legacy E2E suites were
+not rerun. The earlier E2E-03-only verification missed R1; this full Lab 4 run
+closes that verification gap without claiming the all-lab release regression.
+
+Proposed reply (not posted):
+
+> R1 was valid: updated all eight outdated post-login waits to assert `/dashboard`.
+> All four Lab 4 Chromium tests now pass, along with ten dashboard client tests
+> and the production build/typecheck. Adopted N1's account-label casing and updated
+> screenshots. N2 is already covered by global teardown: the full run deleted all
+> five fixture Tickets and the attachment, with zero E2E Tickets/Attachments left.
+> The Issue 28 retirement inventory remains intact.
+
+This record is agent verification, not a posted reply or human approval. The
+Changes Requested verdict still requires human re-review.

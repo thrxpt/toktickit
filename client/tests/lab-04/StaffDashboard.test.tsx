@@ -154,8 +154,14 @@ describe("UI-01, UI-03, UI-10, UI-12 — AC-13, AC-14, AC-15, AC-17", () => {
     expect(
       screen.queryByRole("link", { name: /^Inactive,/ }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "IT Staff, 2, view list" }),
+    ).toHaveAttribute("href", "/admin/users?role=IT_STAFF");
+    expect(
+      screen.getByRole("link", { name: "Administrator, 1, view list" }),
+    ).toHaveAttribute("href", "/admin/users?role=ADMINISTRATOR");
     fireEvent.click(
-      screen.getByRole("link", { name: "REQUESTER, 6, view list" }),
+      screen.getByRole("link", { name: "Requester, 6, view list" }),
     );
     await waitFor(() =>
       expect(

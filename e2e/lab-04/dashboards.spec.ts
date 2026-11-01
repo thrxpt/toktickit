@@ -73,7 +73,7 @@ test("E2E-03 — AC-12–AC-16: role dashboards drill into filtered collections"
   expect(download.suggestedFilename()).toBe("dashboard-evidence.png");
   expect(await download.failure()).toBeNull();
   await page.goto("/dashboard");
-  await page.getByRole("link", { name: /^REQUESTER,/ }).click();
+  await page.getByRole("link", { name: /^Requester,/ }).click();
   await expect(page).toHaveURL(/admin\/users\?role=REQUESTER/);
   await expect(page.getByRole("combobox", { name: /role/i })).toHaveValue(
     "REQUESTER",

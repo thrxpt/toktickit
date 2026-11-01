@@ -6,10 +6,17 @@ import Badge from "../components/Badge";
 import { DashboardList } from "../components/DashboardList";
 import { MetricCard } from "../components/MetricCard";
 import StateBlock from "../components/StateBlock";
+import type { UserRole } from "../types/auth";
 import type {
   RequesterDashboardData,
   StaffDashboardData,
 } from "../types/dashboard";
+
+const ACCOUNT_ROLE_LABELS: Record<UserRole, string> = {
+  REQUESTER: "Requester",
+  IT_STAFF: "IT Staff",
+  ADMINISTRATOR: "Administrator",
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -217,7 +224,7 @@ export default function Dashboard() {
                     ([accountRole, value]) => (
                       <MetricCard
                         key={accountRole}
-                        label={accountRole.replaceAll("_", " ")}
+                        label={ACCOUNT_ROLE_LABELS[accountRole as UserRole]}
                         value={value}
                         to={`/admin/users?role=${accountRole}`}
                       />

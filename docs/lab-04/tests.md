@@ -545,3 +545,27 @@ database's default read-committed isolation. A concurrent Ticket write can make 
 count and recent list reflect different committed moments. BR-21/FR-15 require
 backend-computed metrics, not a single point-in-time snapshot; no stronger isolation
 or new concurrency contract is introduced here.
+
+### Issue 27 re-review follow-up — #60 (R1)
+
+R1 reproduced before the fix: E2E-01 timed out waiting for `/tickets` after
+successful Requester login navigated to `/dashboard`. Updated all eight post-login
+waits in E2E-01 and both E2E-02 journeys to assert `/dashboard` for Requester,
+IT Staff, and Administrator, as required by FR-16 and ui-spec.md §3.1. All existing
+workflow, authorization, concurrency, and Actions Taken assertions remain intact.
+
+UI-12 now checks title-case account captions and unchanged per-role destinations
+for Requester, IT Staff, and Administrator (N1); the assertion failed before the
+caption fix. E2E-03 follows the updated Requester caption. Dashboard desktop/mobile
+screenshots were regenerated and visually inspected.
+
+Verification (2026-11-01, Node 24.18.0): the entire `CI=1 pnpm test:e2e:lab4`
+suite passed (four tests across all three files), ten focused dashboard client tests
+passed with `NODE_OPTIONS=--no-experimental-webstorage`, and `pnpm build` passed
+root typechecking and both package builds. The database setup probe also passed
+all eight UNIT-02 cases. Browser verification used the exported `server/.env.test`
+URL (`toktickit_test`), separate from development. Teardown deleted five E2E
+Tickets and their attachment; direct queries afterward found zero `E2E ` Tickets
+and zero Attachment rows (N2). The fixture appears in screenshots because they are
+taken during the journey, before teardown. No cleanup implementation change was
+needed. Legacy Lab 2/3 E2E suites were not rerun.
