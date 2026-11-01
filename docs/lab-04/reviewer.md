@@ -5,19 +5,26 @@
 
 ## Pull Requests I authored (reviewed by my partner)
 
-| PR | Branch | Reviewer verdict |
-| --- | --- | --- |
-| [#56](https://github.com/thrxpt/toktickit/pull/56) | feature/22-lab4-contract | Approved and merged (latest GitHub state checked 2026-11-01) |
-| [#59](https://github.com/thrxpt/toktickit/pull/59) | feature/25-actions-taken-ui | Approved and merged (latest GitHub state checked 2026-11-01) |
-| [#61](https://github.com/thrxpt/toktickit/pull/61) | feature/26-ticket-workflow | Approved and merged (latest GitHub state checked 2026-11-01) |
+| PR | Branch | Latest peer verdict | PR state |
+| --- | --- | --- | --- |
+| [#56](https://github.com/thrxpt/toktickit/pull/56) | feature/22-lab4-contract | [Approved, 2026-10-29](https://github.com/thrxpt/toktickit/pull/56#pullrequestreview-5699573824) | Merged 2026-10-29 |
+| [#57](https://github.com/thrxpt/toktickit/pull/57) | feature/23-stale-update-guard | [Approved, 2026-10-29](https://github.com/thrxpt/toktickit/pull/57#pullrequestreview-5704764074) | Merged 2026-10-29 |
+| [#58](https://github.com/thrxpt/toktickit/pull/58) | feature/24-actions-taken-foundation | [Approved, 2026-10-30](https://github.com/thrxpt/toktickit/pull/58#pullrequestreview-5710802852) | Merged 2026-10-30 |
+| [#59](https://github.com/thrxpt/toktickit/pull/59) | feature/25-actions-taken-ui | [Approved, 2026-10-31](https://github.com/thrxpt/toktickit/pull/59#pullrequestreview-5722170413) | Merged 2026-10-31 |
+| [#60](https://github.com/thrxpt/toktickit/pull/60) | feature/27-role-dashboards | [Approved, 2026-11-01](https://github.com/thrxpt/toktickit/pull/60#pullrequestreview-5727849545) | Merged 2026-11-01 |
+| [#61](https://github.com/thrxpt/toktickit/pull/61) | feature/26-ticket-workflow | [Approved, 2026-10-31](https://github.com/thrxpt/toktickit/pull/61#pullrequestreview-5724299806) | Merged 2026-10-31 |
+| [#62](https://github.com/thrxpt/toktickit/pull/62) | feat/final-release | Pending — no submitted peer review | Open |
 
-Current GitHub state (2026-11-01) also confirms [#57](https://github.com/thrxpt/toktickit/pull/57),
-[#58](https://github.com/thrxpt/toktickit/pull/58), and
-[#60](https://github.com/thrxpt/toktickit/pull/60) are **APPROVED / MERGED** into
-`lab4-staging`. Earlier change-request narratives below are historical records;
-they do not override these later peer verdicts. Issues #49–#54 are closed.
-Issue #55's implementation and release PRs still require human review and the
-integration-branch verification described in [release.md](release.md).
+Checked against GitHub PR metadata and submitted reviews on **2026-11-01**.
+This table covers every authored Lab 4 PR targeting `lab4-staging`; earlier labs
+keep their own review records. Approval links above point to @fahsai-02's actual
+submitted verdicts. Merge dates are UTC and are recorded separately from approval.
+
+The change-request and follow-up narratives below are historical snapshots; their
+then-pending statements do not override the later approval records. Issues
+#49–#54 are closed. [PR #62](https://github.com/thrxpt/toktickit/pull/62) implements
+Issue 28 / #55 and remains open without a human verdict. Integration verification
+and the reviewed release into `main` remain the gates in [release.md](release.md).
 
 ---
 
@@ -74,26 +81,60 @@ the new rows remain planned implementation evidence.
 
 **Reviewer approved comment:**
 
-> _Awaiting re-review and explicit approval. The 2026-10-29 review requested changes._
+> I re-checked only the four blockers and the diff they touch (`bba8714`), plus the five smaller fixes. All are addressed.
+
+Source: [@fahsai-02's approval, 2026-10-29](https://github.com/thrxpt/toktickit/pull/56#pullrequestreview-5699573824).
+The reviewer confirmed the four blockers and five smaller fixes, reran typechecking
+and whitespace checks, and checked the contract counts/traceability. No application
+suite was required for this docs-only PR.
 
 **Reviewer verdict:**
 
-> Changes requested (`@fahsai-02`), 2026-10-29. Follow-up awaiting re-review.
+> Approved by `@fahsai-02` on `bba8714`, 2026-10-29; merged into `lab4-staging`
+> on 2026-10-29. The earlier Changes Requested verdict is superseded by the linked
+> approval.
 
 ---
 
-## Pull Requests I reviewed for my partner
+### feature/23-stale-update-guard #57
 
-| PR | Branch | Reviewer verdict |
-| --- | --- | --- |
-| — | — | — |
+**Pull Request URL:** <https://github.com/thrxpt/toktickit/pull/57>
 
----
+**Scope:** Issue 23 / #50 — additive `Ticket.version`, required `expectedVersion`
+on Ticket-owned writes, atomic stale-update rejection, and conflict/reload UI
+preserving unsaved inputs (BR-11, BR-12, AC-08, AC-20).
 
-_This record is extended as each Lab 4 Issue's PR is reviewed. A PR is recorded as
-Approved only after the reviewer has posted that verdict; an open PR is never
-self-certified._
+**Reviewer verdict:** [Approved by @fahsai-02, 2026-10-29](https://github.com/thrxpt/toktickit/pull/57#pullrequestreview-5704764074)
+on `95c108e`; merged into `lab4-staging` on 2026-10-29.
 
+The reviewer endorsed the database predicate/atomic increment and retained drafts,
+and reported 149 client tests, typechecking, and `git diff --check` passing.
+Non-blocking comments covered redundant in-memory version checks, repeated change
+wrappers, clearer disabled-resolution feedback after dismissing a conflict, and
+preserving UI-09 traceability when Actions Taken arrives. The approval did not
+require those observations to become new scope; it also noted that the coupled
+API/client version payload changes must deploy together.
+
+### feature/24-actions-taken-foundation #58
+
+**Pull Request URL:** <https://github.com/thrxpt/toktickit/pull/58>
+
+**Scope:** Issue 24 / #51 — ActionTaken model/migration, authorized create/update/read,
+immutable performer and Action Date/Time, conditional Follow-up Note, transactional
+Ticket version guards, stable seed keys, and child-first cleanup
+(AC-01–AC-08, AC-21, BR-01–BR-13, BR-26–BR-29).
+
+**Reviewer verdict:** [Approved by @fahsai-02, 2026-10-30](https://github.com/thrxpt/toktickit/pull/58#pullrequestreview-5710802852)
+on `48813c2`; merged into `lab4-staging` on 2026-10-30.
+
+The review confirms the foundation meets the contract and cites API-01–API-07,
+API-22/API-27 and 296 server + 149 client tests with zero skips. It highlights the
+operational risk that reverse SQL drops the work-log table and therefore destroys
+Actions Taken unless exported or recovered from a pre-migration backup. It also
+records transaction atomicity, deterministic ordering, immutable-field validation,
+and cleanup scoping as checks to retain. Those risks/suggestions are recorded as
+such; this entry does not invent additional follow-up commits or claim a separate
+reviewer test run beyond the review's stated evidence.
 
 ### feature/25-actions-taken-ui #59
 
@@ -104,8 +145,16 @@ verified and corrected. The update also addresses safe error copy, API validatio
 wording, failed-save focus, shared reload behavior, and the small presentation/test
 nits. The lost-response retry limitation is documented. Rendered Chromium checks
 exercise focus in both switch states, a double-click with one POST/action, and
-failure recovery. Approval and merge remain pending; this record does not claim a
-new reviewer verdict.
+failure recovery. Approval and merge were pending at that follow-up. The later human verdict below
+supersedes that snapshot.
+
+**Latest reviewer verdict:** [Approved by @fahsai-02, 2026-10-31](https://github.com/thrxpt/toktickit/pull/59#pullrequestreview-5722170413)
+on `d59c560`; merged into `lab4-staging` on 2026-10-31. The re-review confirms
+all previous focus, duplicate-submit, recovery, validation, reload, counter/style,
+and PR-documentation items were addressed. It cites the author's 161 client /
+296 server tests, build and E2E-01 results; the reviewer explicitly did **not**
+rerun server or E2E verification at this head. The earlier client/build run was on
+the previous head.
 
 ### feature/26-ticket-workflow #61
 
@@ -122,12 +171,20 @@ configuration was undocumented.
 | 4 — E2E configuration | **VALID.** `tests.md` §6 and README document sourcing/exporting `.env.test` in a subshell, initializing its database with the server harness, and `CI=1` to prevent reusing a development server. |
 | 5 — Silent status guard | **VALID hardening.** An unavailable submission now displays recovery text and sends no write; the rendered UI regression first failed for the silent return. Existing conflict/reload feedback remains. |
 | 6 — Issue closure | **VALID.** PR description uses `Refs #53` because the target is `lab4-staging`, not the default branch. |
-| 7 — Human E2E verification | **VERIFICATION LIMITATION.** The documented command was rerun successfully against newly created `toktickit_review_test`, distinct from `server/.env`, applying all migrations before both Chromium journeys and teardown. Human re-verification and a new review verdict remain pending. |
+| 7 — Human E2E verification | **VERIFICATION LIMITATION.** The documented command was rerun successfully against newly created `toktickit_review_test`, distinct from `server/.env`, applying all migrations before both Chromium journeys and teardown. Human re-verification was pending at that follow-up; the later approval below independently confirms it. |
 
-This record describes verified changes and their evidence. It is not a posted
-GitHub reply, approval, or claim that the reviewer has rerun Chromium. The review's
+The original follow-up recorded author verification, not a posted GitHub reply,
+approval, or reviewer Chromium run at that point. The review's
 minor observations about version-check precedence and existing feedback timers did
 not identify a new contract defect and remain unchanged.
+
+**Latest reviewer verdict:** [Approved by @fahsai-02, 2026-10-31](https://github.com/thrxpt/toktickit/pull/61#pullrequestreview-5724299806)
+on `cbc9250`; merged into `lab4-staging` on 2026-10-31. Both blocking findings
+were resolved. The reviewer independently ran 326 server and 169 client tests,
+the eight UNIT-02 cases, and both Chromium E2E-02 journeys using the documented
+disposable-database procedure, with clean setup/teardown. The reviewer did not
+re-open the PR description to verify the reported `Refs #53` change; that limited
+observation was explicitly non-blocking.
 
 ### feature/27-role-dashboards #60
 
@@ -164,8 +221,10 @@ Proposed reply (not posted):
 > documented as a non-blocking read-committed consistency limitation. The default
 > E2E command retains Lab 3 scope; the full release regression remains Issue 28.
 
-This record and draft do not constitute a GitHub reply or a new reviewer verdict.
-The human Changes Requested verdict remains pending human re-review.
+That follow-up record and draft did not constitute a GitHub reply or a new
+reviewer verdict.
+At that snapshot, the human Changes Requested verdict still awaited re-review;
+the later approval below is the current verdict.
 
 ### feature/27-role-dashboards #60 — re-review on `abe67f7`
 
@@ -194,8 +253,46 @@ Proposed reply (not posted):
 > five fixture Tickets and the attachment, with zero E2E Tickets/Attachments left.
 > The Issue 28 retirement inventory remains intact.
 
-This record is agent verification, not a posted reply or human approval. The
-Changes Requested verdict still requires human re-review.
+That follow-up was agent verification, not a posted reply or human approval;
+the Changes Requested verdict still required re-review at that point. The human
+approval below supersedes it.
+
+**Latest reviewer verdict:** [Approved by @fahsai-02, 2026-11-01](https://github.com/thrxpt/toktickit/pull/60#pullrequestreview-5727849545)
+on `978a959`; merged into `lab4-staging` on 2026-11-01. The reviewer confirms
+R1, N1 and N2 resolved and no new blocking issues. Independent verification:
+179 client tests, the production build, and all four Lab 4 Chromium cases passed.
+The reviewer did not run server tests or legacy Lab 2/3 E2E in that round. The
+recorded development-credential failure was local; verification passed against
+`toktickit_test` with the documented override.
+
+### feat/final-release #62
+
+**Pull Request URL:** <https://github.com/thrxpt/toktickit/pull/62>
+
+**Scope:** Issue 28 / #55 — retire legacy identity (BR-30), harden duplicate/retry
+handling and draft recovery (FR-19, FR-20, BR-33), verify regression and responsive
+accessibility, capture visual evidence, and update setup/demo/release records.
+
+**Reviewer verdict:** Pending. GitHub has no submitted peer review as of
+2026-11-01; the PR is open against `lab4-staging`. The implementation's automated
+Standards and Spec checks below are not a human approval. Author verification is
+332 server + 181 client tests, 29 all-lab Chromium cases, the build/typechecks,
+and the final three-viewport follow-up. [release.md](release.md) records that
+evidence and the remaining integration/main release gates. No merge or completed
+release is claimed.
+
+---
+
+## Pull Requests I reviewed for my partner
+
+| PR | Branch | Reviewer verdict |
+| --- | --- | --- |
+| — | — | — |
+
+No partner-authored Lab 4 PR review has been recorded here. This section is
+separate from the seven PRs authored above.
+
+---
 
 ## Issue 28 automated implementation review — #55
 
