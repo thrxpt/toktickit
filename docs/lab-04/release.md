@@ -1,8 +1,10 @@
 # Lab 4 release preparation — Issue 28 / GitHub #55
 
 Implementation starts at `1ae913790cda2af4a30b6734116333d5fd1e4db0`, the merged
-role-dashboard work on `lab4-staging`. Verification below is **feature-branch
-evidence**. It does not claim a staging-to-main release or a peer verdict on #55.
+role-dashboard work on `lab4-staging`. Initial verification below is **feature-branch
+evidence**; the post-merge sections record the subsequent staging and released
+`main` runs. PR #63 has since been approved and merged; documentation PR #64
+remains a separate follow-up.
 
 ## Delivered
 
@@ -99,7 +101,9 @@ this follow-up changes recovery behavior, not the visual design.
 Cleanup waits for the Ticket lock before checking an uncertain commit's row.
 If the database cannot establish the outcome, bytes are retained as a possible
 inert orphan rather than risking deletion of committed evidence (ADR-0004).
-No dependency or migration was added. Human re-review remains pending.
+No dependency or migration was added. Human re-review was pending at that point;
+@fahsai-02 subsequently [approved #62](https://github.com/thrxpt/toktickit/pull/62#pullrequestreview-5728819835)
+on `59c15da`, and it merged into staging on 2026-11-01.
 
 ## Visual and accessibility evidence
 
@@ -133,17 +137,76 @@ expected by the API contract. This is Chromium and emulated-viewport evidence;
 physical touch devices, other engines, and a manual screen-reader session were
 not certified.
 
-## Remaining release gates
+## Post-merge staging verification (2026-11-01)
 
-GitHub checked on 2026-11-01: Issues #49–#54 are closed; PRs #56–#61 are approved
-and merged into `lab4-staging`. The contract PR preceded implementation.
+[PR #62](https://github.com/thrxpt/toktickit/pull/62) received
+[@fahsai-02's approval](https://github.com/thrxpt/toktickit/pull/62#pullrequestreview-5728819835)
+on `59c15da` and merged into `lab4-staging` at 15:29:50 UTC. The following commands
+ran against the resulting staging head **`e26f6bd10decf31ba7494da217ddd9828ed2b5dd`**,
+with no application-code changes. This is the integration evidence required by
+AC-22 / REG-01, rather than another feature-branch result.
 
-- [ ] Peer-review and merge this #55 feature work into `lab4-staging` through a PR.
-- [ ] Run the complete commands above on the resulting staging head and record its
-      SHA/results (AC-22 / REG-01); feature-branch evidence cannot satisfy that gate.
-- [ ] Open, peer-review, and merge `lab4-staging` → `main` through a release PR.
-- [ ] Verify the released head and move #55 to Done. No issue is closed early and
-      no integration branch is advanced by a local commit or merge.
+| Check | Staging result |
+| --- | --- |
+| `pnpm test` | **337 server + 189 client = 526 passing**, zero skipped; 32 server + 36 client files |
+| `CI=1 pnpm test:e2e` | **29 passing**, zero skipped, Labs 2–4, 38.6 s |
+| `pnpm build` | Root E2E typecheck and both package builds pass |
+| Migration and seed | Fresh `toktickit_release_pr_test` created by the harness; all seven migrations applied and seed completed |
+| Browser teardown | 15 E2E Tickets, 5 Attachments and 6 temporary Users removed; demo seed restored |
 
-[reviewer.md](reviewer.md) keeps peer verdicts separate from automated review.
-No approval or completed release is self-certified by this record.
+Runtime: Node 24.18.0, pnpm 11.20.0, PostgreSQL 17, headless Chromium, with
+`NODE_OPTIONS=--no-experimental-webstorage`. Existing local credentials were reused
+without printing or committing them. API and browser runs used the same disposable
+database sequentially; the development database was not used. The existing `pg`
+query deprecation warning remains non-failing. Regenerated screenshots were restored
+to the committed evidence; this follow-up changes documentation only.
+
+## Released-main verification (2026-11-01)
+
+[PR #63](https://github.com/thrxpt/toktickit/pull/63) received
+[@fahsai-02's release approval](https://github.com/thrxpt/toktickit/pull/63#pullrequestreview-5728892082)
+on `e26f6bd` at 15:49:41 UTC and merged into `main` at 15:49:53 UTC. The released
+head is **`8ff194ccc3b686b30d64e29aada292a7c9c3b07b`**. Its committed tree is
+identical to the staging head verified above (`git diff e26f6bd 8ff194c` is empty).
+The actual release commit was checked out detached and verified again:
+
+| Check | Released-main result |
+| --- | --- |
+| `pnpm test` | **337 server + 189 client = 526 passing**, zero skipped |
+| `CI=1 pnpm test:e2e` | **29 passing**, zero skipped, Labs 2–4 |
+| `pnpm build` | Root E2E typecheck and both package builds pass |
+| Browser teardown | E2E records removed and demo seed restored |
+
+Runtime and isolation match the staging run: Node 24.18.0, pnpm 11.20.0,
+PostgreSQL 17, headless Chromium, `NODE_OPTIONS=--no-experimental-webstorage`,
+with API and browser runs sequential on `toktickit_release_pr_test`. The first
+browser launch stopped before running any cases because port 5173 was occupied.
+After confirming the listener was gone, the unchanged command passed; no process
+was terminated, server reused, timeout increased, assertion changed or test skipped.
+Regenerated screenshots were restored to the committed evidence.
+
+## Release status and documentation follow-up
+
+GitHub checked on 2026-11-01: PRs #56–#62 are approved and merged into staging;
+release PR #63 is separately approved and merged into `main`. Issues #49–#55 are
+closed, and parent [#48](https://github.com/thrxpt/toktickit/issues/48) closed
+through #63 at 15:49:55 UTC. The contract PR preceded implementation.
+
+[Documentation PR #64](https://github.com/thrxpt/toktickit/pull/64) had not merged
+when #63 released. This follow-up records that actual order; it does not claim
+the documentation was present in the original release.
+
+- [x] Peer-review and merge #55 feature work into `lab4-staging` through PR #62.
+- [x] Run the complete commands on the resulting staging head and record its
+      SHA/results (AC-22 / REG-01), above.
+- [x] Peer-review and merge `lab4-staging` → `main` through release PR #63.
+- [x] Verify the released `main` head, above.
+- [ ] Peer-review and merge documentation PR #64 into staging.
+- [ ] Open, link to Issue #55, peer-review and merge a documentation-only
+      `lab4-staging` → `main` follow-up PR. Both integration branches continue
+      to advance only through reviewed PRs.
+- [ ] Reconcile Issue 28 / #55's acceptance checklist after the documentation
+      follow-up reaches `main`.
+
+[reviewer.md](reviewer.md) keeps submitted human verdicts separate from execution
+and automated review. Pending documentation approvals are not self-certified.
