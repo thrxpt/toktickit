@@ -1,3 +1,4 @@
+import { fileSubmissionKey } from "../api/submissions";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import apiFetch from "../api/client";
@@ -30,6 +31,7 @@ export function AttachmentSection({
   );
   const [removalReason, setRemovalReason] = useState("");
   const [isRemoving, setIsRemoving] = useState(false);
+  const isRemovingRef = useRef(false);
   const [removalError, setRemovalError] = useState<string | null>(null);
 
   const [previewAttachment, setPreviewAttachment] =
@@ -138,8 +140,10 @@ export function AttachmentSection({
   }, []);
 
   const handleConfirmRemoval = async () => {
+    if (isRemovingRef.current) return;
     if (!removalTarget || !removalReason.trim()) return;
 
+    isRemovingRef.current = true;
     setIsRemoving(true);
     setRemovalError(null);
 
@@ -169,6 +173,7 @@ export function AttachmentSection({
     } catch {
       setRemovalError("Failed to remove attachment. Please try again.");
     } finally {
+      isRemovingRef.current = false;
       setIsRemoving(false);
     }
   };
@@ -245,6 +250,7 @@ export function AttachmentSection({
     try {
       const res = await apiFetch(`/api/tickets/${ticketId}/attachments`, {
         method: "POST",
+        headers: { "Idempotency-Key": fileSubmissionKey(file) },
         body: formData,
       });
 
@@ -258,7 +264,7 @@ export function AttachmentSection({
           ...prev,
           [file.name]: errorMsg,
         }));
-        return;
+        return false;
       }
 
       const added: AttachmentDto = await res.json();
@@ -268,11 +274,13 @@ export function AttachmentSection({
         return next;
       });
       onAttachmentAdded?.(added);
+      return true;
     } catch {
       setUploadErrors((prev) => ({
         ...prev,
         [file.name]: "Upload failed due to a network error.",
       }));
+      return false;
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { apiFetch } from "../api/client";
@@ -19,6 +19,7 @@ export function ChangePassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [formError, setFormError] = useState("");
 
   // Password criteria checks (BR-07, UI-03)
@@ -45,11 +46,13 @@ export function ChangePassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
 
     if (!canSubmit) {
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     setFormError("");
 
@@ -77,9 +80,10 @@ export function ChangePassword() {
       navigate(getDefaultRouteForRole(role), { replace: true });
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Failed to change password.";
+        "Unable to change password. Please try again.";
       setFormError(message);
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

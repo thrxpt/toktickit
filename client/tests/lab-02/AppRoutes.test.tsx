@@ -17,10 +17,10 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
       if (url === '/api/auth/me') return Promise.resolve({ ok: true, json: async () => ({ user: { id: 1, name: 'Jennifer Anderson', email: 'jennifer.anderson@example.ac.th', role: 'REQUESTER', mustChangePassword: false } }) } as Response)
       if (url === '/api/dashboard/requester') return Promise.resolve({ ok: true, json: async () => ({ openTickets: 0, waitingForRequester: 0, recentlyUpdated: [], recentlyResolved: [] }) } as Response)
       if (url.endsWith('/actions')) return Promise.resolve(new Response('[]'))
-      if (url === '/api/requesters') {
+      if (url === '/api/auth/me') {
         return Promise.resolve({
           ok: true,
-          json: async () => mockActiveRequesters,
+          json: async () => ({ user: { ...mockActiveRequesters[0], role: "REQUESTER", mustChangePassword: false } }),
         } as Response)
       }
       if (url.startsWith('/api/tickets/')) {
@@ -71,7 +71,7 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders /select-requester screen', async () => {
+  it('retires /select-requester (Lab 4 BR-30)', async () => {
     render(
       <MemoryRouter initialEntries={['/select-requester']}>
         <App />
@@ -80,12 +80,11 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole('heading', { name: 'Select Development Requester' }),
+        screen.getByRole('heading', { name: 'Page Not Found' }),
       ).toBeInTheDocument()
     })
-    expect(
-      screen.getByText(/Select a Development Requester to test requester-specific ticket behavior/i),
-    ).toBeInTheDocument()
+    expect(screen.queryByText('Change Requester')).not.toBeInTheDocument()
+    expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes('/api/requesters'))).toBe(false)
   })
 
   it('renders /tickets/new screen when context is established', async () => {
@@ -148,7 +147,7 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
       ).toBeInTheDocument()
     })
     expect(
-      screen.getByRole('link', { name: 'Go to My Tickets' }),
+      screen.getByRole('link', { name: 'Go to Dashboard' }),
     ).toBeInTheDocument()
   })
 })

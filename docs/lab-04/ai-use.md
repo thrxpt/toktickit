@@ -287,3 +287,35 @@ and one Attachment were deleted, and direct queries confirmed no E2E Tickets or
 Attachments remained. No cleanup code change was necessary. Legacy E2E was not
 rerun; Issue 28's retirement inventory remains intact. Recorded classifications
 and a draft reply in reviewer.md; no new GitHub reply or approval was posted.
+
+## Issue 28 — Final regression and release preparation (#55)
+
+User prompt: `$implement #55`. The user confirmed the existing HTTP, rendered UI,
+and Playwright seams and review base `1ae9137`. GPT-6.1 Sol via Codex in T3 Code
+traced authentication, every mutation entry point, recovery state, existing tests,
+and the four Lab 4 contract documents before implementation.
+
+Tests first reproduced the live Requester directory/header fallback, duplicate
+same-event account/comment/note submissions, duplicate records on network retries,
+and failed Logout's unhandled promise. The implementation retires identity
+compatibility, preserves drafts, and adds nullable unique submission keys for the
+four unversioned creates. API tests exercise concurrent/sequential retries; the
+browser tests commit upstream and abort delivery before retrying from retained UI
+state. An additive migration/reverse preserves existing records. No dependency
+was added. The new key/index storage is the necessary cost of retry safety across
+lost responses and server restarts, rather than an in-memory cache.
+
+The complete run exposed old E2E assumptions that isolated runs missed: a removed
+Admin confirmation control, a zero-data account used by an earlier lab, and
+unprefixed fixture summaries. A cleanup test also proved file bytes were left
+behind after row deletion. Those paths are corrected without weakening Ticket,
+authorization, status, or attachment assertions. Shared HTTP listeners replace
+per-request listener churn after intermittent connection resets in combined API
+runs; no retry or skip masks those failures.
+
+Rendered inspection found Bootstrap suppressing the shared input outline and
+cramped tablet work-log headings. Theme specificity, tablet typography/padding,
+and mobile target sizes address those findings while preserving Zen Green.
+57 release screenshots cover three widths. Validation and the remaining human
+release gates are recorded in [release.md](release.md); neither automated checks
+nor agent review stand in for peer approval or integration-branch verification.

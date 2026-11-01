@@ -57,7 +57,13 @@ The `toktickit_test` database strategy from Lab 3 continues, with two additions:
 | --- | --- | --- | --- | --- |
 | UNIT-01 | AC-03, BR-04, BR-05, BR-06 | Action Taken validation: required description/result, trimming, 2,000/1,000 bounds, follow-up-note conditional in both directions | Valid payload accepted; each invalid variant names its field | `actions-taken.unit.test.ts` |
 | UNIT-02 | AC-09, BR-15, BR-16 | Final matrix: every permitted edge accepted; invalid, same-status, and post-`CANCELLED` edges rejected | `isValidStatusTransition` returns true/false exactly per matrix; `CANCELLED` has no outgoing edge | `status-matrix.unit.test.ts` |
-| UNIT-03 | AC-12, AC-13, BR-21, BR-22 | Metric boundary helpers: open-status set, recently-updated ordering, zero-data behavior | Sets and ordering match the documented definitions; zero input yields zeros/empty | `dashboard-metrics.unit.test.ts` |
+
+UNIT-03's planned metric-helper cases are implemented at the HTTP seam in
+`requester-dashboard.api.test.ts` and `staff-dashboard.api.test.ts` (API-16–API-21).
+There is no separate pure metric helper: authoritative queries own the definitions
+(FR-15). The boundary, ordering, and zero-data assertions remain required; no
+behavior was waived and no helper was introduced solely to mirror it in a test.
+
 
 ### API — `server/tests/lab-04/*.api.test.ts`
 
@@ -213,8 +219,8 @@ finding was reproduced and fixed with regression coverage.
 | AC-09 | UNIT-02, API-10, E2E-02 | Unit + API + E2E |
 | AC-10 | API-11, UI-08, E2E-02 | API + UI + E2E |
 | AC-11 | API-12, E2E-02 | API + E2E |
-| AC-12 | UNIT-03, API-16, UI-02, UI-11, E2E-03 | Unit + API + UI + E2E |
-| AC-13 | UNIT-03, API-20, API-24, UI-01, E2E-03 | Unit + API + UI + E2E |
+| AC-12 | API-16, UI-02, UI-11, E2E-03 | API + UI + E2E |
+| AC-13 | API-20, API-24, UI-01, E2E-03 | API + UI + E2E |
 | AC-14 | API-21, UI-03, UI-12, E2E-03 | API + UI + E2E |
 | AC-15 | API-19, UI-01, UI-11, UI-12, E2E-03 | API + UI + E2E |
 | AC-16 | API-17, UI-02, E2E-03 | API + UI + E2E |
@@ -366,18 +372,20 @@ above when verifying against a disposable database.
 
 ## 7. Final Results
 
-Filled in by the release ticket after implementation; planned counts:
+Feature-branch verification is recorded in [release.md](release.md). Counts below
+are distinct contract IDs, not individual runner cases (513 Vitest/Supertest and
+29 Playwright cases passed). REG-01 remains pending its required integration run.
 
-| Level | Planned | Passing | Skipped | Status |
+| Level | Planned IDs | Passing locally | Skipped | Status |
 | --- | --- | --- | --- | --- |
-| Unit | 3 | — | — | Planned |
-| API | 28 | — | — | Planned |
-| UI Component | 12 | — | — | Planned |
-| UI Style | 3 | — | — | Planned |
-| Responsive | 4 | — | — | Planned |
-| E2E | 3 | — | — | Planned |
-| Regression suite | 1 | — | — | Planned |
-| **Total** | **54** | — | — | Planned |
+| Unit | 2 | 2 | 0 | Pass; metric boundaries covered at HTTP seam |
+| API | 29 | 29 | 0 | Pass |
+| UI Component | 13 | 13 | 0 | Pass |
+| UI Style | 3 | 3 | 0 | Pass |
+| Responsive | 4 | 4 | 0 | Pass |
+| E2E | 4 | 4 | 0 | Pass |
+| Regression suite | 1 | — | 0 | Feature branch green; staging run pending reviewed merge |
+| **Total** | **56** | **55** | **0** | **Integration/release gates pending** |
 
 Known limitations to carry into the release evidence:
 
@@ -569,3 +577,52 @@ Tickets and their attachment; direct queries afterward found zero `E2E ` Tickets
 and zero Attachment rows (N2). The fixture appears in screenshots because they are
 taken during the journey, before teardown. No cleanup implementation change was
 needed. Legacy Lab 2/3 E2E suites were not rerun.
+
+### Issue 28 implementation — Final regression and release preparation (#55)
+
+| Test ID | Requirement | Evidence |
+| --- | --- | --- |
+| API-26, API-28 | AC-22, BR-29, BR-30 | `identity-retirement.api.test.ts`: removed directory, header-only/expired sessions for every role, conflicting session/header Ticket and attachment ownership, Staff/Admin reads without Requester impersonation |
+| API-29 | FR-19, BR-33 | `submission-retries.api.test.ts`: concurrent/sequential Ticket/discussion/upload retries, session isolation, UUID validation, five-file-limit replay, no internal key exposure or orphan replay bytes |
+| API-23 | AC-21, BR-27 | `actions-migration.api.test.ts`: populated Ticket/Comment/Note/Attachment upgrade and submission-key reversal preserve every original field |
+| UI-13 | FR-19, FR-20, AC-26 | `SubmissionRecovery.test.tsx`: synchronous duplicate-submit locks, prevented native resubmission, retained account/discussion fields, safe non-JSON failures, retry-key lifecycle, retained failed File with same-key retry |
+| RESP-01–RESP-04 | AC-24–AC-26 | `responsive.spec.ts`: 19 screen/states × 1280/768/390 px, visible keyboard outlines, 44 px mobile controls, server-driven transitions, real conflict/reload with retained draft, no overflow, no unexpected console/runtime errors |
+| E2E-04 | FR-19, FR-20, BR-33 | `submission-recovery.spec.ts`: upstream commit followed by lost response for Ticket creation and both upload entry points; UI retry produces one Ticket and one Attachment per File |
+| REG-01 | AC-22, BR-31 | Root `pnpm test` and `pnpm test:e2e` include all labs; legacy selector/header fixtures use real sessions, keep Ticket/validation/attachment/ownership assertions, and never skip a test |
+
+The original 54 planned IDs become 56 distinct IDs: UNIT-03's behavior moves to
+API-16–API-21, and API-29/UI-13/E2E-04 extend product-wide hardening coverage. An ID
+may cover several concrete assertions or parameterized tests; IDs are not runner
+case counts. See [release.md](release.md) for actual runner totals, environment,
+visual inspection, and the integration-branch/human-release gates.
+
+Legacy Lab 2 directory/selector-only tests are deleted as planned in §5. Session
+restoration/logout and stale-storage rejection replace selector persistence/switch
+assertions. The read-only Ticket-field assertion now allows the separate Lab 3
+Public Comment editor while still forbidding editable Ticket fields. Lab 2
+fixtures explicitly select active Requesters past the password-change gate.
+Lab 3's Administrator journey now uses the existing toggle + Save User flow and
+asserts persisted inactive status; it no longer waits for a nonexistent confirmation
+dialog. Its last-Administrator safety assertion uses the current documented copy.
+The zero-data dashboard journey creates its own empty Requester so earlier labs
+can create Tickets for Marcus without making the combined run order-dependent.
+
+Expected HTTP console diagnostics are distinguished from application errors:
+anonymous `/api/auth/me` probes return `401` by contract, and the deliberately
+stale Action Taken save returns `409`. The responsive journey permits only those
+resource diagnostics and fails on every unexpected console error or page exception.
+Lost-response tests deliberately abort delivery after the upstream server commits.
+
+The shared `server/tests/setup/test-app.ts` owns a persistent HTTP listener per
+API test file. It replaces Supertest's per-request listener churn (already avoided
+by Issue 26's matrix test) after combined runs exposed intermittent socket resets
+in unrelated files. It introduces no retry, skip, or changed response assertion.
+The shell regression also reproduces a failed Logout: it retains the session and
+shows safe retry text instead of rejecting an unhandled promise and pretending
+the HttpOnly session cookie was cleared.
+
+Release cleanup verification also extends API-23 with actual Attachment bytes:
+the check failed before cleanup deleted the stored file. Legacy Lab 2 summaries
+now use the same `E2E ` prefix as the existing cleanup contract, and browser
+teardown propagates cleanup failures. This keeps subsequent seeded demonstrations
+and the combined regression independent of residue from earlier journeys.

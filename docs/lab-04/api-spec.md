@@ -507,3 +507,31 @@ the header and a session combined with a conflicting header.
 - Attachment upload/download/soft-removal, comments, notes, password change, and
   User Management retain their behavior for permitted authenticated callers.
   Administrator ticket access widens per ADR-0010; IT Staff cannot manage users.
+
+## 7. Retry-safe unversioned creates (Issue 28, FR-19, BR-33)
+
+`POST /api/tickets`, `POST /api/tickets/:id/comments`,
+`POST /api/tickets/:id/notes`, and `POST /api/tickets/:id/attachments` accept an
+optional `Idempotency-Key: <UUID>` header. An invalid UUID answers
+`400 VALIDATION_FAILED` with `fields.idempotencyKey`; existing clients may omit
+it. Authentication, role, ownership, and payload validation still run on every
+request, including replays.
+
+The key is scoped to the authenticated user, endpoint path, and normalized body.
+Attachment scope includes original filename, detected MIME type, and file bytes.
+Retrying that same submission returns the existing record with `201` and its
+original resource identifier/Location where applicable. A new key or changed
+payload is a new submission; keys are not a content-deduplication rule. A Ticket
+replay returns its current representation if Staff have since changed it. A
+removed Attachment remains inaccessible: retrying its old submission answers
+`404 ATTACHMENT_NOT_FOUND`, never restores it. A replay at the five-active-file
+limit still succeeds for an active Attachment; a distinct upload answers `409`.
+
+The client keeps each draft's key across failed requests, then clears it after
+acknowledged success or an explicit new Ticket. Failed Files retain their key and
+can be retried without choosing them again, including partial uploads after Ticket
+creation (ADR-0006). Keys are persisted internally as nullable unique digests and
+are omitted from all responses. They do not grant access to another user's row.
+Clients do not automatically retry mutations. Ticket-field/Actions Taken writes
+continue to use `expectedVersion` and `409 STALE_UPDATE` (§4), while User creation
+continues to reject duplicate email addresses.

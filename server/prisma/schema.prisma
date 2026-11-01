@@ -88,6 +88,7 @@ model Category {
 }
 
 model Ticket {
+  submissionKey String? @unique
   id           Int    @id @default(autoincrement())
   ticketNumber String @unique
   version      Int    @default(0)
@@ -128,6 +129,7 @@ model Ticket {
 }
 
 model Attachment {
+  submissionKey String? @unique
   id       Int    @id @default(autoincrement())
   ticketId Int
   ticket   Ticket @relation(fields: [ticketId], references: [id])
@@ -150,6 +152,7 @@ model Attachment {
 }
 
 model Comment {
+  submissionKey String? @unique
   id        Int      @id @default(autoincrement())
   ticketId  Int
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict)
@@ -162,6 +165,7 @@ model Comment {
 }
 
 model InternalNote {
+  submissionKey String? @unique
   id        Int      @id @default(autoincrement())
   ticketId  Int
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict)

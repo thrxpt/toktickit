@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import ActionsTakenPanel from "../components/tickets/ActionsTakenPanel";
@@ -11,25 +11,12 @@ import PublicComments from "../components/tickets/PublicComments";
 import ReadOnlyField from "../components/ReadOnlyField";
 import StateBlock from "../components/StateBlock";
 import { useAuth } from "../auth/AuthContext";
-import { useRequester } from "../context/RequesterContext";
 import type { TicketDetail } from "../types/ticket";
 import { formatDate } from "../utils/date";
 
 export function RequesterTicketDetail() {
   const { id } = useParams<{ id: string }>();
-  let user: { id: number; name: string } | null = null;
-  try {
-    user = useAuth().user;
-  } catch {
-    // outside AuthProvider
-  }
-  let selectedRequester: { id: number; name: string } | null = null;
-  try {
-    selectedRequester = useRequester().selectedRequester;
-  } catch {
-    // outside RequesterProvider
-  }
-  const activeRequester = user || selectedRequester;
+  const { user: activeRequester } = useAuth();
 
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +25,7 @@ export function RequesterTicketDetail() {
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
+  const isResolvingRef = useRef(false);
   const [needsReload, setNeedsReload] = useState(false);
   const [showConflict, setShowConflict] = useState(false);
   const [resolveError, setResolveError] = useState<string | null>(null);
@@ -156,7 +144,9 @@ export function RequesterTicketDetail() {
   }
 
   const handleConfirmResolution = async () => {
+    if (isResolvingRef.current) return;
     if (!ticket || isResolving || needsReload) return;
+    isResolvingRef.current = true;
     setIsResolving(true);
     setResolveError(null);
     try {
@@ -187,6 +177,7 @@ export function RequesterTicketDetail() {
         err instanceof Error ? err.message : "Unable to submit resolution",
       );
     } finally {
+      isResolvingRef.current = false;
       setIsResolving(false);
     }
   };
@@ -202,7 +193,7 @@ export function RequesterTicketDetail() {
           </p>
         </div>
         <div className="d-flex align-items-center gap-2">
-          {user && (
+          {activeRequester && (
             <button
               type="button"
               className="btn btn-outline-success d-inline-flex align-items-center gap-2"
@@ -383,7 +374,7 @@ export function RequesterTicketDetail() {
       />
 
       {/* Public Comments Section (FR-07, AC-14, ui-spec.md §4.6) */}
-      {user && (
+      {activeRequester && (
         <div className="mt-4">
           <h2 className="h4 mb-3">Public Comments</h2>
           <PublicComments ticketId={ticket.id} />

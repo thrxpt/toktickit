@@ -7,7 +7,6 @@ import Pagination from "../components/Pagination";
 import StateBlock from "../components/StateBlock";
 import Toolbar from "../components/Toolbar";
 import { useAuth } from "../auth/AuthContext";
-import { useRequester } from "../context/RequesterContext";
 import type { TicketListItem, TicketListMeta } from "../types/ticket";
 import { formatDate } from "../utils/date";
 
@@ -17,19 +16,7 @@ interface CategoryOption {
 }
 
 export function MyTickets() {
-  let user: { id: number; name: string } | null = null;
-  try {
-    user = useAuth().user;
-  } catch {
-    // outside AuthProvider
-  }
-  let selectedRequester: { id: number; name: string } | null = null;
-  try {
-    selectedRequester = useRequester().selectedRequester;
-  } catch {
-    // outside RequesterProvider
-  }
-  const activeRequester = user || selectedRequester;
+  const { user: activeRequester } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const searchInputId = useId();

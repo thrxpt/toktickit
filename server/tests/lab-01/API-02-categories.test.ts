@@ -1,7 +1,7 @@
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import app from "../../src/app";
+import app from "../setup/test-app";
 import { prisma } from "../../src/prisma";
 
 const categoryNames = ["Account and Access", "Hardware", "Software", "Network"];

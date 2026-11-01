@@ -1,19 +1,13 @@
 import request from "supertest";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
-import app from "../../src/app";
+import server from "../setup/test-app";
 import type { TicketStatus } from "../../src/generated/prisma/client";
 import { prisma } from "../../src/prisma";
 import { truncateTransactionalData } from "../setup/truncate";
 
-// Keep one HTTP listener for the exhaustive matrix rather than reopening a port per request.
-const server = app.listen(0);
-beforeAll(async () => {
-  if (!server.listening) await new Promise<void>(resolve => server.once("listening", resolve));
-});
 beforeEach(truncateTransactionalData);
 afterAll(async () => {
-  await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
   await prisma.$disconnect();
 });
 

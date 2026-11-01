@@ -157,6 +157,7 @@ server-side, and the UI merely guides the user toward what the server allows.
 | BR-11 | Every write to a Ticket-owned field (owner, IT Priority, status, resolution indication, Actions Taken create/update) increments `version` by one; Public Comments and Internal Notes do not. |
 | BR-12 | Mutating Ticket endpoints, including Requester resolution indication, require `expectedVersion`; a mismatch answers `409 STALE_UPDATE` and changes nothing. The conditional Ticket write and version increment are atomic. An ActionTaken insert/update and its conditional Ticket write run in one database transaction; any failure rolls both back. |
 | BR-13 | A repeated submission carrying the same `expectedVersion` is rejected with `409 STALE_UPDATE`, so a double-click or retry cannot create two Actions Taken. Concurrent submissions produce exactly one action row and one version increment; a failed ActionTaken write leaves both the action and Ticket version unchanged (BR-12). |
+| BR-33 | Unversioned Ticket, Public Comment, Internal Note, and Attachment creates accept an optional UUID `Idempotency-Key`. The application retains it across recoverable failures. The same authenticated user, endpoint, key, and normalized payload return the existing record with `201`, including simultaneous submissions; changed payloads or a new key are distinct submissions. Keys are internal, persisted under a unique index, and never authorize a read or write. Legacy callers without a key remain supported. |
 
 ### Ticket Lifecycle and Resolution
 
@@ -254,6 +255,22 @@ Relation: `Ticket.actionsTaken ActionTaken[]` and `User.performedActions ActionT
 every existing row by the migration default; no backfill script is required. Every
 write to a Ticket-owned field increments it atomically (BR-11, BR-12).
 
+### Retry Keys (Issue 28)
+
+`Ticket`, `Comment`, `InternalNote`, and `Attachment` each gain nullable unique
+`submissionKey String? @unique`. A server-generated SHA-256 digest binds the
+client UUID to the authenticated user, endpoint, and normalized payload (including
+file bytes for an Attachment). Existing rows retain `null`; keys never appear in
+API responses. The unique index arbitrates simultaneous inserts; a losing writer
+reads the committed winner. Attachment writes serialize on the Ticket row so the
+five-active-file limit also holds for simultaneous distinct uploads. Temporary
+bytes from a replay or failed insert are removed (BR-33).
+
+The additive `20261101090000_submission_keys` migration preserves existing rows.
+Its reverse SQL removes only the four columns/indexes. Stop keyed writes and use
+the matching old app revision before reversal; records remain, retry protection
+does not. API-23 verifies populated upgrade/reversal, and API-29 verifies replay.
+
 ### Dashboard Indexes
 
 Add `@@index([requesterId, updatedAt(sort: Desc)])` for ownership-scoped recent
@@ -266,7 +283,7 @@ for filtered counts. The existing `createdAt` index cannot serve the dashboards'
 
 - Additive Prisma migrations add `Ticket.version` (Issue 23), then create
   `ActionTaken` with its nullable unique `seedKey` (Issue 24) and the dashboard
-  indexes (Issue 27).
+  indexes (Issue 27), then nullable submission keys (Issue 28).
   Nothing is dropped or renamed, so all Lab 1–3 rows survive untouched.
 - No backfill is needed: a Ticket with zero Actions Taken is valid (legacy Tickets
   and newly created Tickets alike), and dashboards read Ticket fields only.

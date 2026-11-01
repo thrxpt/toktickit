@@ -1,7 +1,7 @@
 import request from "supertest";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import app from "../../src/app";
+import app from "../setup/test-app";
 import { seedReferenceData, users as seedUsers } from "../../prisma/seed-data";
 import { prisma } from "../../src/prisma";
 import { truncateTransactionalData } from "../setup/truncate";

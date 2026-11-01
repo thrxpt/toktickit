@@ -20,7 +20,6 @@ vi.mock("../../src/auth/useAuth", () => ({
     loading: false,
     logout: vi.fn(),
     refreshUser: vi.fn(),
-    isLegacyTest: false,
   }),
 }));
 

@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { attachmentFileExists, writeAttachmentFile } from "../../src/attachments/storage";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
@@ -41,6 +43,12 @@ describe("API-23 (Issue 24) — BR-26, BR-27 E2E cleanup baseline", () => {
       requestedPriority: "LOW", requesterId: demo.requesterId, categoryId: demo.categoryId, relatedSystemId: demo.relatedSystemId,
       actionsTaken: { create: { description: "E2E work", result: "Done", performedById: staff.id } },
     } });
+    const storageKey = randomUUID();
+    await writeAttachmentFile(storageKey, Buffer.from("%PDF-1.4 E2E cleanup"));
+    await prisma.attachment.create({ data: {
+      ticketId: e2e.id, uploadedById: demo.requesterId, storageKey,
+      originalFilename: "cleanup.pdf", mimeType: "application/pdf", sizeBytes: 20,
+    } });
     const temporaryPerformer = await prisma.user.create({ data: {
       name: "E2E temporary staff", email: "e2e.action-cleanup@example.test", passwordHash: "unused", role: "IT_STAFF",
     } });
@@ -52,6 +60,7 @@ describe("API-23 (Issue 24) — BR-26, BR-27 E2E cleanup baseline", () => {
       cwd: fileURLToPath(new URL("../..", import.meta.url)), env: process.env,
     });
     expect(await prisma.ticket.findUnique({ where: { id: e2e.id } })).toBeNull();
+    expect(await attachmentFileExists(storageKey)).toBe(false);
     expect(await prisma.actionTaken.count({ where: { ticketId: e2e.id } })).toBe(0);
     expect(await prisma.user.findUnique({ where: { id: temporaryPerformer.id } })).toBeNull();
     expect(await prisma.ticket.count()).toBe(8);

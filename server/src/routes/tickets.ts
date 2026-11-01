@@ -1,3 +1,4 @@
+import { validateSubmissionKey } from "../submissions";
 import { STATUS_GROUPS } from "../dashboard/status-groups";
 import express, { type Request, type Response } from "express";
 import { z } from "zod";
@@ -223,7 +224,7 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
 });
 
 // POST /api/tickets (FR-05, FR-06, BR-01, BR-02, BR-11, BR-12)
-ticketsRouter.post("/", rejectRequesterIdInBody, handleCreateTicket);
+ticketsRouter.post("/", rejectRequesterIdInBody, validateSubmissionKey, handleCreateTicket);
 
 // GET /api/tickets/:ticketId/attachments (FR-11, BR-07, BR-35, BR-39)
 ticketsRouter.get("/:ticketId/attachments", getTicketAttachments);
@@ -235,7 +236,7 @@ ticketsRouter.post("/:ticketId/attachments", ...postTicketAttachmentHandlers);
 ticketsRouter.get("/:id", async (req: Request, res: Response) => {
   const requesterId = req.requesterId;
   if (!requesterId) {
-    sendError(res, "REQUESTER_CONTEXT_MISSING");
+    sendError(res, "UNAUTHENTICATED");
     return;
   }
 
@@ -329,7 +330,7 @@ ticketsRouter.get("/:id", async (req: Request, res: Response) => {
 ticketsRouter.post("/:id/resolve-indication", async (req: Request, res: Response) => {
   const requesterId = req.requesterId;
   if (!requesterId) {
-    sendError(res, "REQUESTER_CONTEXT_MISSING");
+    sendError(res, "UNAUTHENTICATED");
     return;
   }
 

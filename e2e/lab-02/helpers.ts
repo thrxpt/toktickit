@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { login, logout } from "../lab-03/helpers";
 
 // Seeded active requesters (from server/prisma/seed-data.ts)
 export const REQUESTER_A = "Jennifer Anderson";
@@ -23,52 +24,22 @@ export const DISGUISED_BUFFER = Buffer.from(
   "This is plain text pretending to be a png file",
 );
 
-/**
- * Select a development requester from /select-requester.
- */
-export async function selectRequester(
-  page: Page,
-  requesterName: string,
-): Promise<void> {
-  await page.goto("/select-requester");
-  const selectLocator = page.locator("#requester-select");
-  await expect(selectLocator).toBeVisible();
-  await expect(selectLocator).not.toBeDisabled();
-  const optionValue = await selectLocator
-    .locator("option")
-    .filter({ hasText: requesterName })
-    .first()
-    .getAttribute("value");
-  if (optionValue) {
-    await selectLocator.selectOption(optionValue);
-  }
-  await page.click('button[type="submit"]:has-text("Continue")');
-  await page.waitForURL("**/tickets");
+/** Log in through the session UI; preserve the Lab 2 Ticket journey. */
+export async function loginRequester(page: Page, requesterName: string): Promise<void> {
+  const emails: Record<string, string> = {
+    [REQUESTER_A]: "jennifer.anderson@example.ac.th",
+    [REQUESTER_B]: "marcus.chen@example.ac.th",
+    [REQUESTER_C]: "somchai.prasert@example.ac.th",
+    [REQUESTER_D]: "priya.raman@example.ac.th",
+  };
+  await login(page, emails[requesterName], "Password123!");
+  await page.waitForURL("**/dashboard");
+  await page.goto("/tickets");
 }
 
-/**
- * Change the development requester via the profile menu in the shell.
- */
-export async function switchRequester(
-  page: Page,
-  requesterName: string,
-): Promise<void> {
-  await page.click('button[aria-label="Requester profile"]');
-  await page.click("text=Change Requester");
-  await page.waitForURL("**/select-requester");
-  const selectLocator = page.locator("#requester-select");
-  await expect(selectLocator).toBeVisible();
-  await expect(selectLocator).not.toBeDisabled();
-  const optionValue = await selectLocator
-    .locator("option")
-    .filter({ hasText: requesterName })
-    .first()
-    .getAttribute("value");
-  if (optionValue) {
-    await selectLocator.selectOption(optionValue);
-  }
-  await page.click('button[type="submit"]:has-text("Continue")');
-  await page.waitForURL("**/tickets");
+export async function switchRequester(page: Page, requesterName: string): Promise<void> {
+  await logout(page);
+  await loginRequester(page, requesterName);
 }
 
 /**

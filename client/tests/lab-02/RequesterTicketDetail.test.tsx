@@ -3,8 +3,8 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import AppShell from '../../src/components/AppShell'
-import RequesterGuard from '../../src/components/RequesterGuard'
-import { RequesterProvider, STORAGE_KEY } from '../../src/context/RequesterContext'
+import { RequireAuth } from "../../src/routes/RequireAuth";
+import { RequesterSession } from "../helpers/RequesterSession";
 import RequesterTicketDetail from '../../src/pages/RequesterTicketDetail'
 
 const mockRequesters = [
@@ -14,6 +14,7 @@ const mockRequesters = [
 
 const mockTicketDetail = {
   id: 42,
+  version: 0,
   ticketNumber: 'TKT-2026-000042',
   summary: 'Laptop battery drains quickly',
   description: 'Line 1: My laptop battery is draining.\nLine 2: Even when idle.',
@@ -33,12 +34,12 @@ const mockTicketDetail = {
 function renderTicketDetail(ticketId = '42') {
   return render(
     <MemoryRouter initialEntries={[`/tickets/${ticketId}`]}>
-      <RequesterProvider>
+      <RequesterSession>
         <Routes>
           <Route
             path="/tickets/:id"
             element={
-              <RequesterGuard>
+              <RequireAuth>
                 <AppShell
                   breadcrumbs={[
                     { label: 'My Tickets', to: '/tickets' },
@@ -47,20 +48,19 @@ function renderTicketDetail(ticketId = '42') {
                 >
                   <RequesterTicketDetail />
                 </AppShell>
-              </RequesterGuard>
+              </RequireAuth>
             }
           />
           <Route path="/tickets" element={<div>My Tickets Page</div>} />
           <Route path="/select-requester" element={<div>Select Requester Page</div>} />
         </Routes>
-      </RequesterProvider>
+      </RequesterSession>
     </MemoryRouter>,
   )
 }
 
 describe('Ticket Detail Screen (Issue 11)', () => {
   beforeEach(() => {
-    localStorage.setItem(STORAGE_KEY, '1')
   })
 
   afterEach(() => {
@@ -72,10 +72,10 @@ describe('Ticket Detail Screen (Issue 11)', () => {
     it('renders all ticket fields in read-only presentation and no editable controls exist', async () => {
       globalThis.fetch = vi.fn().mockImplementation((input: string | URL | Request) => {
         const url = typeof input === 'string' ? input : input.toString()
-        if (url === '/api/requesters') {
+        if (url === '/api/auth/me') {
           return Promise.resolve({
             ok: true,
-            json: async () => mockRequesters,
+            json: async () => ({ user: mockRequesters[0] }),
           } as Response)
         }
         if (url === '/api/tickets/42') {
@@ -85,6 +85,7 @@ describe('Ticket Detail Screen (Issue 11)', () => {
             json: async () => mockTicketDetail,
           } as Response)
         }
+        if (url.endsWith('/comments') || url.endsWith('/actions')) return Promise.resolve({ ok: true, json: async () => [] } as Response)
         return Promise.reject(new Error(`Unhandled request: ${url}`))
       })
 
@@ -116,7 +117,7 @@ describe('Ticket Detail Screen (Issue 11)', () => {
       expect(screen.getByText('Related System')).toBeInTheDocument()
       expect(screen.getByText('Corporate Laptop')).toBeInTheDocument()
 
-      expect(screen.getByText('Requester')).toBeInTheDocument()
+      expect(screen.getByText('Requester', { selector: '.form-label' })).toBeInTheDocument()
       expect(screen.getAllByText('Jennifer Anderson').length).toBeGreaterThanOrEqual(1)
 
       expect(screen.getByText('Requested Priority')).toBeInTheDocument()
@@ -136,8 +137,8 @@ describe('Ticket Detail Screen (Issue 11)', () => {
         ),
       ).toBeInTheDocument()
 
-      // AC-29, STYLE-03: No editable controls (no textbox, combobox, spinbutton)
-      expect(screen.queryAllByRole('textbox')).toHaveLength(0)
+      // AC-29: Ticket fields stay read-only; Lab 3 adds the separate discussion editor.
+      expect(screen.getAllByRole('textbox')).toEqual([screen.getByRole('textbox', { name: 'Add Public Comment' })])
       expect(screen.queryAllByRole('combobox')).toHaveLength(0)
       expect(screen.queryAllByRole('spinbutton')).toHaveLength(0)
     })
@@ -150,10 +151,10 @@ describe('Ticket Detail Screen (Issue 11)', () => {
 
       globalThis.fetch = vi.fn().mockImplementation((input: string | URL | Request) => {
         const url = typeof input === 'string' ? input : input.toString()
-        if (url === '/api/requesters') {
+        if (url === '/api/auth/me') {
           return Promise.resolve({
             ok: true,
-            json: async () => mockRequesters,
+            json: async () => ({ user: mockRequesters[0] }),
           } as Response)
         }
         if (url === '/api/tickets/99') {
@@ -168,6 +169,7 @@ describe('Ticket Detail Screen (Issue 11)', () => {
             }),
           } as Response)
         }
+        if (url.endsWith('/comments') || url.endsWith('/actions')) return Promise.resolve({ ok: true, json: async () => [] } as Response)
         return Promise.reject(new Error(`Unhandled request: ${url}`))
       })
 
@@ -193,10 +195,10 @@ describe('Ticket Detail Screen (Issue 11)', () => {
       let callCount = 0
       globalThis.fetch = vi.fn().mockImplementation((input: string | URL | Request) => {
         const url = typeof input === 'string' ? input : input.toString()
-        if (url === '/api/requesters') {
+        if (url === '/api/auth/me') {
           return Promise.resolve({
             ok: true,
-            json: async () => mockRequesters,
+            json: async () => ({ user: mockRequesters[0] }),
           } as Response)
         }
         if (url === '/api/tickets/42') {
@@ -219,6 +221,7 @@ describe('Ticket Detail Screen (Issue 11)', () => {
             json: async () => mockTicketDetail,
           } as Response)
         }
+        if (url.endsWith('/comments') || url.endsWith('/actions')) return Promise.resolve({ ok: true, json: async () => [] } as Response)
         return Promise.reject(new Error(`Unhandled request: ${url}`))
       })
 

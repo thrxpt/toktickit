@@ -1,7 +1,8 @@
 import request from "supertest";
+import { requesterSession } from "../setup/requester-session";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
-import app from "../../src/app";
+import app from "../setup/test-app";
 import { prisma } from "../../src/prisma";
 import { truncateTransactionalData } from "../setup/truncate";
 
@@ -16,7 +17,7 @@ afterAll(async () => {
 // Helper to retrieve seeded reference data for test fixtures
 async function getTestFixtures() {
   const requesters = await prisma.requester.findMany({
-    where: { isActive: true },
+    where: { role: "REQUESTER", mustChangePassword: false, isActive: true },
     orderBy: { email: "asc" },
   });
   const requesterA = requesters[0]; // e.g. Jennifer Anderson
@@ -73,7 +74,7 @@ describe("API-09 — 14 owned Tickets, default paging (AC-19)", () => {
 
     const response = await request(app)
       .get("/api/tickets")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(10);
@@ -143,7 +144,7 @@ describe("API-10 — Requester B lists tickets, isolation (AC-20, BR-07)", () =>
     // 1. Default listing for B
     const resDefault = await request(app)
       .get("/api/tickets")
-      .set("X-Requester-Id", String(requesterB.id));
+      .set("Cookie", await requesterSession(requesterB.id));
     expect(resDefault.status).toBe(200);
     expect(resDefault.body.data).toHaveLength(2);
     expect(resDefault.body.meta.totalItems).toBe(2);
@@ -156,7 +157,7 @@ describe("API-10 — Requester B lists tickets, isolation (AC-20, BR-07)", () =>
     // 2. Search query matching A's tickets ("Laptop")
     const resSearch = await request(app)
       .get("/api/tickets?search=Laptop")
-      .set("X-Requester-Id", String(requesterB.id));
+      .set("Cookie", await requesterSession(requesterB.id));
     expect(resSearch.status).toBe(200);
     expect(resSearch.body.data).toHaveLength(0);
     expect(resSearch.body.meta.totalItems).toBe(0);
@@ -164,7 +165,7 @@ describe("API-10 — Requester B lists tickets, isolation (AC-20, BR-07)", () =>
     // 3. Search query matching A's ticket number
     const resSearchNum = await request(app)
       .get("/api/tickets?search=TKT-2026-000101")
-      .set("X-Requester-Id", String(requesterB.id));
+      .set("Cookie", await requesterSession(requesterB.id));
     expect(resSearchNum.status).toBe(200);
     expect(resSearchNum.body.data).toHaveLength(0);
     expect(resSearchNum.body.meta.totalItems).toBe(0);
@@ -172,7 +173,7 @@ describe("API-10 — Requester B lists tickets, isolation (AC-20, BR-07)", () =>
     // 4. Category filter matching A's category
     const resCat = await request(app)
       .get(`/api/tickets?categoryId=${catHardware.id}`)
-      .set("X-Requester-Id", String(requesterB.id));
+      .set("Cookie", await requesterSession(requesterB.id));
     expect(resCat.status).toBe(200);
     expect(resCat.body.data).toHaveLength(0);
     expect(resCat.body.meta.totalItems).toBe(0);
@@ -180,7 +181,7 @@ describe("API-10 — Requester B lists tickets, isolation (AC-20, BR-07)", () =>
     // 5. Priority filter matching A's priority (HIGH)
     const resPrio = await request(app)
       .get("/api/tickets?requestedPriority=HIGH")
-      .set("X-Requester-Id", String(requesterB.id));
+      .set("Cookie", await requesterSession(requesterB.id));
     expect(resPrio.status).toBe(200);
     expect(resPrio.body.data).toHaveLength(0);
     expect(resPrio.body.meta.totalItems).toBe(0);
@@ -188,7 +189,7 @@ describe("API-10 — Requester B lists tickets, isolation (AC-20, BR-07)", () =>
     // 6. Sorting
     const resSort = await request(app)
       .get("/api/tickets?sort=ticketNumber&order=asc")
-      .set("X-Requester-Id", String(requesterB.id));
+      .set("Cookie", await requesterSession(requesterB.id));
     expect(resSort.status).toBe(200);
     expect(resSort.body.data).toHaveLength(2);
     expect(
@@ -241,7 +242,7 @@ describe("API-11 — Search by Ticket Number and Summary substring (AC-21, BR-26
     // Substring match on summary (case-insensitive)
     const resSummary = await request(app)
       .get("/api/tickets?search=fLiCkEr")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
     expect(resSummary.status).toBe(200);
     expect(resSummary.body.data).toHaveLength(1);
     expect(resSummary.body.data[0].ticketNumber).toBe("TKT-2026-000002");
@@ -249,7 +250,7 @@ describe("API-11 — Search by Ticket Number and Summary substring (AC-21, BR-26
     // Substring match on ticket number (case-insensitive)
     const resNumber = await request(app)
       .get("/api/tickets?search=tkt-2026-000003")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
     expect(resNumber.status).toBe(200);
     expect(resNumber.body.data).toHaveLength(1);
     expect(resNumber.body.data[0].summary).toBe("Keyboard replacement for laptop");
@@ -257,7 +258,7 @@ describe("API-11 — Search by Ticket Number and Summary substring (AC-21, BR-26
     // Partial ticket number
     const resPartial = await request(app)
       .get("/api/tickets?search=000001")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
     expect(resPartial.status).toBe(200);
     expect(resPartial.body.data).toHaveLength(1);
     expect(resPartial.body.data[0].ticketNumber).toBe("TKT-2026-000001");
@@ -317,7 +318,7 @@ describe("API-12 — Category filter and combined filters (AC-24, BR-27)", () =>
     // 1. Filter by category only
     const resCat = await request(app)
       .get(`/api/tickets?categoryId=${catHardware.id}`)
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
     expect(resCat.status).toBe(200);
     expect(resCat.body.data).toHaveLength(2);
     expect(
@@ -331,7 +332,7 @@ describe("API-12 — Category filter and combined filters (AC-24, BR-27)", () =>
       .get(
         `/api/tickets?categoryId=${catHardware.id}&requestedPriority=HIGH&status=NEW`,
       )
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
     expect(resCombined.status).toBe(200);
     expect(resCombined.body.data).toHaveLength(1);
     expect(resCombined.body.data[0].ticketNumber).toBe("TKT-2026-000011");
@@ -341,7 +342,7 @@ describe("API-12 — Category filter and combined filters (AC-24, BR-27)", () =>
       .get(
         `/api/tickets?search=High&categoryId=${catSoftware.id}&requestedPriority=HIGH&status=NEW`,
       )
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
     expect(resAll.status).toBe(200);
     expect(resAll.body.data).toHaveLength(1);
     expect(resAll.body.data[0].ticketNumber).toBe("TKT-2026-000013");
@@ -383,7 +384,7 @@ describe("API-13 — Sorting by ticketNumber and defaults (AC-25, BR-28)", () =>
     // Default sorting: createdAt desc (t2 then t1)
     const resDefault = await request(app)
       .get("/api/tickets")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
     expect(resDefault.status).toBe(200);
     expect(resDefault.body.data[0].id).toBe(t2.id);
     expect(resDefault.body.data[1].id).toBe(t1.id);
@@ -391,7 +392,7 @@ describe("API-13 — Sorting by ticketNumber and defaults (AC-25, BR-28)", () =>
     // Explicit sorting: ticketNumber asc (t2 then t1)
     const resSortNum = await request(app)
       .get("/api/tickets?sort=ticketNumber&order=asc")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
     expect(resSortNum.status).toBe(200);
     expect(resSortNum.body.data[0].id).toBe(t2.id);
     expect(resSortNum.body.data[1].id).toBe(t1.id);
@@ -399,7 +400,7 @@ describe("API-13 — Sorting by ticketNumber and defaults (AC-25, BR-28)", () =>
     // Explicit sorting: ticketNumber desc (t1 then t2)
     const resSortNumDesc = await request(app)
       .get("/api/tickets?sort=ticketNumber&order=desc")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
     expect(resSortNumDesc.status).toBe(200);
     expect(resSortNumDesc.body.data[0].id).toBe(t1.id);
     expect(resSortNumDesc.body.data[1].id).toBe(t2.id);
@@ -434,7 +435,7 @@ describe("API-14 — Two Tickets sharing createdAt, stable paging (AC-28, BR-28)
     // Fetch page 1 (pageSize=2)
     const resPage1 = await request(app)
       .get("/api/tickets?page=1&pageSize=10") // we can test with 3 tickets and check secondary sort
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
     expect(resPage1.status).toBe(200);
 
     // Because secondary sort is id desc, order must be tickets[2], tickets[1], tickets[0]
@@ -462,13 +463,13 @@ describe("API-14 — Two Tickets sharing createdAt, stable paging (AC-28, BR-28)
 
     const p1 = await request(app)
       .get("/api/tickets?page=1&pageSize=10")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
     expect(p1.status).toBe(200);
     expect(p1.body.data).toHaveLength(10);
 
     const p2 = await request(app)
       .get("/api/tickets?page=2&pageSize=10")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
     expect(p2.status).toBe(200);
     expect(p2.body.data).toHaveLength(5);
 
@@ -492,7 +493,7 @@ describe("API-15 — Strict parameter validation (AC-26, BR-30)", () => {
 
     const response = await request(app)
       .get("/api/tickets?pageSize=7")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
@@ -511,7 +512,7 @@ describe("API-15 — Strict parameter validation (AC-26, BR-30)", () => {
 
     const response = await request(app)
       .get("/api/tickets?unknownParam=xyz")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
@@ -530,7 +531,7 @@ describe("API-15 — Strict parameter validation (AC-26, BR-30)", () => {
 
     const response = await request(app)
       .get("/api/tickets?requesterId=2")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe("INVALID_QUERY_PARAMETER");
@@ -543,7 +544,7 @@ describe("API-15 — Strict parameter validation (AC-26, BR-30)", () => {
 
     const response = await request(app)
       .get(`/api/tickets?search=${longSearch}`)
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe("INVALID_QUERY_PARAMETER");
@@ -555,7 +556,7 @@ describe("API-15 — Strict parameter validation (AC-26, BR-30)", () => {
 
     const response = await request(app)
       .get("/api/tickets?page=0")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe("INVALID_QUERY_PARAMETER");
@@ -567,7 +568,7 @@ describe("API-15 — Strict parameter validation (AC-26, BR-30)", () => {
 
     const response = await request(app)
       .get("/api/tickets?categoryId=999999")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe("INVALID_QUERY_PARAMETER");
@@ -579,7 +580,7 @@ describe("API-15 — Strict parameter validation (AC-26, BR-30)", () => {
 
     const response = await request(app)
       .get("/api/tickets?requestedPriority=URGENT")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe("INVALID_QUERY_PARAMETER");
@@ -610,7 +611,7 @@ describe("API-16 — Page beyond the last (AC-27, BR-29)", () => {
     // Page 5 with pageSize 10 when only 3 items exist
     const response = await request(app)
       .get("/api/tickets?page=5&pageSize=10")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(response.status).toBe(200);
     expect(response.body.data).toEqual([]);
@@ -627,7 +628,7 @@ describe("API-16 — Page beyond the last (AC-27, BR-29)", () => {
 
     const response = await request(app)
       .get("/api/tickets")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(response.status).toBe(200);
     expect(response.body.data).toEqual([]);

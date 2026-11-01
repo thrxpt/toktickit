@@ -1,7 +1,8 @@
 import request from "supertest";
+import { requesterSession } from "../setup/requester-session";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
-import app from "../../src/app";
+import app from "../setup/test-app";
 import { prisma } from "../../src/prisma";
 import { truncateTransactionalData } from "../setup/truncate";
 
@@ -15,7 +16,7 @@ afterAll(async () => {
 
 async function getTestFixtures() {
   const requesters = await prisma.requester.findMany({
-    where: { isActive: true },
+    where: { role: "REQUESTER", mustChangePassword: false, isActive: true },
     orderBy: { email: "asc" },
   });
   const requesterA = requesters[0];
@@ -64,12 +65,13 @@ describe("API-17 — Fetch an owned Ticket (AC-29)", () => {
 
     const response = await request(app)
       .get(`/api/tickets/${created.id}`)
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       id: created.id,
       version: 0,
+      resolvedByRequester: false,
       ticketNumber: "TKT-2026-000042",
       summary: "Laptop battery drains quickly",
       description:
@@ -144,7 +146,7 @@ describe("API-17 — Fetch an owned Ticket (AC-29)", () => {
 
     const response = await request(app)
       .get(`/api/tickets/${created.id}`)
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(response.status).toBe(200);
     expect(response.body.attachments).toEqual({
@@ -214,18 +216,18 @@ describe("API-18 — Fetch another Requester's Ticket (AC-30, BR-08)", () => {
     // Requester A attempts to fetch Requester B's ticket
     const unownedResponse = await request(app)
       .get(`/api/tickets/${ticketB.id}`)
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     // Requester A attempts to fetch a nonexistent ticket id
     const nonexistentId = 999999;
     const missingResponse = await request(app)
       .get(`/api/tickets/${nonexistentId}`)
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     // Non-numeric id should also return the exact same 404 body
     const nonNumericResponse = await request(app)
       .get("/api/tickets/invalid-id")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set("Cookie", await requesterSession(requesterA.id));
 
     expect(unownedResponse.status).toBe(404);
     expect(missingResponse.status).toBe(404);

@@ -1,3 +1,4 @@
+import { createOnce, submissionKey } from "../submissions";
 import type { Request, Response } from "express";
 
 import { sendError } from "../errors";
@@ -15,7 +16,7 @@ export async function handleCreateTicket(req: Request, res: Response): Promise<v
   const data = parseResult.data;
   const requesterId = req.requesterId;
   if (!requesterId) {
-    sendError(res, "REQUESTER_CONTEXT_MISSING");
+    sendError(res, "UNAUTHENTICATED");
     return;
   }
 
@@ -48,31 +49,36 @@ export async function handleCreateTicket(req: Request, res: Response): Promise<v
       return;
     }
 
-    const ticket = await prisma.$transaction(async (tx) => {
-      const seqRows = await tx.$queryRaw<{ nextval: bigint | number | string }[]>`
-        SELECT nextval('ticket_number_seq')
-      `;
-      const nextVal = Number(seqRows[0].nextval);
-      const ticketNumber = formatTicketNumber(nextVal, new Date().getFullYear());
+    const key = submissionKey(req, data);
+    const include = {
+      category: { select: { id: true, name: true } },
+      relatedSystem: { select: { id: true, name: true } },
+      requester: { select: { id: true, name: true } },
+    } as const;
+    const ticket = await createOnce(key,
+      () => prisma.ticket.findUnique({ where: { submissionKey: key! }, include }),
+      () => prisma.$transaction(async (tx) => {
+        const seqRows = await tx.$queryRaw<{ nextval: bigint | number | string }[]>`
+          SELECT nextval('ticket_number_seq')
+        `;
+        const nextVal = Number(seqRows[0].nextval);
+        const ticketNumber = formatTicketNumber(nextVal, new Date().getFullYear());
 
-      return await tx.ticket.create({
-        data: {
-          ticketNumber,
-          requesterId,
-          categoryId: data.categoryId,
-          relatedSystemId: data.relatedSystemId,
-          summary: data.summary,
-          description: data.description,
-          requestedPriority: data.requestedPriority,
-          status: "NEW",
-        },
-        include: {
-          category: { select: { id: true, name: true } },
-          relatedSystem: { select: { id: true, name: true } },
-          requester: { select: { id: true, name: true } },
-        },
-      });
-    });
+        return await tx.ticket.create({
+          data: {
+            ticketNumber,
+            submissionKey: key,
+            requesterId,
+            categoryId: data.categoryId,
+            relatedSystemId: data.relatedSystemId,
+            summary: data.summary,
+            description: data.description,
+            requestedPriority: data.requestedPriority,
+            status: "NEW",
+          },
+          include,
+        });
+    }));
 
     res.setHeader("Location", `/api/tickets/${ticket.id}`);
     res.status(201).json({

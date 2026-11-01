@@ -7,9 +7,17 @@
 
 | PR | Branch | Reviewer verdict |
 | --- | --- | --- |
-| [#56](https://github.com/thrxpt/toktickit/pull/56) | feature/22-lab4-contract | Changes requested; follow-up awaiting re-review |
-| [#59](https://github.com/thrxpt/toktickit/pull/59) | feature/25-actions-taken-ui | Commented: fix focus and duplicate-submit coverage before merge; follow-up awaiting re-review |
-| [#61](https://github.com/thrxpt/toktickit/pull/61) | feature/26-ticket-workflow | Changes requested: assignment reachability and UNIT-02 evidence; follow-up awaiting re-review |
+| [#56](https://github.com/thrxpt/toktickit/pull/56) | feature/22-lab4-contract | Approved and merged (latest GitHub state checked 2026-11-01) |
+| [#59](https://github.com/thrxpt/toktickit/pull/59) | feature/25-actions-taken-ui | Approved and merged (latest GitHub state checked 2026-11-01) |
+| [#61](https://github.com/thrxpt/toktickit/pull/61) | feature/26-ticket-workflow | Approved and merged (latest GitHub state checked 2026-11-01) |
+
+Current GitHub state (2026-11-01) also confirms [#57](https://github.com/thrxpt/toktickit/pull/57),
+[#58](https://github.com/thrxpt/toktickit/pull/58), and
+[#60](https://github.com/thrxpt/toktickit/pull/60) are **APPROVED / MERGED** into
+`lab4-staging`. Earlier change-request narratives below are historical records;
+they do not override these later peer verdicts. Issues #49–#54 are closed.
+Issue #55's implementation and release PRs still require human review and the
+integration-branch verification described in [release.md](release.md).
 
 ---
 
