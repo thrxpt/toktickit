@@ -53,7 +53,11 @@ existing development database. The README setup probe uses separate
 database. API-29 proves concurrent and sequential replay, no duplicate bytes,
 no internal-key exposure, session isolation, and a replay at the file limit.
 E2E-04 commits upstream, deliberately loses the response, retries from the UI,
-and checks one Ticket and one Attachment per File.
+and checks one Ticket and one Attachment per File. The final full browser
+run passed all 29 cases; the final mobile-target follow-up passed all three
+responsive cases again. A post-teardown query confirmed exactly 8 demo Tickets,
+4 Actions Taken, zero Attachments, zero temporary `e2e.` Users, and zero uploaded
+files in the isolated worktree.
 
 Initial combined runs exposed transient Supertest connection resets in different
 legacy files. Focused rechecks passed; sharing a listener per file removes the

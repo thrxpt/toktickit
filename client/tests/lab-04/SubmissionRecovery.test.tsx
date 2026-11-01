@@ -110,7 +110,7 @@ it("FR-19 — does not duplicate a replayed Comment already recovered by refresh
   fireEvent.change(screen.getByRole("textbox"), { target: { value: comment.content } });
   fireEvent.click(screen.getByRole("button", { name: "Post Comment" }));
   await screen.findByText("Unable to post comment. Please try again.");
-  fireEvent.click(screen.getByRole("button", { name: "Retry", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
   await screen.findByText(comment.content, { selector: "p" });
   fireEvent.click(screen.getByRole("button", { name: "Post Comment" }));
   await waitFor(() => expect(screen.getByRole("textbox")).toHaveValue(""));

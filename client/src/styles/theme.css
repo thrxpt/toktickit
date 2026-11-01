@@ -489,6 +489,7 @@ textarea.form-control {
   .form-select {
     min-height: 44px;
   }
+  .btn,
   .navbar-toggler,
   .btn-close {
     min-width: 44px;

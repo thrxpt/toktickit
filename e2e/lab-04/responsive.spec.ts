@@ -14,6 +14,13 @@ async function focusedCapture(page: Page, target: Locator, name: string, width: 
   if (width === 390 && await target.evaluate(el => el.matches("button, input, textarea, select"))) {
     expect((await target.boundingBox())!.height, `${name} touch height`).toBeGreaterThanOrEqual(44);
   }
+  if (width === 390) {
+    for (const profile of await page.getByRole("button", { name: "User profile" }).all()) {
+      const box = await profile.boundingBox();
+      expect(box!.width, "profile touch width").toBeGreaterThanOrEqual(44);
+      expect(box!.height, "profile touch height").toBeGreaterThanOrEqual(44);
+    }
+  }
   await page.screenshot({ path: `artifacts/lab-04/screenshots/release/${name}-${width}.png`, fullPage: name !== "user-editor" });
 }
 
