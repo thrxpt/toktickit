@@ -13,19 +13,20 @@
 | 25 ([#52](https://github.com/thrxpt/toktickit/issues/52)) | [#59](https://github.com/thrxpt/toktickit/pull/59) | feature/25-actions-taken-ui | [Approved, 2026-10-31](https://github.com/thrxpt/toktickit/pull/59#pullrequestreview-5722170413) | Merged 2026-10-31 |
 | 26 ([#53](https://github.com/thrxpt/toktickit/issues/53)) | [#61](https://github.com/thrxpt/toktickit/pull/61) | feature/26-ticket-workflow | [Approved, 2026-10-31](https://github.com/thrxpt/toktickit/pull/61#pullrequestreview-5724299806) | Merged 2026-10-31 |
 | 27 ([#54](https://github.com/thrxpt/toktickit/issues/54)) | [#60](https://github.com/thrxpt/toktickit/pull/60) | feature/27-role-dashboards | [Approved, 2026-11-01](https://github.com/thrxpt/toktickit/pull/60#pullrequestreview-5727849545) | Merged 2026-11-01 |
-| 28 ([#55](https://github.com/thrxpt/toktickit/issues/55)) | [#62](https://github.com/thrxpt/toktickit/pull/62) | feat/final-release | [Commented, 2026-11-01](https://github.com/thrxpt/toktickit/pull/62#pullrequestreview-5728702889) — re-review pending | Open |
+| 28 ([#55](https://github.com/thrxpt/toktickit/issues/55)) | [#62](https://github.com/thrxpt/toktickit/pull/62) | feat/final-release | [Approved, 2026-11-01](https://github.com/thrxpt/toktickit/pull/62#pullrequestreview-5728819835) | Merged 2026-11-01 |
 
 Checked against GitHub PR metadata and submitted reviews on **2026-11-01**.
-Ordered by repository Issue 22–28 (GitHub #49–#55). This table covers every
-authored Lab 4 PR targeting `lab4-staging`; earlier labs
+Ordered by repository Issue 22–28 (GitHub #49–#55). This table covers the seven
+authored Lab 4 contract/implementation PRs targeting `lab4-staging`; earlier labs
 keep their own review records. Approval links above point to @fahsai-02's actual
 submitted verdicts. Merge dates are UTC and are recorded separately from approval.
 
 The change-request and follow-up narratives below are historical snapshots; their
 then-pending statements do not override the later approval records. Issues
-#49–#54 are closed. [PR #62](https://github.com/thrxpt/toktickit/pull/62) implements
-Issue 28 / #55 and remains open with a human COMMENTED review. Integration verification
-and the reviewed release into `main` remain the gates in [release.md](release.md).
+#49–#55 and parent #48 are closed on GitHub. PR #62 was approved and merged into
+`lab4-staging`; [release PR #63](https://github.com/thrxpt/toktickit/pull/63) was
+approved and merged into `main`. Documentation PR #64 remains a separate reviewed
+follow-up. [release.md](release.md) records execution evidence and outstanding gates.
 
 ---
 
@@ -274,10 +275,10 @@ recorded development-credential failure was local; verification passed against
 handling and draft recovery (FR-19, FR-20, BR-33), verify regression and responsive
 accessibility, capture visual evidence, and update setup/demo/release records.
 
-**Latest reviewer verdict:** [COMMENTED by @fahsai-02, 2026-11-01](https://github.com/thrxpt/toktickit/pull/62#pullrequestreview-5728702889)
-on `1a53155`, requesting the first four findings before merge. The PR remains open
-against `lab4-staging`; no approval or release is claimed. The earlier automated
-Standards/Spec checks missed defects found by this human review.
+**Initial reviewer verdict:** [COMMENTED by @fahsai-02, 2026-11-01](https://github.com/thrxpt/toktickit/pull/62#pullrequestreview-5728702889)
+on `1a53155`, requesting the first four findings before merge. The earlier automated
+Standards/Spec checks missed defects found by this human review. The approval below
+supersedes this initial verdict.
 
 | Inline comment | Fact-check and response |
 | --- | --- |
@@ -308,8 +309,72 @@ the full command results. The fixed review base remains `1ae9137`.
 > cancellation already succeeds. Regression tests cover the corrected cases;
 > release.md records final verification. Please re-review the follow-up before merge.
 
-This local record is not a GitHub reply or a new reviewer verdict. Human re-review,
-staging verification, and the reviewed release into `main` remain open.
+The draft above was not posted as a GitHub reply. The subsequent submitted human
+approval is recorded below.
+
+**Latest reviewer verdict:** [Approved by @fahsai-02, 2026-11-01](https://github.com/thrxpt/toktickit/pull/62#pullrequestreview-5728819835)
+on `59c15da7d5aa201d396adf260adeb80fc4e6474f`. The reviewer checked out the branch,
+ran `pnpm test` (**337 server + 189 client passing**) and `pnpm build`, and confirmed
+the submission-key migration applies cleanly. Their review confirms session-only
+identity (BR-30), database-arbitrated retry handling (FR-19/BR-33), Ticket locking
+for the five-Attachment limit (BR-35), and additive migration/record-preserving
+submission-key reversal. Prisma column alignment remains a non-blocking nit.
+The reviewer did not claim a new E2E run and explicitly required post-merge
+staging verification for AC-22 / REG-01.
+
+**Merge:** PR #62 merged into `lab4-staging` on **2026-11-01 at 15:29:50 UTC**,
+producing `e26f6bd10decf31ba7494da217ddd9828ed2b5dd`. This completes the feature
+peer-review gate; the staging-to-main release requires its own peer verdict.
+
+---
+
+## Lab 4 release PR — #63
+
+**Pull Request URL:** <https://github.com/thrxpt/toktickit/pull/63>
+
+**Direction:** `lab4-staging` → `main`. References Issue 28 /
+[#55](https://github.com/thrxpt/toktickit/issues/55). Parent
+[#48](https://github.com/thrxpt/toktickit/issues/48) closed automatically when this
+release merged.
+
+**Latest peer verdict:** [Approved by @fahsai-02, 2026-11-01](https://github.com/thrxpt/toktickit/pull/63#pullrequestreview-5728892082)
+on `e26f6bd10decf31ba7494da217ddd9828ed2b5dd` at **15:49:41 UTC**. This is a
+separate approval of the release PR, in addition to the earlier #62 approval.
+The submitted review does not claim an additional test run.
+
+**Merge:** PR #63 merged into `main` on **2026-11-01 at 15:49:53 UTC**, producing
+`8ff194ccc3b686b30d64e29aada292a7c9c3b07b`. Parent #48 closed at 15:49:55 UTC.
+
+**Post-merge staging verification (2026-11-01):** tested
+`e26f6bd10decf31ba7494da217ddd9828ed2b5dd` after #62 merged. `pnpm test` passed
+**337 server + 189 client = 526 tests**, zero skipped. `CI=1 pnpm test:e2e` passed
+**29 Chromium cases**, zero skipped, across Labs 2–4 (38.6 s). `pnpm build` passed
+root E2E typechecking and both package builds. Node 24.18.0 / pnpm 11.20.0 with
+`NODE_OPTIONS=--no-experimental-webstorage`; API and browser runs used the fresh,
+isolated `toktickit_release_pr_test` sequentially. The harness applied all seven
+migrations and seeded it; browser teardown restored the demo baseline. This is
+agent execution evidence for AC-22 / REG-01, separate from human peer review.
+
+**Released-head verification (2026-11-01):** checked out the actual `main` merge
+`8ff194c` and reran the full commands: **526 unit/API/UI/style tests** and
+**29 Chromium E2E cases** passed, zero skipped; `pnpm build` passed. The committed
+tree also matches the verified staging tree exactly. This is agent execution
+evidence, not a test claim attributed to the peer reviewer. See
+[release.md](release.md) for runtime, database isolation and recovery details.
+
+### Documentation follow-up — #64
+
+**Pull Request URL:** <https://github.com/thrxpt/toktickit/pull/64>
+
+**Direction:** `docs/lab4-release-review-record` → `lab4-staging`; linked to
+Issue 28 / [#55](https://github.com/thrxpt/toktickit/issues/55).
+
+**Peer verdict:** Pending. PR #63 merged before this documentation PR. The original
+application release is approved, merged and verified; its review records still
+need to reach `main`. After #64 receives peer approval and merges into staging,
+a separate documentation-only `lab4-staging` → `main` PR will carry these records.
+Neither integration branch is advanced directly, and no approval of this follow-up
+is implied by the earlier release approval.
 
 ---
 
