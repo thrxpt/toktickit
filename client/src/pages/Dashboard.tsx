@@ -93,13 +93,6 @@ export default function Dashboard() {
               ? "You do not have access to this dashboard."
               : "Unable to load the dashboard. Please try again."
           }
-          action={
-            state === "error" ? (
-              <button className="btn btn-primary" onClick={reload}>
-                Try Again
-              </button>
-            ) : undefined
-          }
         />
       )}
       {state === "ready" && data && (

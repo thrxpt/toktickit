@@ -1,9 +1,9 @@
-import { dashboardRouter } from "./dashboard/dashboard.router";
 import { actionsTakenRouter } from "./routes/actions-taken";
 import cookieParser from "cookie-parser";
 import express, { type Response } from "express";
 
 import { sendError } from "./errors";
+import { dashboardRouter } from "./dashboard/dashboard.router";
 import { requireAuth, requireRole } from "./middleware/auth";
 import { prisma } from "./prisma";
 import { attachmentsRouter } from "./routes/attachments";

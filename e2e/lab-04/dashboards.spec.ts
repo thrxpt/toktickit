@@ -1,9 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { createTicket, VALID_PNG_BUFFER } from "../lab-02/helpers";
 import { login, logout, TEST_USERS } from "../lab-03/helpers";
 
 test("E2E-03 — AC-12–AC-16: role dashboards drill into filtered collections", async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
   await login(page, TEST_USERS.requester.email, TEST_USERS.requester.password);
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(
@@ -23,6 +25,22 @@ test("E2E-03 — AC-12–AC-16: role dashboards drill into filtered collections"
     /statusGroup=resolved&sort=updatedAt&order=desc/,
   );
   await expect(page.getByRole("alert")).toHaveCount(0);
+  const ticket = await createTicket(page, {
+    summary: "E2E Dashboard Attachment Download",
+  });
+  const attachment = await page.request.post(
+    `/api/tickets/${ticket.ticketId}/attachments`,
+    {
+      multipart: {
+        file: {
+          name: "dashboard-evidence.png",
+          mimeType: "image/png",
+          buffer: VALID_PNG_BUFFER,
+        },
+      },
+    },
+  );
+  expect(attachment.status()).toBe(201);
   await logout(page);
 
   await login(page, TEST_USERS.staff.email, TEST_USERS.staff.password);
@@ -38,6 +56,23 @@ test("E2E-03 — AC-12–AC-16: role dashboards drill into filtered collections"
   await expect(
     page.getByRole("heading", { name: "Administration Dashboard" }),
   ).toBeVisible();
+  // AC-15, AC-23: dashboard Ticket links support operational attachment reads.
+  await page
+    .getByRole("region", { name: "Recently Updated" })
+    .getByRole("link")
+    .filter({ hasText: ticket.ticketNumber })
+    .click();
+  await expect(page).toHaveURL(`/staff/tickets/${ticket.ticketId}`);
+  await expect(
+    page.getByText("dashboard-evidence.png", { exact: true }),
+  ).toBeVisible();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("link", { name: "Download", exact: true }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("dashboard-evidence.png");
+  expect(await download.failure()).toBeNull();
+  await page.goto("/dashboard");
   await page.getByRole("link", { name: /^REQUESTER,/ }).click();
   await expect(page).toHaveURL(/admin\/users\?role=REQUESTER/);
   await expect(page.getByRole("combobox", { name: /role/i })).toHaveValue(
@@ -58,12 +93,12 @@ test("E2E-03 — AC-12–AC-16: role dashboards drill into filtered collections"
     page.getByRole("heading", { name: "Accounts", exact: true }),
   ).toBeVisible();
   await page.screenshot({
-    path: "/tmp/toktickit-dashboard-desktop.png",
+    path: "artifacts/lab-04/screenshots/dashboards/admin-1280.png",
     fullPage: true,
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({
-    path: "/tmp/toktickit-dashboard-mobile.png",
+    path: "artifacts/lab-04/screenshots/dashboards/admin-390.png",
     fullPage: true,
   });
   expect(

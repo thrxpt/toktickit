@@ -246,3 +246,25 @@ links, Administrator queue access, a zero-Ticket Requester, and mobile overflow.
 Desktop and 390 px mobile dashboard screenshots were visually inspected. The
 Impeccable mechanical detector returned no findings. Verification used a separate
 local PostgreSQL container; API tests used `toktickit_test`, never development data.
+
+### Issue 27 human review follow-up — #60
+
+User prompt: "Check my partner comment. If it's valid, you can fix."
+Fact-checked @fahsai-02's review on `aca4cab` against merged head `f303ed7`.
+The earlier merge already incorporated Administrator attachment access, active
+operational-role assignment targets, the dedicated Lab 4 Playwright configuration,
+and both Issues' documentation. Restored the default Lab 3 E2E discovery scope;
+the legacy identity retirement remains with Issue 28.
+
+Two rendered assertions failed for skipped metric heading levels and duplicate
+retry controls before the fixes. Metric labels now use caption paragraphs, and
+the accessible error summary retains per-card retry without a second page retry.
+Applied the specific formatting requests. Extended E2E-03 to follow an Administrator
+dashboard Ticket link and download its attachment, and saved its desktop/mobile
+screenshots as committed evidence. The review classifications and remaining
+read-committed consistency limitation are recorded in reviewer.md and tests.md.
+
+Verification: 23 focused client tests, the production build/root typecheck, and
+isolated headless Chromium E2E-03 passed. Screenshot inspection and the UI detector
+found no new layout or mechanical issues. No GitHub reply was posted; the human
+Changes Requested verdict still requires human re-review.

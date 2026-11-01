@@ -50,6 +50,12 @@ describe("UI-01, UI-03, UI-10, UI-12 — AC-13, AC-14, AC-15, AC-17", () => {
     expect(
       await screen.findByRole("link", { name: "Unassigned, 3, view list" }),
     ).toHaveAttribute("href", "/staff/queue?owner=unassigned");
+    expect(
+      screen.queryByRole("heading", { name: "Unassigned" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Owned by Me" }),
+    ).not.toBeInTheDocument();
     for (const status of Object.keys(metrics.byStatus))
       expect(
         screen.getByRole("link", {
@@ -75,7 +81,11 @@ describe("UI-01, UI-03, UI-10, UI-12 — AC-13, AC-14, AC-15, AC-17", () => {
     expect(
       screen.getByRole("status", { name: "Loading dashboard" }),
     ).toHaveAttribute("aria-busy", "true");
-    fireEvent.click(await screen.findByRole("button", { name: "Try Again" }));
+    await screen.findByRole("alert");
+    expect(
+      screen.queryByRole("button", { name: "Try Again" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retry Unassigned" }));
     await screen.findByText("You do not have access to this dashboard.");
     expect(
       screen.queryByRole("button", { name: "Try Again" }),

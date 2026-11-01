@@ -120,3 +120,41 @@ This record describes verified changes and their evidence. It is not a posted
 GitHub reply, approval, or claim that the reviewer has rerun Chromium. The review's
 minor observations about version-check precedence and existing feedback timers did
 not identify a new contract defect and remain unchanged.
+
+### feature/27-role-dashboards #60
+
+[@fahsai-02's review, 2026-10-31](https://github.com/thrxpt/toktickit/pull/60#pullrequestreview-5721594425)
+requested changes on `aca4cab`. Follow-up checked the merged head `f303ed7` on
+2026-11-01 rather than assuming every finding still applied.
+
+| Item | Fact-check and response |
+| --- | --- |
+| B1 — Default E2E scope | **VALID scope regression; retirement premise premature.** The default config discovered legacy Lab 2 suites along with Labs 3/4. The selector still exists on this head, and its retirement belongs to Issue 28, so the exact claimed failure was not assumed. Restored `testDir: ./e2e/lab-03`; the dedicated Lab 4 config still discovers all three Lab 4 files. The all-lab release run remains Issue 28 work. |
+| B2 — Administrator attachments | **OUTDATED.** `698fbdd`, incorporated by merge `f303ed7`, permits Administrator attachment content under BR-20/ADR-0010. The authorization test passed in the merge verification. Extended E2E-03 now follows the dashboard link into Ticket Detail and completes a real browser download as Administrator. |
+| B3 — Issue 25 conflicts | **OUTDATED.** Merge `f303ed7` resolved the conflicts, retained `playwright.lab4.config.ts`, and preserved both documentation histories. No history rewrite is needed. |
+| C1 — Duplicate retry | **VALID usability issue.** The rendered assertion first failed for the page-level Try Again button. Removed that duplicate control while preserving the safe error summary and contract-required per-card Retry controls (ui-spec.md §2). Retry still reaches the endpoint; forbidden responses expose no retry. |
+| C2 — Heading hierarchy | **VALID accessibility issue.** The rendered assertion reproduced `h3` captions directly after `h1`. Metric captions now use paragraphs with the same Bootstrap classes, matching the MetricCard caption contract and preserving section headings. |
+| C3 — Requester labels | **INCORRECT as described.** The Requester dashboard has Open Tickets and Waiting for You cards, followed by Recently Updated and Recently Resolved lists. It has neither a separate Open status card nor a Resolved Tickets card. Kept the specified labels. |
+| C4 — Concurrent metric consistency | **VALID limitation, non-blocking.** Default read-committed transactions do not provide a shared snapshot across statements. Documented that counts and lists can reflect different committed moments. The current contract requires authoritative backend calculations, not stronger isolation. |
+| C5 — Administrator assignees | **OUTDATED.** `cbc9250`, incorporated by `f303ed7`, lists active IT Staff and Administrators and supports assignment/takeover. The current contract names both operational roles; no additional change needed. |
+| S1 — Formatting | **SUBJECTIVE; adopted.** Wrapped the named route, navigation array, role-route expression and Zod refinement, and moved the dashboard import into the local import group. No behavior change. |
+| E1 — Screenshot location | **VALID evidence gap.** E2E-03 now saves desktop/mobile screenshots under `artifacts/lab-04/screenshots/dashboards/`. Both are committed and were visually inspected at 1280/390 px. |
+| E2 — Ticket Detail coverage | **VALID coverage gap.** E2E-03 creates a Ticket and attachment as Requester, follows its recent-list link as Administrator, and verifies a completed download with the expected filename. |
+
+Verification: 23 focused client tests passed; `pnpm build` passed root typechecking
+and both package builds; isolated headless Chromium E2E-03 passed. Discovery checks
+confirmed the default Lab 3 and dedicated Lab 4 scopes. The UI detector and
+`git diff --check` reported no findings. The full legacy E2E matrix was not rerun.
+
+Proposed reply (not posted):
+
+> Addressed the remaining E2E scope, retry, heading, formatting and evidence items.
+> B2/B3/C5 were already resolved by the staging merge. The new Chromium journey
+> follows an Administrator dashboard Ticket link and successfully downloads its
+> attachment. Focused client tests, the production build/typecheck and E2E-03 pass;
+> screenshots are committed. C3 does not match the Requester layout, and C4 is
+> documented as a non-blocking read-committed consistency limitation. The default
+> E2E command retains Lab 3 scope; the full release regression remains Issue 28.
+
+This record and draft do not constitute a GitHub reply or a new reviewer verdict.
+The human Changes Requested verdict remains pending human re-review.

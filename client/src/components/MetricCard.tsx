@@ -17,9 +17,9 @@ export function MetricCard({
 }) {
   const content = (
     <>
-      <h3 className="small fw-semibold text-body-secondary mb-2">
+      <p className="small fw-semibold text-body-secondary mb-2">
         {badge || label}
-      </h3>
+      </p>
       <p className={`fs-2 fw-bold mb-0 ${loading ? "placeholder-glow" : ""}`}>
         {loading ? (
           <span className="placeholder col-4" aria-hidden="true">

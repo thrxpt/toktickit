@@ -1,4 +1,3 @@
-import Dashboard from "./pages/Dashboard";
 import { Link, Navigate, Route, Routes } from "react-router-dom";
 
 import { AuthProvider } from "./auth/AuthContext";
@@ -7,6 +6,7 @@ import { RequesterProvider } from "./context/RequesterContext";
 import ChangePassword from "./pages/ChangePassword";
 import CheckSystem from "./pages/CheckSystem";
 import CreateTicket from "./pages/CreateTicket";
+import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import MyTickets from "./pages/MyTickets";
 import RequesterSelection from "./pages/RequesterSelection";
@@ -36,10 +36,19 @@ function NotFoundPage() {
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Root redirects to /tickets */}
+      {/* Root redirects to the role-appropriate dashboard (FR-16). */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-      <Route path="/dashboard" element={<RequireRole roles={["REQUESTER", "IT_STAFF", "ADMINISTRATOR"]}><AppShell><Dashboard /></AppShell></RequireRole>} />
+      <Route
+        path="/dashboard"
+        element={
+          <RequireRole roles={["REQUESTER", "IT_STAFF", "ADMINISTRATOR"]}>
+            <AppShell>
+              <Dashboard />
+            </AppShell>
+          </RequireRole>
+        }
+      />
 
       {/* Authentication screens (Lab 3) */}
       <Route path="/login" element={<Login />} />

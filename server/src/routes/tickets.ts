@@ -92,7 +92,10 @@ const listTicketsQuerySchema = z
       ),
   })
   .strict()
-  .refine(data => !(data.status && data.statusGroup), { path: ["statusGroup"], message: "Status and statusGroup are mutually exclusive" });
+  .refine((data) => !(data.status && data.statusGroup), {
+    path: ["statusGroup"],
+    message: "Status and statusGroup are mutually exclusive",
+  });
 
 export const ticketsRouter = express.Router();
 ticketsRouter.use(requireRequesterContext);
