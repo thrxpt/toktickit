@@ -1,8 +1,7 @@
-import { validateSubmissionKey } from "../submissions";
-import { STATUS_GROUPS } from "../dashboard/status-groups";
 import express, { type Request, type Response } from "express";
 import { z } from "zod";
 
+import { STATUS_GROUPS } from "../dashboard/status-groups";
 import { formatZodErrors, sendError } from "../errors";
 import type { Prisma } from "../generated/prisma/client";
 import {
@@ -10,6 +9,7 @@ import {
   requireRequesterContext,
 } from "../middleware/requester-context";
 import { prisma } from "../prisma";
+import { validateSubmissionKey } from "../submissions";
 import { serializeAttachments } from "../tickets/attachment-serializer";
 import { handleCreateTicket } from "../tickets/create-ticket";
 import {

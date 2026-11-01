@@ -112,7 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async (): Promise<void> => {
     const response = await apiFetch("/api/auth/logout", { method: "POST" });
-    if (!response.ok) throw new Error("Unable to sign out. Please try again.");
+    // A 401 confirms that the expired/invalid session is already unauthenticated.
+    if (!response.ok && response.status !== 401) throw new Error("Unable to sign out. Please try again.");
     localStorage.removeItem("toktickit_requester_id");
     setUser(null);
   };

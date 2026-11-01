@@ -326,3 +326,27 @@ reviewer.md. Final verification passed 332 server and 181 client cases, 29
 Chromium journeys, and the production build. A tooling-only test option and the
 mobile profile button's width were corrected during final QA; focused rendered
 checks cover the latter. The peer-reviewed integration/release gates remain open.
+
+### Issue 28 — human review corrections (2026-11-01)
+
+User prompt: `Can you fix?`, following @fahsai-02's COMMENTED review of PR #62
+on `1a53155`. GPT-6.1 Sol via Codex fact-checked all nine inline findings against
+the contract and HTTP/rendered UI behavior. Temporary reproduction checks showed
+which claims held; six rendered regressions and four API regressions then failed
+before the fixes. Human review caught expired-session logout, discarded API
+messages, mutable-reference replay validation, post-commit file deletion,
+File-key lifecycle, and duplicate React keys missed by the automated reviews.
+
+Fixes retain server authorization, BR-33's payload scope, removed-file `404`, and
+the atomic attachment limit. Comment/note cancellation replay already worked.
+Known-full fresh uploads avoid disk writes and row locks; payload fingerprinting
+still needs the bounded upload. Added HTTP checks use a response-serialization
+fault, lost commit acknowledgement, and a real database constraint failure to distinguish committed evidence
+from rollback cleanup. Rendered checks cover drafts, safe/malformed API envelopes,
+expired logout, intentional File reuse, and same-name retry identity.
+
+The existing HTTP API, rendered UI, and Playwright seams remain in use, with review
+base `1ae9137`. No dependency, migration, GitHub reply, or agent approval was added.
+[reviewer.md](reviewer.md) records classifications and a local reply draft;
+[release.md](release.md) records final verification. Human re-review and integration
+release gates remain pending.

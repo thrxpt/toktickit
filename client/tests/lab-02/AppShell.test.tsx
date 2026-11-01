@@ -66,3 +66,17 @@ it("FR-19/FR-20 — keeps the session visible when Logout fails and offers a saf
   fireEvent.click(screen.getByRole("button", { name: "Logout" }));
   await screen.findByRole("button", { name: "Sign In" });
 });
+
+it("UI-13 — FR-20: ends local authentication when Logout confirms the session has expired", async () => {
+  sessionFetch(true);
+  const original = globalThis.fetch;
+  globalThis.fetch = vi.fn((input, init) => String(input) === "/api/auth/logout"
+    ? Promise.resolve(new Response(JSON.stringify({ error: { code: "UNAUTHENTICATED", message: "Authentication required." } }), { status: 401 }))
+    : original(input, init));
+  render(<MemoryRouter initialEntries={["/tickets"]}><App /></MemoryRouter>);
+  await screen.findByRole("heading", { name: "My Tickets" });
+  fireEvent.click(screen.getByRole("button", { name: "User profile" }));
+  fireEvent.click(screen.getByRole("button", { name: "Logout" }));
+  await screen.findByRole("button", { name: "Sign In" });
+  expect(screen.queryByText("Unable to sign out. Please try again.")).not.toBeInTheDocument();
+});

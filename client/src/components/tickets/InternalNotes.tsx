@@ -1,7 +1,7 @@
-import { useSubmissionKey } from "../../api/submissions";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-import apiFetch from "../../api/client";
+import apiFetch, { apiErrorMessage } from "../../api/client";
+import { useSubmissionKey } from "../../api/submissions";
 import Badge from "../Badge";
 import StateBlock from "../StateBlock";
 import type { InternalNoteDto } from "../../types/ticket";
@@ -79,9 +79,8 @@ export function InternalNotes({
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
-        throw new Error(
-          errorData?.error?.message || `Failed to post note (${res.status})`,
-        );
+        setSubmitError(apiErrorMessage(errorData, "Unable to save internal note. Please try again."));
+        return;
       }
 
       const created = (await res.json()) as InternalNoteDto;

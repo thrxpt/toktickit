@@ -13,7 +13,7 @@
 | 25 ([#52](https://github.com/thrxpt/toktickit/issues/52)) | [#59](https://github.com/thrxpt/toktickit/pull/59) | feature/25-actions-taken-ui | [Approved, 2026-10-31](https://github.com/thrxpt/toktickit/pull/59#pullrequestreview-5722170413) | Merged 2026-10-31 |
 | 26 ([#53](https://github.com/thrxpt/toktickit/issues/53)) | [#61](https://github.com/thrxpt/toktickit/pull/61) | feature/26-ticket-workflow | [Approved, 2026-10-31](https://github.com/thrxpt/toktickit/pull/61#pullrequestreview-5724299806) | Merged 2026-10-31 |
 | 27 ([#54](https://github.com/thrxpt/toktickit/issues/54)) | [#60](https://github.com/thrxpt/toktickit/pull/60) | feature/27-role-dashboards | [Approved, 2026-11-01](https://github.com/thrxpt/toktickit/pull/60#pullrequestreview-5727849545) | Merged 2026-11-01 |
-| 28 ([#55](https://github.com/thrxpt/toktickit/issues/55)) | [#62](https://github.com/thrxpt/toktickit/pull/62) | feat/final-release | Pending — no submitted peer review | Open |
+| 28 ([#55](https://github.com/thrxpt/toktickit/issues/55)) | [#62](https://github.com/thrxpt/toktickit/pull/62) | feat/final-release | [Commented, 2026-11-01](https://github.com/thrxpt/toktickit/pull/62#pullrequestreview-5728702889) — re-review pending | Open |
 
 Checked against GitHub PR metadata and submitted reviews on **2026-11-01**.
 Ordered by repository Issue 22–28 (GitHub #49–#55). This table covers every
@@ -24,7 +24,7 @@ submitted verdicts. Merge dates are UTC and are recorded separately from approva
 The change-request and follow-up narratives below are historical snapshots; their
 then-pending statements do not override the later approval records. Issues
 #49–#54 are closed. [PR #62](https://github.com/thrxpt/toktickit/pull/62) implements
-Issue 28 / #55 and remains open without a human verdict. Integration verification
+Issue 28 / #55 and remains open with a human COMMENTED review. Integration verification
 and the reviewed release into `main` remain the gates in [release.md](release.md).
 
 ---
@@ -274,13 +274,42 @@ recorded development-credential failure was local; verification passed against
 handling and draft recovery (FR-19, FR-20, BR-33), verify regression and responsive
 accessibility, capture visual evidence, and update setup/demo/release records.
 
-**Reviewer verdict:** Pending. GitHub has no submitted peer review as of
-2026-11-01; the PR is open against `lab4-staging`. The implementation's automated
-Standards and Spec checks below are not a human approval. Author verification is
-332 server + 181 client tests, 29 all-lab Chromium cases, the build/typechecks,
-and the final three-viewport follow-up. [release.md](release.md) records that
-evidence and the remaining integration/main release gates. No merge or completed
-release is claimed.
+**Latest reviewer verdict:** [COMMENTED by @fahsai-02, 2026-11-01](https://github.com/thrxpt/toktickit/pull/62#pullrequestreview-5728702889)
+on `1a53155`, requesting the first four findings before merge. The PR remains open
+against `lab4-staging`; no approval or release is claimed. The earlier automated
+Standards/Spec checks missed defects found by this human review.
+
+| Inline comment | Fact-check and response |
+| --- | --- |
+| [1 — Logout](https://github.com/thrxpt/toktickit/pull/62#discussion_r4436125014) | **VALID for expired sessions.** Logout `401` now clears local identity and reaches Sign In. Network/5xx failures retain state and safe retry feedback because neither confirms clearance of the HttpOnly cookie. |
+| [2 — Server error copy](https://github.com/thrxpt/toktickit/pull/62#discussion_r4436125017) | **VALID.** Staff mutations, Public Comments, Internal Notes, and Change Password display messages from validated API error envelopes. Network/parser errors keep fixed recovery copy; drafts and choices survive rejection. Arbitrary exception messages are not exposed. |
+| [3 — Replay ordering](https://github.com/thrxpt/toktickit/pull/62#discussion_r4436125018) | **VALID for Tickets; INCORRECT for discussion.** Committed Ticket lookup precedes mutable active-reference checks; new Tickets still require active references. Comment/note routes have no status gate; HTTP reproduction confirmed both replays after cancellation already succeed. Authentication, authorization, ownership, and syntactic validation still run. |
+| [4 — Attachment cleanup](https://github.com/thrxpt/toktickit/pull/62#discussion_r4436125020) | **VALID post-commit data-loss defect.** Cleanup preserves committed/referenced bytes, including uncertain commit acknowledgement; an unavailable database leaves an inert orphan rather than risking live evidence (ADR-0004). HTTP fault injection proves post-commit response failure remains downloadable, while a real insert rollback cleans up bytes. The deletion helper already swallows its own errors. |
+| [5 — Removed-file replay](https://github.com/thrxpt/toktickit/pull/62#discussion_r4436125022) | **CONFLICTS_WITH_SPEC.** API §7 requires `404 ATTACHMENT_NOT_FOUND` for the old removed submission and forbids resurrection. Kept that behavior; a later intentional upload now gets a new client key (item 7). |
+| [6 — Full-Ticket uploads](https://github.com/thrxpt/toktickit/pull/62#discussion_r4436125024) | **VALID unnecessary I/O/locking; no quota bypass.** Known-full fresh submissions stop before disk writes and row locks; active replays succeed. Bounded parsing/fingerprinting remains necessary because BR-33 includes file bytes, so a raw UUID alone cannot identify a replay. The locked count still enforces the atomic limit. |
+| [7 — File-key lifecycle](https://github.com/thrxpt/toktickit/pull/62#discussion_r4436125030) | **VALID.** Both upload entry points clear the File's cached key after acknowledged success. Failed attempts retain the key; a later intentional upload uses a new key. |
+| [8 — Changed payload](https://github.com/thrxpt/toktickit/pull/62#discussion_r4436125033) | **CONFLICTS_WITH_SPEC.** BR-33 defines changed normalized payloads as distinct submissions, even with the same UUID. Kept the scoped digest and existing HTTP proof; no raw-key mismatch rejection added. |
+| [9 — Outcome identity](https://github.com/thrxpt/toktickit/pull/62#discussion_r4436125035) | **VALID duplicate React keys; index failure not reproduced.** Outcome rows carry stable submission IDs and their File, and retry resolves by ID. Same-named Files remain distinct. Ticket keys clear after acknowledged creation. The earlier immutable outcome list did not misroute an index retry. |
+
+**Optional nits adopted:** grouped/consolidated imports, moved the cleanup import
+below the module header, and placed Prisma `submissionKey` fields after `@id`.
+Schema changes in this follow-up are formatting only; no migration is needed.
+
+**Verification:** six rendered UI regressions and four HTTP regressions failed
+before the fixes; the focused suites now pass. [release.md](release.md) records
+the full command results. The fixed review base remains `1ae9137`.
+
+**Draft reply (not posted):**
+
+> Fixed the confirmed logout, API-message, Ticket-replay, attachment-cleanup,
+> File-key, and same-name outcome defects. Full-limit fresh uploads now avoid disk
+> writes and row locks. BR-33 still makes changed payloads distinct submissions,
+> and API §7 keeps removed Attachment replays at 404. Comment/note replay after
+> cancellation already succeeds. Regression tests cover the corrected cases;
+> release.md records final verification. Please re-review the follow-up before merge.
+
+This local record is not a GitHub reply or a new reviewer verdict. Human re-review,
+staging verification, and the reviewed release into `main` remain open.
 
 ---
 

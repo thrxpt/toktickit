@@ -514,8 +514,10 @@ the header and a session combined with a conflicting header.
 `POST /api/tickets/:id/notes`, and `POST /api/tickets/:id/attachments` accept an
 optional `Idempotency-Key: <UUID>` header. An invalid UUID answers
 `400 VALIDATION_FAILED` with `fields.idempotencyKey`; existing clients may omit
-it. Authentication, role, ownership, and payload validation still run on every
-request, including replays.
+it. Authentication, role, ownership, and syntactic payload validation still run
+on every request, including replays. Active Category/Related System validation
+applies to new Tickets; deactivating a reference does not invalidate a committed
+Ticket's replay.
 
 The key is scoped to the authenticated user, endpoint path, and normalized body.
 Attachment scope includes original filename, detected MIME type, and file bytes.
@@ -526,6 +528,12 @@ replay returns its current representation if Staff have since changed it. A
 removed Attachment remains inaccessible: retrying its old submission answers
 `404 ATTACHMENT_NOT_FOUND`, never restores it. A replay at the five-active-file
 limit still succeeds for an active Attachment; a distinct upload answers `409`.
+To identify that replay safely, keyed uploads still parse and fingerprint the
+bounded file (at most 5 MB). If the ownership precheck already found five active
+files, a fresh submission is rejected before disk writes or a Ticket row lock.
+New uploads recheck the limit under the lock before writing bytes. Cleanup never
+deletes bytes referenced by a committed Attachment, including when response
+delivery fails after commit.
 
 The client keeps each draft's key across failed requests, then clears it after
 acknowledged success or an explicit new Ticket. Failed Files retain their key and

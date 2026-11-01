@@ -1,8 +1,8 @@
-import { createOnce, submissionKey } from "../submissions";
 import type { Request, Response } from "express";
 
 import { sendError } from "../errors";
 import { prisma } from "../prisma";
+import { createOnce, submissionKey } from "../submissions";
 import { formatTicketNumber } from "./ticket-number";
 import { createTicketSchema, formatZodFields } from "./ticket-schema";
 
@@ -20,65 +20,48 @@ export async function handleCreateTicket(req: Request, res: Response): Promise<v
     return;
   }
 
-  // Verify category and related system are active before opening the transaction,
-  // avoiding sequence consumption on invalid reference data (BR-12, BR-16, BR-17).
+  const key = submissionKey(req, data);
+  const include = {
+    category: { select: { id: true, name: true } },
+    relatedSystem: { select: { id: true, name: true } },
+    requester: { select: { id: true, name: true } },
+  } as const;
   try {
-    const [category, relatedSystem] = await Promise.all([
-      prisma.category.findUnique({
-        where: { id: data.categoryId },
-        select: { id: true, name: true, isActive: true },
-      }),
-      prisma.relatedSystem.findUnique({
-        where: { id: data.relatedSystemId },
-        select: { id: true, name: true, isActive: true },
-      }),
-    ]);
-
-    const fieldErrors: Record<string, string> = {};
-
-    if (!category || !category.isActive) {
-      fieldErrors.categoryId = "Selected category is inactive or does not exist.";
-    }
-
-    if (!relatedSystem || !relatedSystem.isActive) {
-      fieldErrors.relatedSystemId = "Selected related system is inactive or does not exist.";
-    }
-
-    if (Object.keys(fieldErrors).length > 0) {
-      sendError(res, "VALIDATION_FAILED", fieldErrors);
-      return;
-    }
-
-    const key = submissionKey(req, data);
-    const include = {
-      category: { select: { id: true, name: true } },
-      relatedSystem: { select: { id: true, name: true } },
-      requester: { select: { id: true, name: true } },
-    } as const;
     const ticket = await createOnce(key,
       () => prisma.ticket.findUnique({ where: { submissionKey: key! }, include }),
-      () => prisma.$transaction(async (tx) => {
-        const seqRows = await tx.$queryRaw<{ nextval: bigint | number | string }[]>`
-          SELECT nextval('ticket_number_seq')
-        `;
-        const nextVal = Number(seqRows[0].nextval);
-        const ticketNumber = formatTicketNumber(nextVal, new Date().getFullYear());
+      async () => {
+        // A replay returns the owned record even if reference data was deactivated
+        // afterward. Only a new Ticket needs currently active references (BR-33).
+        const [category, relatedSystem] = await Promise.all([
+          prisma.category.findUnique({ where: { id: data.categoryId }, select: { isActive: true } }),
+          prisma.relatedSystem.findUnique({ where: { id: data.relatedSystemId }, select: { isActive: true } }),
+        ]);
+        const fields: Record<string, string> = {};
+        if (!category?.isActive) fields.categoryId = "Selected category is inactive or does not exist.";
+        if (!relatedSystem?.isActive) fields.relatedSystemId = "Selected related system is inactive or does not exist.";
+        if (Object.keys(fields).length > 0) {
+          sendError(res, "VALIDATION_FAILED", fields);
+          return null;
+        }
 
-        return await tx.ticket.create({
-          data: {
-            ticketNumber,
-            submissionKey: key,
-            requesterId,
-            categoryId: data.categoryId,
-            relatedSystemId: data.relatedSystemId,
-            summary: data.summary,
-            description: data.description,
-            requestedPriority: data.requestedPriority,
-            status: "NEW",
-          },
-          include,
+        return prisma.$transaction(async tx => {
+          const rows = await tx.$queryRaw<{ nextval: bigint | number | string }[]>`
+            SELECT nextval('ticket_number_seq')
+          `;
+          return tx.ticket.create({
+            data: {
+              ticketNumber: formatTicketNumber(Number(rows[0].nextval), new Date().getFullYear()),
+              submissionKey: key,
+              requesterId,
+              ...data,
+              status: "NEW",
+            },
+            include,
+          });
         });
-    }));
+      },
+    );
+    if (!ticket) return;
 
     res.setHeader("Location", `/api/tickets/${ticket.id}`);
     res.status(201).json({

@@ -288,3 +288,16 @@ describe("UI-09 — Staff mutation versions (AC-08, AC-20, FR-06)", () => {
     ]);
   });
 });
+
+it("UI-09 — shows the API's safe rejection while preserving Ticket state", async () => {
+  vi.stubGlobal("fetch", vi.fn(async (input: string, init?: RequestInit) => {
+    if (input.endsWith("/actions") || input.endsWith("/assignees")) return response([]);
+    if (init?.method === "PATCH") return response({ error: { code: "FORBIDDEN", message: "You no longer have permission to update this Ticket." } }, 403);
+    return response(ticket);
+  }));
+  renderStaff();
+  const status = await screen.findByRole("combobox", { name: "Current Status" });
+  fireEvent.change(status, { target: { value: "RESOLVED" } });
+  await screen.findByText("You no longer have permission to update this Ticket.");
+  expect(status).toHaveValue("OPEN");
+});

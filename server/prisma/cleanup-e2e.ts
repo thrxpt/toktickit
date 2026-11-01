@@ -1,9 +1,9 @@
-import { deleteAttachmentFile } from "../src/attachments/storage";
 // Cleanup script for Lab 4 E2E test residue.
 // Removes transactional records (tickets, attachments, comments, notes) and throwaway
 // accounts created by Playwright E2E specs, restoring the database to pristine seed state.
 import { PrismaPg } from "@prisma/adapter-pg";
 
+import { deleteAttachmentFile } from "../src/attachments/storage";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { demoTicketNumbers, seedReferenceData } from "./seed-data";
 

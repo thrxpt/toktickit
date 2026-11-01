@@ -1,7 +1,7 @@
-import { fileSubmissionKey } from "../api/submissions";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import apiFetch from "../api/client";
+import { fileSubmissionKey, resetFileSubmissionKey } from "../api/submissions";
 import ConfirmDialog from "./ConfirmDialog";
 import AttachmentUploader from "./AttachmentUploader";
 import type { AttachmentDto } from "../types/ticket";
@@ -274,6 +274,7 @@ export function AttachmentSection({
         return next;
       });
       onAttachmentAdded?.(added);
+      resetFileSubmissionKey(file);
       return true;
     } catch {
       setUploadErrors((prev) => ({

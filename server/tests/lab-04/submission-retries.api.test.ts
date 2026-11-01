@@ -1,15 +1,18 @@
 import { readdirSync } from "node:fs";
-import { deleteAttachmentFile, UPLOADS_DIR } from "../../src/attachments/storage";
 import { randomUUID } from "node:crypto";
 import request from "supertest";
-import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import app from "../setup/test-app";
+import expressApp from "../../src/app";
+import { deleteAttachmentFile, UPLOADS_DIR } from "../../src/attachments/storage";
+import * as storage from "../../src/attachments/storage";
 import { prisma } from "../../src/prisma";
 import { truncateTransactionalData } from "../setup/truncate";
 
 beforeEach(truncateTransactionalData);
 afterEach(async () => {
+  vi.restoreAllMocks();
   for (const file of await prisma.attachment.findMany({ select: { storageKey: true } })) {
     await deleteAttachmentFile(file.storageKey);
   }
@@ -86,7 +89,11 @@ describe("API-29 — FR-19, FR-20: retries of unversioned creates", () => {
     expect(first.status).toBe(201);
     expect(second.status).toBe(201);
     expect(second.body).toEqual(first.body);
+    const write = vi.spyOn(storage, "writeAttachmentFile");
     expect((await send()).body).toEqual(first.body);
+    const fresh = await request(app).post(url).set("Cookie", cookie).set("Idempotency-Key", randomUUID()).attach("file", bytes, "fresh.pdf");
+    expect(fresh.status).toBe(409);
+    expect(write).not.toHaveBeenCalled();
     const list = await request(app).get(url).set("Cookie", cookie);
     expect(list.body.active).toHaveLength(5);
     expect(readdirSync(UPLOADS_DIR)).toHaveLength(initialFiles + 5);
@@ -95,4 +102,81 @@ describe("API-29 — FR-19, FR-20: retries of unversioned creates", () => {
     expect(invalid.body.error.code).toBe("VALIDATION_FAILED");
     expect(await prisma.ticket.count()).toBe(1);
   });
+});
+
+it.each(["category", "system"] as const)("API-29 — replays a committed Ticket after its %s is deactivated", async reference => {
+  const { cookie, data } = await fixture();
+  const key = randomUUID();
+  const send = (id = key) => request(app).post("/api/tickets").set("Cookie", cookie).set("Idempotency-Key", id).send(data);
+  const created = await send();
+  expect(created.status).toBe(201);
+  try {
+    if (reference === "category") await prisma.category.update({ where: { id: data.categoryId }, data: { isActive: false } });
+    else await prisma.relatedSystem.update({ where: { id: data.relatedSystemId }, data: { isActive: false } });
+    const replay = await send();
+    expect(replay.status).toBe(201);
+    expect(replay.body.id).toBe(created.body.id);
+    expect((await send(randomUUID())).status).toBe(400);
+    expect(await prisma.ticket.count()).toBe(1);
+  } finally {
+    if (reference === "category") await prisma.category.update({ where: { id: data.categoryId }, data: { isActive: true } });
+    else await prisma.relatedSystem.update({ where: { id: data.relatedSystemId }, data: { isActive: true } });
+  }
+});
+
+it("API-29 — preserves committed Attachment bytes when response serialization fails", async () => {
+  const { cookie, data } = await fixture();
+  const ticket = await request(app).post("/api/tickets").set("Cookie", cookie).send(data);
+  const json = expressApp.response.json;
+  vi.spyOn(expressApp.response, "json").mockImplementation(function (body) {
+    if (this.statusCode === 201) throw new Error("Simulated response failure after commit");
+    return json.call(this, body);
+  });
+  const key = randomUUID(), url = `/api/tickets/${ticket.body.id}/attachments`;
+  const bytes = Buffer.from("%PDF-1.4\nCommitted evidence\n%%EOF");
+  const failed = await request(app).post(url).set("Cookie", cookie).set("Idempotency-Key", key).attach("file", bytes, "committed.pdf");
+  expect(failed.status).toBe(500);
+  vi.restoreAllMocks();
+  const replay = await request(app).post(url).set("Cookie", cookie).set("Idempotency-Key", key).attach("file", bytes, "committed.pdf");
+  expect(replay.status).toBe(201);
+  const content = await request(app).get(replay.body.contentUrl).set("Cookie", cookie);
+  expect(content.status).toBe(200);
+  expect(content.body).toEqual(bytes);
+  expect(await prisma.attachment.count()).toBe(1);
+});
+
+it("API-29 — removes uncommitted bytes after an Attachment insert rolls back", async () => {
+  const { cookie, data } = await fixture();
+  const ticket = await request(app).post("/api/tickets").set("Cookie", cookie).send(data);
+  const initialFiles = readdirSync(UPLOADS_DIR).length;
+  await prisma.$executeRawUnsafe(`ALTER TABLE "Attachment" ADD CONSTRAINT "review_upload_failure" CHECK ("originalFilename" <> 'rollback.pdf')`);
+  try {
+    const r = await request(app).post(`/api/tickets/${ticket.body.id}/attachments`).set("Cookie", cookie)
+      .set("Idempotency-Key", randomUUID()).attach("file", Buffer.from("%PDF-1.4\nRollback\n%%EOF"), "rollback.pdf");
+    expect(r.status).toBe(500);
+    expect(await prisma.attachment.count()).toBe(0);
+    expect(readdirSync(UPLOADS_DIR)).toHaveLength(initialFiles);
+  } finally {
+    await prisma.$executeRawUnsafe('ALTER TABLE "Attachment" DROP CONSTRAINT "review_upload_failure"');
+  }
+});
+
+it("API-29 — preserves Attachment bytes when the transaction commits but acknowledgement is lost", async () => {
+  const { cookie, data } = await fixture();
+  const ticket = await request(app).post("/api/tickets").set("Cookie", cookie).send(data);
+  const transaction = prisma.$transaction.bind(prisma);
+  vi.spyOn(prisma, "$transaction").mockImplementationOnce(async operation => {
+    await transaction(operation);
+    throw new Error("Simulated lost commit acknowledgement");
+  });
+  const key = randomUUID(), url = `/api/tickets/${ticket.body.id}/attachments`;
+  const bytes = Buffer.from("%PDF-1.4\nUncertain response\n%%EOF");
+  const send = () => request(app).post(url).set("Cookie", cookie).set("Idempotency-Key", key).attach("file", bytes, "uncertain.pdf");
+  expect((await send()).status).toBe(500);
+  const replay = await send();
+  expect(replay.status).toBe(201);
+  const content = await request(app).get(replay.body.contentUrl).set("Cookie", cookie);
+  expect(content.status).toBe(200);
+  expect(content.body).toEqual(bytes);
+  expect(await prisma.attachment.count()).toBe(1);
 });

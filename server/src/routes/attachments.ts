@@ -1,4 +1,3 @@
-import { createOnce, submissionKey, validateSubmissionKey } from "../submissions";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import express, {
@@ -25,6 +24,7 @@ import {
   requireRequesterContext,
 } from "../middleware/requester-context";
 import { prisma } from "../prisma";
+import { createOnce, submissionKey, validateSubmissionKey } from "../submissions";
 import {
   serializeActiveAttachment,
   serializeAttachments,
@@ -89,7 +89,10 @@ async function checkTicketOwnershipAndLimit(
       },
     });
 
-    if (activeCount >= 5 && !req.header("Idempotency-Key")) {
+    // A keyed replay needs its validated file fingerprint before lookup. Multer
+    // still caps buffering at 5 MB; fresh keys on a full Ticket stop before I/O.
+    res.locals.attachmentLimitReached = activeCount >= 5;
+    if (res.locals.attachmentLimitReached && !req.header("Idempotency-Key")) {
       sendError(res, "ATTACHMENT_LIMIT_REACHED");
       return;
     }
@@ -215,10 +218,10 @@ export const postTicketAttachmentHandlers = [
 
     const mimeType = typeValidation.mimeType;
     const storageKey = crypto.randomUUID();
+    let fileMayExist = false;
+    let committed = false;
 
     try {
-      await writeAttachmentFile(storageKey, file.buffer);
-
       const key = submissionKey(req, {
         filename: file.originalname, mimeType,
         bytes: crypto.createHash("sha256").update(file.buffer).digest("hex"),
@@ -226,25 +229,30 @@ export const postTicketAttachmentHandlers = [
       const include = { uploadedBy: { select: { id: true, name: true } } } as const;
       const attachment = await createOnce(key,
         () => prisma.attachment.findUnique({ where: { submissionKey: key! }, include }),
-        () => prisma.$transaction(async tx => {
-          // BR-35: serialize uploads on this Ticket, including distinct keys.
-          await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id = ${ticketId} FOR UPDATE`;
-          if (key) {
-            const existing = await tx.attachment.findUnique({ where: { submissionKey: key }, include });
-            if (existing) return existing;
-          }
-          const count = await tx.attachment.count({ where: { ticketId, removedAt: null } });
-          if (count >= 5) return null;
-          return tx.attachment.create({
-            data: {
-              ticketId, originalFilename: file.originalname, mimeType,
-              sizeBytes: file.size, storageKey, uploadedById: requesterId, submissionKey: key,
-            },
-            include,
+        async () => {
+          if (res.locals.attachmentLimitReached) return null;
+          return prisma.$transaction(async tx => {
+            // BR-35: serialize new uploads, including distinct keys, on this Ticket.
+            await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id = ${ticketId} FOR UPDATE`;
+            if (key) {
+              const existing = await tx.attachment.findUnique({ where: { submissionKey: key }, include });
+              if (existing) return existing;
+            }
+            const count = await tx.attachment.count({ where: { ticketId, removedAt: null } });
+            if (count >= 5) return null;
+            fileMayExist = true;
+            await writeAttachmentFile(storageKey, file.buffer);
+            return tx.attachment.create({
+              data: {
+                ticketId, originalFilename: file.originalname, mimeType,
+                sizeBytes: file.size, storageKey, uploadedById: requesterId, submissionKey: key,
+              },
+              include,
+            });
           });
-        }),
+        },
       );
-      if (!attachment || attachment.storageKey !== storageKey) await deleteAttachmentFile(storageKey);
+      committed = attachment?.storageKey === storageKey;
       if (!attachment) {
         sendError(res, "ATTACHMENT_LIMIT_REACHED");
         return;
@@ -260,8 +268,20 @@ export const postTicketAttachmentHandlers = [
         .header("Location", `/api/attachments/${attachment.id}/content`)
         .json(serializeActiveAttachment(attachment));
     } catch {
-      await deleteAttachmentFile(storageKey);
-      sendError(res, "DATABASE_UNAVAILABLE");
+      if (fileMayExist && !committed) {
+        try {
+          // Wait for the upload's lock to settle an uncertain commit before
+          // checking visibility; an unlocked read could miss an in-flight commit.
+          const referenced = await prisma.$transaction(async tx => {
+            await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id = ${ticketId} FOR UPDATE`;
+            return tx.attachment.findUnique({ where: { storageKey }, select: { id: true } });
+          });
+          if (!referenced) await deleteAttachmentFile(storageKey);
+        } catch {
+          // Unknown database outcome: an inert orphan is safer than deleting live evidence.
+        }
+      }
+      if (!res.headersSent) sendError(res, "DATABASE_UNAVAILABLE");
     }
   },
 ];

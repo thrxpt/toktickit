@@ -1,9 +1,8 @@
-import { fileSubmissionKey } from "../api/submissions";
-import { useSubmissionKey } from "../api/submissions";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { apiFetch } from "../api/client";
+import { fileSubmissionKey, resetFileSubmissionKey, useSubmissionKey } from "../api/submissions";
 import AttachmentUploader from "../components/AttachmentUploader";
 import FormField from "../components/FormField";
 import ReferenceSelect, {
@@ -21,24 +20,30 @@ interface CreatedTicket {
 }
 
 export interface AttachmentOutcome {
+  id: string;
+  file: File;
   filename: string;
   status: "uploaded" | "failed";
   error?: string;
 }
 
-async function uploadFile(ticketId: number, file: File): Promise<AttachmentOutcome> {
+async function uploadFile(ticketId: number, file: File, id = fileSubmissionKey(file)): Promise<AttachmentOutcome> {
+  const identity = { id, file, filename: file.name };
   const body = new FormData();
   body.append("file", file);
   try {
     const response = await apiFetch(`/api/tickets/${ticketId}/attachments`, {
-      method: "POST", headers: { "Idempotency-Key": fileSubmissionKey(file) }, body,
+      method: "POST", headers: { "Idempotency-Key": id }, body,
     });
-    if (response.ok) return { filename: file.name, status: "uploaded" };
+    if (response.ok) {
+      resetFileSubmissionKey(file);
+      return { ...identity, status: "uploaded" };
+    }
     const data = await response.json().catch(() => null);
-    return { filename: file.name, status: "failed",
+    return { ...identity, status: "failed",
       error: data?.error?.fields?.file || data?.error?.message || "Upload failed. Please retry." };
   } catch {
-    return { filename: file.name, status: "failed", error: "Upload failed. Please retry." };
+    return { ...identity, status: "failed", error: "Upload failed. Please retry." };
   }
 }
 
@@ -69,13 +74,14 @@ export function CreateTicket() {
   const [fileOutcomes, setFileOutcomes] = useState<AttachmentOutcome[]>([]);
   const retryingRef = useRef(false);
   const [retrying, setRetrying] = useState(false);
-  const retryFile = async (index: number) => {
-    if (!createdTicket || retryingRef.current) return;
+  const retryFile = async (id: string) => {
+    const pending = fileOutcomes.find(outcome => outcome.id === id);
+    if (!createdTicket || !pending || pending.status !== "failed" || retryingRef.current) return;
     retryingRef.current = true;
     setRetrying(true);
     try {
-      const outcome = await uploadFile(createdTicket.id, selectedFiles[index]);
-      setFileOutcomes(prev => prev.map((item, i) => i === index ? outcome : item));
+      const outcome = await uploadFile(createdTicket.id, pending.file, pending.id);
+      setFileOutcomes(prev => prev.map(item => item.id === id ? outcome : item));
     } finally {
       retryingRef.current = false;
       setRetrying(false);
@@ -204,6 +210,7 @@ export function CreateTicket() {
 
       setFileOutcomes(outcomes);
       setCreatedTicket(ticket);
+      submission.reset();
     } catch {
       setApiError("Unable to reach the server. Please try again.");
     } finally {
@@ -267,9 +274,9 @@ export function CreateTicket() {
                     Attachments ({fileOutcomes.length}):
                   </h6>
                   <ul className="list-group list-group-flush bg-transparent">
-                    {fileOutcomes.map((outcome, index) => (
+                    {fileOutcomes.map((outcome) => (
                       <li
-                        key={outcome.filename}
+                        key={outcome.id}
                         className="list-group-item bg-transparent d-flex align-items-center justify-content-between px-0 py-2"
                       >
                         <span
@@ -286,7 +293,7 @@ export function CreateTicket() {
                           <div className="d-flex flex-wrap align-items-center gap-2">
                             <span className="badge bg-danger-subtle text-danger">Failed: {outcome.error}</span>
                             <button type="button" className="btn btn-outline-danger btn-sm"
-                              disabled={retrying} onClick={() => retryFile(index)}
+                              disabled={retrying} onClick={() => retryFile(outcome.id)}
                               aria-label={`Retry ${outcome.filename}`}>Retry</button>
                           </div>
                         )}

@@ -24,3 +24,7 @@ export function fileSubmissionKey(file: File): string {
   }
   return key;
 }
+
+export function resetFileSubmissionKey(file: File): void {
+  fileKeys.delete(file);
+}

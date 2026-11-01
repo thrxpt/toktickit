@@ -1,13 +1,16 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import AttachmentSection from "../../src/components/AttachmentSection";
 import UserEditDrawer from "../../src/pages/admin/UserEditDrawer";
 import PublicComments from "../../src/components/tickets/PublicComments";
 import InternalNotes from "../../src/components/tickets/InternalNotes";
+import ChangePassword from "../../src/pages/ChangePassword";
+import CreateTicket from "../../src/pages/CreateTicket";
 import { RequesterSession } from "../helpers/RequesterSession";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 const failure = () => new Response("<h1>Database internals</h1>", { status: 500 });
 
 function submitTwice(form: HTMLFormElement) {
@@ -115,4 +118,74 @@ it("FR-19 — does not duplicate a replayed Comment already recovered by refresh
   fireEvent.click(screen.getByRole("button", { name: "Post Comment" }));
   await waitFor(() => expect(screen.getByRole("textbox")).toHaveValue(""));
   expect(screen.getAllByText(comment.content, { selector: "p" })).toHaveLength(1);
+});
+
+it.each([[PublicComments, "Post Comment"], [InternalNotes, "Save Internal Note"]] as const)("UI-13 — preserves a safe server rejection and the discussion draft (%s)", async (Component, button) => {
+  const message = "Your account cannot post discussion.";
+  vi.stubGlobal("fetch", vi.fn((_url, init?: RequestInit) => Promise.resolve(init?.method === "POST"
+    ? new Response(JSON.stringify({ error: { code: "FORBIDDEN", message } }), { status: 403 }) : new Response("[]"))));
+  render(<Component ticketId={42} />);
+  await screen.findByText(/No (public comments|internal notes) yet/);
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Keep this draft" } });
+  fireEvent.click(screen.getByRole("button", { name: button }));
+  await screen.findByText(message);
+  expect(screen.getByRole("textbox")).toHaveValue("Keep this draft");
+});
+
+it.each([
+  [JSON.stringify({ error: { code: "INVALID_CURRENT_PASSWORD", message: "Current password is incorrect." } }), "Current password is incorrect."],
+  [JSON.stringify({ message: "Database internals" }), "Unable to change password. Please try again."],
+] as const)("UI-13 — shows password rejection safely and retains the form (%s)", async (body, message) => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(body, { status: 400 })));
+  render(<MemoryRouter><RequesterSession><ChangePassword /></RequesterSession></MemoryRouter>);
+  fireEvent.change(screen.getByLabelText(/^Current Password/), { target: { value: "OldPassword123!" } });
+  fireEvent.change(screen.getByLabelText(/^New Password/), { target: { value: "NewPassword456!" } });
+  fireEvent.change(screen.getByLabelText(/^Confirm New Password/), { target: { value: "NewPassword456!" } });
+  fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+  await screen.findByText(message);
+  expect(screen.getByLabelText(/^Current Password/)).toHaveValue("OldPassword123!");
+  expect(screen.getByLabelText(/^New Password/)).toHaveValue("NewPassword456!");
+  expect(screen.getByLabelText(/^Confirm New Password/)).toHaveValue("NewPassword456!");
+  expect(screen.getByRole("button", { name: /Continue/ })).toBeEnabled();
+  expect(screen.queryByText("Database internals")).not.toBeInTheDocument();
+});
+
+it("UI-13 — gives an acknowledged File a new key for a later intentional upload", async () => {
+  const fetch = vi.fn().mockImplementation((_input: string | URL | Request, _init?: RequestInit) => Promise.resolve(new Response(JSON.stringify({ id: 1, originalFilename: "same.pdf", mimeType: "application/pdf", sizeBytes: 8, createdAt: new Date().toISOString(), uploadedBy: { id: 1, name: "Jennifer" } }))));
+  vi.stubGlobal("fetch", fetch);
+  const onAdded = vi.fn();
+  render(<AttachmentSection ticketId={42} attachments={{ active: [], removed: [] }} onAttachmentAdded={onAdded} />);
+  const file = new File(["%PDF-1.4"], "same.pdf", { type: "application/pdf" });
+  fireEvent.change(screen.getByTestId("attachment-file-input"), { target: { files: [file] } });
+  await waitFor(() => expect(onAdded).toHaveBeenCalledTimes(1));
+  fireEvent.change(screen.getByTestId("attachment-file-input"), { target: { files: [file] } });
+  await waitFor(() => expect(onAdded).toHaveBeenCalledTimes(2));
+  expect(new Headers(fetch.mock.calls[0][1].headers).get("Idempotency-Key")).not.toBe(new Headers(fetch.mock.calls[1][1].headers).get("Idempotency-Key"));
+});
+
+it("UI-13 — retries the correct same-named File without duplicate React keys", async () => {
+  const error = vi.spyOn(console, "error").mockImplementation(() => {});
+  const uploads: { file: FormDataEntryValue | null; key: string | null }[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (input, init?: RequestInit) => {
+    if (String(input).endsWith("/categories") || String(input).endsWith("/related-systems")) return new Response(JSON.stringify([{ id: 1, name: "Hardware" }]));
+    if (String(input) === "/api/tickets") return new Response(JSON.stringify({ id: 42, ticketNumber: "TKT-2026-000042" }), { status: 201 });
+    uploads.push({ file: (init!.body as FormData).get("file"), key: new Headers(init!.headers).get("Idempotency-Key") });
+    return uploads.length === 2 ? failure() : new Response("{}", { status: 201 });
+  }));
+  render(<MemoryRouter><RequesterSession><CreateTicket /></RequesterSession></MemoryRouter>);
+  await waitFor(() => expect(screen.getByLabelText(/^Category/)).toBeEnabled());
+  fireEvent.change(screen.getByLabelText(/^Category/), { target: { value: "1" } });
+  fireEvent.change(screen.getByLabelText(/^Related System/), { target: { value: "1" } });
+  fireEvent.change(screen.getByLabelText(/^Summary/), { target: { value: "Same filename evidence" } });
+  fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: "Distinct files share the same filename." } });
+  const files = [new File(["%PDF-1.4 first"], "same.pdf", { type: "application/pdf" }), new File(["%PDF-1.4 second"], "same.pdf", { type: "application/pdf" })];
+  fireEvent.change(screen.getByTestId("attachment-file-input"), { target: { files } });
+  fireEvent.click(screen.getByRole("button", { name: "Create Ticket" }));
+  await screen.findByTestId("success-panel");
+  fireEvent.click(screen.getByRole("button", { name: "Retry same.pdf" }));
+  await waitFor(() => expect(screen.getAllByText("Uploaded", { exact: true })).toHaveLength(2));
+  expect(uploads[2].file).toBe(files[1]);
+  expect(uploads[2].key).toBe(uploads[1].key);
+  expect(uploads[0].key).not.toBe(uploads[1].key);
+  expect(error.mock.calls.some(args => String(args[0]).includes("same key"))).toBe(false);
 });

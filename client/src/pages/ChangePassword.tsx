@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { apiFetch } from "../api/client";
+import { apiFetch, apiErrorMessage } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { SubmitButton } from "../components/SubmitButton";
 import { getDefaultRouteForRole } from "../utils/navigation";
@@ -68,11 +68,9 @@ export function ChangePassword() {
       });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(
-          errorData.error?.message ||
-            "Failed to change password. Please try again.",
-        );
+        const errorData = await res.json().catch(() => null);
+        setFormError(apiErrorMessage(errorData, "Unable to change password. Please try again."));
+        return;
       }
 
       const updatedUser = await refreshUser();

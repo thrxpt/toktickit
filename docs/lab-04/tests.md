@@ -621,6 +621,18 @@ The shell regression also reproduces a failed Logout: it retains the session and
 shows safe retry text instead of rejecting an unhandled promise and pretending
 the HttpOnly session cookie was cleared.
 
+### Issue 28 — peer-review follow-up
+
+| Test ID | Rules | Added regression evidence |
+| --- | --- | --- |
+| API-29 | FR-19, BR-33 | `submission-retries.api.test.ts`: Ticket replay after either reference is deactivated; a new key still fails validation. Response failure and lost commit acknowledgement preserve committed downloadable bytes; insert rollback removes uncommitted bytes. Full-limit replay and fresh-key rejection perform no disk writes. |
+| UI-13 | FR-19, FR-20, AC-26 | `SubmissionRecovery.test.tsx`: safe API error messages retain discussion/password drafts; malformed envelopes retain fixed recovery copy. A successful File gets a new key for a later intentional upload; same-named Files have distinct identities and retry the correct File/key. |
+| UI-09 | FR-20, AC-20, BR-11 | `TicketWorkflow.test.tsx`: rejected Staff mutation displays the API envelope message without changing Ticket status. |
+| UI-13 | FR-20, AC-26 | Lab 2 `AppShell.test.tsx`: Logout `401` clears expired local identity and reaches Sign In. Network failures retain safe retry feedback and local state because cookie clearance is unconfirmed. |
+
+These extend the existing HTTP and rendered UI seams; the all-lab Playwright
+journeys remain the end-to-end regression seam. Review base remains `1ae9137`.
+
 Release cleanup verification also extends API-23 with actual Attachment bytes:
 the check failed before cleanup deleted the stored file. Legacy Lab 2 summaries
 now use the same `E2E ` prefix as the existing cleanup contract, and browser

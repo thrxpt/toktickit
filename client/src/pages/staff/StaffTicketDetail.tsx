@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import ActionsTakenPanel from "../../components/tickets/ActionsTakenPanel";
-import apiFetch from "../../api/client";
+import apiFetch, { apiErrorMessage } from "../../api/client";
 import { useAuth } from "../../auth/useAuth";
 import Badge from "../../components/Badge";
 import ReadOnlyField from "../../components/ReadOnlyField";
 import StateBlock from "../../components/StateBlock";
+import ActionsTakenPanel from "../../components/tickets/ActionsTakenPanel";
 import ConflictAlert from "../../components/tickets/ConflictAlert";
 import InternalNotes from "../../components/tickets/InternalNotes";
 import PublicComments from "../../components/tickets/PublicComments";
@@ -165,7 +165,10 @@ export function StaffTicketDetail() {
         setShowConflict(true);
         return;
       }
-      if (!res.ok) throw new Error(data?.error?.message || "Failed to update Ticket.");
+      if (!res.ok) {
+        setErrorMessage(apiErrorMessage(data, "Unable to update Ticket. Please try again."));
+        return;
+      }
 
       setTicket(prev => {
         if (!prev) return prev;
