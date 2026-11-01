@@ -4,9 +4,8 @@
 // User.email — never on ids (BR-36, BR-44). Re-running converges: a row edited
 // by hand goes back to what is written here rather than being duplicated.
 //
-// Reference data and core users only. Tickets, Comments, Notes, and Attachments
-// are transactional and are never seeded, so `pnpm db:seed` leaves transactional
-// data untouched.
+// Lab 4 also seeds demo Tickets and Actions Taken by stable keys (BR-26).
+// Ordinary Tickets, Comments, Notes and Attachments remain untouched.
 import bcrypt from "bcrypt";
 
 import type { PrismaClient } from "../src/generated/prisma/client";
@@ -189,10 +188,46 @@ export async function seedReferenceData(
     });
   }
 
+  await seedDemoTickets(prisma);
+
   return {
     categories: categories.length,
     relatedSystems: relatedSystems.length,
     requesters: requesters.length,
     users: users.length,
   };
+}
+
+export const demoTicketNumbers = Array.from({ length: 8 }, (_, index) => `TKT-2026-${900001 + index}`);
+
+// BR-26: descriptions are deliberately repeated; only seedKey identifies an action.
+async function seedDemoTickets(prisma: PrismaClient): Promise<void> {
+  const requester = await prisma.user.findUniqueOrThrow({ where: { email: "jennifer.anderson@example.ac.th" } });
+  const staff = await prisma.user.findMany({ where: { email: { in: ["michael.brown@toktickit.com", "sarah.johnson@toktickit.com"] } }, orderBy: { email: "asc" } });
+  const category = await prisma.category.findUniqueOrThrow({ where: { name: "Hardware" } });
+  const system = await prisma.relatedSystem.findUniqueOrThrow({ where: { name: "Corporate Laptop" } });
+  const statuses = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"] as const;
+  const priorities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
+  for (const [index, status] of statuses.entries()) {
+    const data = {
+      requesterId: requester.id, categoryId: category.id, relatedSystemId: system.id,
+      ticketOwnerId: index === 0 ? null : staff[index % staff.length].id,
+      summary: `Demo: laptop support (${status})`, description: "Lab 4 demo Ticket for shared service desk work.",
+      requestedPriority: "MEDIUM" as const, itPriority: priorities[index % priorities.length], status,
+      resolvedByRequester: status === "RESOLVED",
+    };
+    const ticketNumber = demoTicketNumbers[index];
+    const ticket = await prisma.ticket.upsert({ where: { ticketNumber }, update: data, create: { ticketNumber, ...data } });
+    const count = index === 1 ? 1 : index === 2 ? 3 : 0;
+    for (let actionIndex = 0; actionIndex < count; actionIndex++) {
+      const seedKey = `lab4-action:${status.toLowerCase()}:${actionIndex + 1}`;
+      const action = {
+        ticketId: ticket.id, performedById: staff[actionIndex % staff.length].id,
+        description: "Checked laptop battery", result: actionIndex === 0 ? "Diagnostics completed" : "Battery health confirmed",
+        followUpRequired: actionIndex === 0, followUpNote: actionIndex === 0 ? "Monitor battery health" : null,
+        attachmentNotes: null,
+      };
+      await prisma.actionTaken.upsert({ where: { seedKey }, update: action, create: { seedKey, ...action } });
+    }
+  }
 }

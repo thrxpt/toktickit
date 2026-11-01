@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
@@ -25,6 +25,7 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -32,6 +33,7 @@ export function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
 
     let hasError = false;
     if (!email.trim()) {
@@ -52,6 +54,7 @@ export function Login() {
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     setFormError("");
 
@@ -70,9 +73,10 @@ export function Login() {
       }
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Invalid email or password.";
+        err instanceof Error && "code" in err ? err.message : "Unable to sign in. Please try again.";
       setFormError(message);
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

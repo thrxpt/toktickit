@@ -7,6 +7,6 @@ import { prisma } from "../../src/prisma";
 
 export async function truncateTransactionalData(): Promise<void> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "InternalNote", "Comment", "Attachment", "Ticket" RESTART IDENTITY CASCADE',
+    'TRUNCATE TABLE "ActionTaken", "InternalNote", "Comment", "Attachment", "Ticket" RESTART IDENTITY CASCADE',
   );
 }

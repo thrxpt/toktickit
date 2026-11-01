@@ -7,7 +7,7 @@ import {
   REQUESTER_A,
   REQUESTER_B,
   REQUESTER_D,
-  selectRequester,
+  loginRequester,
   switchRequester,
   VALID_PDF_BUFFER,
 } from "./helpers";
@@ -49,7 +49,7 @@ test.describe("Visual Evidence and State Capture", () => {
   test("E2E-04 — API failure via route interception (AC-17, AC-25)", async ({
     page,
   }) => {
-    await selectRequester(page, REQUESTER_A);
+    await loginRequester(page, REQUESTER_A);
     await page.goto("/tickets/new");
 
     // Wait for reference dropdowns
@@ -57,7 +57,7 @@ test.describe("Visual Evidence and State Capture", () => {
     await expect(page.locator("#relatedSystemId")).not.toBeDisabled();
 
     // Fill form fields
-    const testSummary = "Database Connection Timeout in Production Service";
+    const testSummary = "E2E Database Connection Timeout in Production Service";
     const testDescription =
       "The payment service cannot establish connection pool to the primary database server.";
 
@@ -124,7 +124,7 @@ test.describe("Visual Evidence and State Capture", () => {
   });
 
   test("Capture Create Ticket State Evidence", async ({ page }) => {
-    await selectRequester(page, REQUESTER_A);
+    await loginRequester(page, REQUESTER_A);
 
     // 1. Initial blank state
     await page.goto("/tickets/new");
@@ -169,7 +169,7 @@ test.describe("Visual Evidence and State Capture", () => {
 
     await page.fill(
       "#summary",
-      "Valid ticket summary for submitting state test",
+      "E2E Valid ticket summary for submitting state test",
     );
     await page.fill(
       "#description",
@@ -233,7 +233,7 @@ test.describe("Visual Evidence and State Capture", () => {
   });
 
   test("Capture My Tickets State Evidence", async ({ page }) => {
-    await selectRequester(page, REQUESTER_A);
+    await loginRequester(page, REQUESTER_A);
 
     // 1. Loading state (interception delay)
     let releaseLoadingRoute: () => void = () => {};
@@ -328,7 +328,7 @@ test.describe("Visual Evidence and State Capture", () => {
     await switchRequester(page, REQUESTER_A);
     await page.goto("/tickets");
     await expect(
-      page.locator('button[aria-label="Requester profile"]'),
+      page.locator("header"),
     ).toContainText(REQUESTER_A);
     await expect(page.locator("text=Loading tickets…")).not.toBeVisible();
     await expect(page.locator("table")).toBeVisible();
@@ -341,7 +341,7 @@ test.describe("Visual Evidence and State Capture", () => {
     // 6. Requester B list (create ticket as Requester B and display B's tickets)
     await switchRequester(page, REQUESTER_B);
     await createTicket(page, {
-      summary: "Requester B Network Port Configuration",
+      summary: "E2E Requester B Network Port Configuration",
       description:
         "Need switch port configuration for secondary laboratory workstation.",
       category: "Network",
@@ -349,7 +349,7 @@ test.describe("Visual Evidence and State Capture", () => {
     });
     await page.goto("/tickets");
     await expect(
-      page.locator('button[aria-label="Requester profile"]'),
+      page.locator("header"),
     ).toContainText(REQUESTER_B);
     await expect(page.locator("text=Loading tickets…")).not.toBeVisible();
     await expect(page.locator("table")).toBeVisible();
@@ -362,9 +362,9 @@ test.describe("Visual Evidence and State Capture", () => {
 
   test("Capture Ticket Detail State Evidence", async ({ page }) => {
     // Establish context as Requester A and create a ticket for evidence capture
-    await selectRequester(page, REQUESTER_A);
+    await loginRequester(page, REQUESTER_A);
     const { ticketId } = await createTicket(page, {
-      summary: "Evidence Capture Ticket - Attachments and Permissions",
+      summary: "E2E Evidence Capture Ticket - Attachments and Permissions",
       description:
         "Detailed description for capturing active, removed, and unowned evidence states.",
     });

@@ -11,7 +11,7 @@ function renderLogin(initialEntry = "/login") {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/tickets" element={<div>My Tickets Screen</div>} />
+          <Route path="/dashboard" element={<div>Dashboard Screen</div>} />
           <Route path="/staff/queue" element={<div>Staff Queue Screen</div>} />
           <Route
             path="/change-password"
@@ -288,7 +288,7 @@ describe("UI-01 — Login form submission, busy state, and inactive account aler
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(screen.getByText("My Tickets Screen")).toBeInTheDocument();
+      expect(screen.getByText("Dashboard Screen")).toBeInTheDocument();
     });
   });
 

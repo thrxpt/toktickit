@@ -52,10 +52,14 @@ permitted status transitions, posting Public Comments, and recording private
 Internal Notes.
 
 **Administrator**:
-An administrative role responsible for minimalist User Management: viewing
+An administrative role responsible for minimalist User Management — viewing
 users, creating accounts with an initial password, editing basic account
-details, assigning one role, and activating/deactivating accounts. Administrators
-do not manage Tickets.
+details, assigning one role, and activating/deactivating accounts — and, since
+Lab 4 (ADR-0010), for performing IT Staff ticket operations for support and
+testing: browsing the Ticket Queue, opening Ticket Detail, claiming and
+reassigning, setting IT Priority, transitioning status, commenting, noting, and
+recording Actions Taken. The widening runs one way only: IT Staff still cannot
+reach User Management.
 
 **Ticket Owner**:
 The active IT Staff or Administrator user currently assigned primary operational
@@ -77,6 +81,46 @@ and Administrator. Authorship and creation timestamp are recorded by the backend
 **Internal Note**:
 An append-only private operational note posted to a Ticket, visible strictly to
 IT Staff and Administrator. Forbidden and invisible to Requesters.
+
+**Action Taken**:
+A record of work actually performed on a Ticket — the work log entry, distinct
+from discussion. Any active IT Staff member or Administrator may write one on any
+accessible Ticket because the work is shared, while the Ticket Owner stays
+accountable. Entries can be updated in place but never deleted; the Requester who
+owns the Ticket reads them read-only. A Ticket with zero Actions Taken is normal.
+_Avoid_: Activity, log, update, comment — **comment** especially, which is
+discussion a Requester can join; an Action Taken is work only IT records
+
+**Action Date/Time**:
+The server-generated creation timestamp of an Action Taken, shown to every reader
+and immutable afterward. There is no client-supplied action date; a second field
+would let the record be back-dated.
+_Avoid_: Performed at, action date, timestamp
+
+**Performed by**:
+The authenticated IT Staff member or Administrator the backend attributes an
+Action Taken to, taken from the session at creation and immutable afterward — even
+when a different staff member later edits the entry's text.
+_Avoid_: Author, creator, user
+
+**Follow-Up Required**:
+The yes/no flag on an Action Taken saying whether further work is expected.
+**Follow-up Note** is mandatory when it is true and rejected when it is false, so
+a follow-up can never exist without saying what it is.
+_Avoid_: Flagged, attention, reminder
+
+**Attachment Notes**:
+Optional free text on an Action Taken that points a reader at supporting files
+already attached to the Ticket. It never uploads anything and never creates an
+Attachment row; the Attachment model stays the single home for file bytes.
+_Avoid_: Attachment, evidence, file
+
+**Ticket Version**:
+A non-negative integer on every Ticket, starting at 0 and incremented by exactly
+one for every write to a Ticket-owned field. A mutating caller sends the
+`expectedVersion` it loaded; a mismatch means someone else wrote first and is
+answered `409 STALE_UPDATE` rather than silently overwriting.
+_Avoid_: Revision, ETag, lock version, updatedAt comparison
 
 **Current Status**:
 The lifecycle status of a Ticket: `NEW`, `OPEN`, `IN_PROGRESS`,
@@ -142,15 +186,16 @@ _Avoid_: Refresh, load, test connection
 **Lab**:
 One graded unit of work delivering one vertical slice. Lab 1 proved React →
 Express → Prisma → PostgreSQL end to end; Lab 2 built the Requester-facing
-ticketing MVP; Lab 3 delivers real authentication, role-based authorization,
-IT Staff ticketing workflows, and Administrator user management.
+ticketing MVP; Lab 3 delivered real authentication, role-based authorization,
+IT Staff ticketing workflows, and Administrator user management; Lab 4 adds
+Actions Taken, finalizes the Ticket lifecycle, and gives every role a dashboard.
 _Avoid_: Sprint, milestone, phase
 
 **Issue**:
 A numbered unit of work inside a Lab, owning exactly one feature branch and
 carrying its own acceptance criteria. Numbering runs continuously across Labs —
-Lab 1 held Issues 1–4, Lab 2 held Issues 5–13, Lab 3 holds Issues 14–21 — and is
-independent of GitHub's own issue/PR sequence.
+Lab 1 held Issues 1–4, Lab 2 held Issues 5–13, Lab 3 held Issues 14–21, Lab 4
+holds Issues 22–28 — and is independent of GitHub's own issue/PR sequence.
 _Avoid_: Task, story, ticket — **Ticket** especially, which is now a real
 product concept above; an Issue is work the team does, a Ticket is work a
 Requester asks for
@@ -163,7 +208,7 @@ spans four companion documents — `specification.md`, `api-spec.md`,
 _Avoid_: Spec, requirements
 
 **Integration branch**:
-A branch that only ever advances through a peer-reviewed PR — `lab3-staging`
-and `main`. Feature branches merge into `lab3-staging`; `lab3-staging` merges
-into `main`.
+A branch that only ever advances through a peer-reviewed PR — currently
+`lab4-staging` and `main` (Lab 3 used `lab3-staging`). Feature branches merge into
+`lab4-staging`; `lab4-staging` merges into `main`.
 _Avoid_: dev, develop, trunk

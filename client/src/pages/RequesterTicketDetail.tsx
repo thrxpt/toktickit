@@ -1,33 +1,22 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import ActionsTakenPanel from "../components/tickets/ActionsTakenPanel";
 import apiFetch from "../api/client";
 import AttachmentSection from "../components/AttachmentSection";
 import Badge from "../components/Badge";
 import ConfirmDialog from "../components/ConfirmDialog";
+import ConflictAlert from "../components/tickets/ConflictAlert";
 import PublicComments from "../components/tickets/PublicComments";
 import ReadOnlyField from "../components/ReadOnlyField";
 import StateBlock from "../components/StateBlock";
 import { useAuth } from "../auth/AuthContext";
-import { useRequester } from "../context/RequesterContext";
 import type { TicketDetail } from "../types/ticket";
 import { formatDate } from "../utils/date";
 
 export function RequesterTicketDetail() {
   const { id } = useParams<{ id: string }>();
-  let user: { id: number; name: string } | null = null;
-  try {
-    user = useAuth().user;
-  } catch {
-    // outside AuthProvider
-  }
-  let selectedRequester: { id: number; name: string } | null = null;
-  try {
-    selectedRequester = useRequester().selectedRequester;
-  } catch {
-    // outside RequesterProvider
-  }
-  const activeRequester = user || selectedRequester;
+  const { user: activeRequester } = useAuth();
 
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,16 +25,19 @@ export function RequesterTicketDetail() {
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
+  const isResolvingRef = useRef(false);
+  const [needsReload, setNeedsReload] = useState(false);
+  const [showConflict, setShowConflict] = useState(false);
   const [resolveError, setResolveError] = useState<string | null>(null);
 
-  const fetchTicket = useCallback(() => {
+  const fetchTicket = useCallback((preserveEditors = false) => {
     if (!id || !activeRequester) {
       setLoading(false);
       return;
     }
 
     const controller = new AbortController();
-    setLoading(true);
+    if (!preserveEditors) setLoading(true);
     setError(false);
     setNotFound(false);
 
@@ -64,6 +56,8 @@ export function RequesterTicketDetail() {
         }
         const data: TicketDetail = await res.json();
         setTicket(data);
+        setNeedsReload(false);
+        setShowConflict(false);
       } catch (err: unknown) {
         if (
           controller.signal.aborted ||
@@ -71,8 +65,11 @@ export function RequesterTicketDetail() {
         ) {
           return;
         }
-        setError(true);
-        setTicket(null);
+        if (preserveEditors) setResolveError("Unable to reload Ticket. Please try again.");
+        else {
+          setError(true);
+          setTicket(null);
+        }
       } finally {
         setLoading(false);
       }
@@ -147,21 +144,32 @@ export function RequesterTicketDetail() {
   }
 
   const handleConfirmResolution = async () => {
-    if (!ticket || isResolving) return;
+    if (isResolvingRef.current) return;
+    if (!ticket || isResolving || needsReload) return;
+    isResolvingRef.current = true;
     setIsResolving(true);
     setResolveError(null);
     try {
       const res = await apiFetch(`/api/tickets/${ticket.id}/resolve-indication`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expectedVersion: ticket.version }),
       });
+      const data = await res.json().catch(() => null);
+      if (res.status === 409 && data?.error?.code === "STALE_UPDATE") {
+        setNeedsReload(true);
+        setShowConflict(true);
+        setIsConfirmOpen(false);
+        return;
+      }
       if (!res.ok) {
-        const errData = await res.json().catch(() => null);
+        const errData = data;
         throw new Error(
           errData?.error?.message || "Failed to submit resolution indication",
         );
       }
       setTicket((prev) =>
-        prev ? { ...prev, resolvedByRequester: true } : prev,
+        prev ? { ...prev, resolvedByRequester: true, version: data.ticketVersion } : prev,
       );
       setIsConfirmOpen(false);
     } catch (err: unknown) {
@@ -169,6 +177,7 @@ export function RequesterTicketDetail() {
         err instanceof Error ? err.message : "Unable to submit resolution",
       );
     } finally {
+      isResolvingRef.current = false;
       setIsResolving(false);
     }
   };
@@ -184,7 +193,7 @@ export function RequesterTicketDetail() {
           </p>
         </div>
         <div className="d-flex align-items-center gap-2">
-          {user && (
+          {activeRequester && (
             <button
               type="button"
               className="btn btn-outline-success d-inline-flex align-items-center gap-2"
@@ -193,7 +202,7 @@ export function RequesterTicketDetail() {
                 ticket.resolvedByRequester ||
                 ticket.status === "CLOSED" ||
                 ticket.status === "CANCELLED" ||
-                isResolving
+                isResolving || needsReload
               }
             >
               Problem Appears Resolved
@@ -221,6 +230,8 @@ export function RequesterTicketDetail() {
         </div>
       </div>
 
+      {showConflict && <ConflictAlert onReload={() => fetchTicket(true)} onDismiss={() => setShowConflict(false)} />}
+      {needsReload && !showConflict && <button type="button" className="btn btn-primary mb-3" onClick={() => fetchTicket(true)}>Reload ticket</button>}
       {resolveError && (
         <div className="alert alert-danger alert-dismissible mb-4" role="alert">
           {resolveError}
@@ -325,6 +336,11 @@ export function RequesterTicketDetail() {
         </div>
       </div>
 
+      <section className="mt-4" aria-labelledby="work-log-heading">
+        <h2 id="work-log-heading" className="h4 mb-3">What IT has done</h2>
+        <ActionsTakenPanel key={ticket.id} ticketId={ticket.id} />
+      </section>
+
       {/* Attachment Panel (FR-11, FR-12, FR-13, FR-14, BR-35, BR-38, BR-39, ui-spec.md §5.4) */}
       <AttachmentSection
         ticketId={ticket.id}
@@ -358,7 +374,7 @@ export function RequesterTicketDetail() {
       />
 
       {/* Public Comments Section (FR-07, AC-14, ui-spec.md §4.6) */}
-      {user && (
+      {activeRequester && (
         <div className="mt-4">
           <h2 className="h4 mb-3">Public Comments</h2>
           <PublicComments ticketId={ticket.id} />

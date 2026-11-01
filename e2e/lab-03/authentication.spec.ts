@@ -57,7 +57,8 @@ test.describe("Authentication and Password Lifecycle (AC-01 to AC-05)", () => {
     await page.fill('input[type="email"]', TEST_USERS.requester.email);
     await page.fill('input[type="password"]', TEST_USERS.requester.password);
     await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForURL("**/tickets");
+    await page.waitForURL("**/dashboard");
+    await page.goto("/tickets");
 
     // Assert AppShell identity and role presentation (FR-04, FR-20)
     await expect(page.locator(`text=${TEST_USERS.requester.name}`)).toBeVisible();
@@ -140,13 +141,15 @@ test.describe("Authentication and Password Lifecycle (AC-01 to AC-05)", () => {
     await submitBtn.click();
 
     // App entry unlocked
-    await page.waitForURL("**/tickets");
+    await page.waitForURL("**/dashboard");
+    await page.goto("/tickets");
     await expect(page.locator(`text=${TEST_USERS.mustChange.name}`)).toBeVisible();
 
     // 5. Verify logout and re-login with the updated credentials
     await logout(page);
     await login(page, TEST_USERS.mustChange.email, newPassword);
-    await page.waitForURL("**/tickets");
+    await page.waitForURL("**/dashboard");
+    await page.goto("/tickets");
     await expect(page.locator(`text=${TEST_USERS.mustChange.name}`)).toBeVisible();
   });
 });

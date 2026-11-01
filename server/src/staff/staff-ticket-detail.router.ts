@@ -6,28 +6,35 @@ import { requireAuth, requireRole } from "../middleware/auth";
 import { prisma } from "../prisma";
 import { serializeActiveAttachment } from "../tickets/attachment-serializer";
 import { parseTicketId } from "../tickets/parse-ticket-id";
-import { isValidStatusTransition } from "../tickets/status-machine";
+import { getPermittedTransitions, isValidStatusTransition } from "../tickets/status-machine";
+import {
+  expectedVersionSchema,
+  updateTicketAtVersion,
+} from "../tickets/ticket-version";
 
 export const staffTicketDetailRouter = express.Router();
 
-// Guarded by authentication and role check (IT_STAFF only; Requesters and Administrators receive 403 Forbidden per BR-14 and ADR-0008).
+// BR-17, BR-20; ADR-0010 widens ticket operations to Administrators.
 staffTicketDetailRouter.use(requireAuth);
-staffTicketDetailRouter.use(requireRole("IT_STAFF"));
+staffTicketDetailRouter.use(requireRole("IT_STAFF", "ADMINISTRATOR"));
 
 const ownerPatchSchema = z
   .object({
+    expectedVersion: expectedVersionSchema,
     ownerId: z.number().int().positive().nullable(),
   })
   .strict();
 
 const priorityPatchSchema = z
   .object({
+    expectedVersion: expectedVersionSchema,
     itPriority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]),
   })
   .strict();
 
 const statusPatchSchema = z
   .object({
+    expectedVersion: expectedVersionSchema,
     status: z.enum([
       "NEW",
       "OPEN",
@@ -83,6 +90,7 @@ staffTicketDetailRouter.get("/:id", async (req: Request, res: Response) => {
     res.status(200).json({
       id: ticket.id,
       ticketNumber: ticket.ticketNumber,
+      version: ticket.version,
       summary: ticket.summary,
       description: ticket.description,
       category: {
@@ -107,6 +115,7 @@ staffTicketDetailRouter.get("/:id", async (req: Request, res: Response) => {
       requestedPriority: ticket.requestedPriority,
       itPriority: ticket.itPriority,
       status: ticket.status,
+      permittedTransitions: getPermittedTransitions(ticket.status),
       resolvedByRequester: ticket.resolvedByRequester,
       createdAt: ticket.createdAt.toISOString(),
       updatedAt: ticket.updatedAt.toISOString(),
@@ -131,7 +140,7 @@ staffTicketDetailRouter.patch(
       return;
     }
 
-    const parseResult = ownerPatchSchema.safeParse(req.body);
+    const parseResult = ownerPatchSchema.safeParse(req.body ?? {});
     if (!parseResult.success) {
       sendError(
         res,
@@ -141,16 +150,21 @@ staffTicketDetailRouter.patch(
       return;
     }
 
-    const { ownerId } = parseResult.data;
+    const { ownerId, expectedVersion } = parseResult.data;
 
     try {
       const ticket = await prisma.ticket.findUnique({
         where: { id },
-        select: { id: true, status: true },
+        select: { id: true, status: true, version: true },
       });
 
       if (!ticket) {
         sendError(res, "TICKET_NOT_FOUND");
+        return;
+      }
+
+      if (ticket.version !== expectedVersion) {
+        sendError(res, "STALE_UPDATE");
         return;
       }
 
@@ -177,23 +191,21 @@ staffTicketDetailRouter.patch(
       const newStatus =
         ticket.status === "NEW" && ownerId !== null ? "OPEN" : ticket.status;
 
-      const updated = await prisma.ticket.update({
-        where: { id },
-        data: {
-          ticketOwnerId: ownerId,
-          status: newStatus,
-        },
-        select: {
-          id: true,
-          ticketOwnerId: true,
-          status: true,
-        },
+      const updated = await updateTicketAtVersion(id, expectedVersion, {
+        ticketOwnerId: ownerId,
+        status: newStatus,
       });
+      if (!updated) {
+        sendError(res, "STALE_UPDATE");
+        return;
+      }
 
       res.status(200).json({
         ticketId: updated.id,
+        ticketVersion: updated.version,
         ticketOwnerId: updated.ticketOwnerId,
         status: updated.status,
+        permittedTransitions: getPermittedTransitions(updated.status),
         message: "Ticket ownership updated.",
       });
     } catch {
@@ -214,7 +226,7 @@ staffTicketDetailRouter.patch(
       return;
     }
 
-    const parseResult = priorityPatchSchema.safeParse(req.body);
+    const parseResult = priorityPatchSchema.safeParse(req.body ?? {});
     if (!parseResult.success) {
       sendError(
         res,
@@ -224,12 +236,12 @@ staffTicketDetailRouter.patch(
       return;
     }
 
-    const { itPriority } = parseResult.data;
+    const { itPriority, expectedVersion } = parseResult.data;
 
     try {
       const ticket = await prisma.ticket.findUnique({
         where: { id },
-        select: { id: true },
+        select: { id: true, version: true },
       });
 
       if (!ticket) {
@@ -237,17 +249,20 @@ staffTicketDetailRouter.patch(
         return;
       }
 
-      const updated = await prisma.ticket.update({
-        where: { id },
-        data: { itPriority },
-        select: {
-          id: true,
-          itPriority: true,
-        },
-      });
+      if (ticket.version !== expectedVersion) {
+        sendError(res, "STALE_UPDATE");
+        return;
+      }
+
+      const updated = await updateTicketAtVersion(id, expectedVersion, { itPriority });
+      if (!updated) {
+        sendError(res, "STALE_UPDATE");
+        return;
+      }
 
       res.status(200).json({
         ticketId: updated.id,
+        ticketVersion: updated.version,
         itPriority: updated.itPriority,
         message: "IT Priority updated.",
       });
@@ -269,7 +284,7 @@ staffTicketDetailRouter.patch(
       return;
     }
 
-    const parseResult = statusPatchSchema.safeParse(req.body);
+    const parseResult = statusPatchSchema.safeParse(req.body ?? {});
     if (!parseResult.success) {
       sendError(
         res,
@@ -279,16 +294,21 @@ staffTicketDetailRouter.patch(
       return;
     }
 
-    const { status: nextStatus } = parseResult.data;
+    const { status: nextStatus, expectedVersion } = parseResult.data;
 
     try {
       const ticket = await prisma.ticket.findUnique({
         where: { id },
-        select: { id: true, status: true },
+        select: { id: true, status: true, version: true },
       });
 
       if (!ticket) {
         sendError(res, "TICKET_NOT_FOUND");
+        return;
+      }
+
+      if (ticket.version !== expectedVersion) {
+        sendError(res, "STALE_UPDATE");
         return;
       }
 
@@ -302,18 +322,17 @@ staffTicketDetailRouter.patch(
         return;
       }
 
-      const updated = await prisma.ticket.update({
-        where: { id },
-        data: { status: nextStatus },
-        select: {
-          id: true,
-          status: true,
-        },
-      });
+      const updated = await updateTicketAtVersion(id, expectedVersion, { status: nextStatus });
+      if (!updated) {
+        sendError(res, "STALE_UPDATE");
+        return;
+      }
 
       res.status(200).json({
         ticketId: updated.id,
+        ticketVersion: updated.version,
         status: updated.status,
+        permittedTransitions: getPermittedTransitions(updated.status),
         message: "Status updated successfully.",
       });
     } catch {

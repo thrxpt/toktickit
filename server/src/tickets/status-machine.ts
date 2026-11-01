@@ -1,7 +1,7 @@
 import type { TicketStatus } from "../generated/prisma/client";
 
 /**
- * Validated status transition lifecycle matrix (BR-21, BR-22).
+ * Final status transition lifecycle matrix (BR-15, BR-16).
  *
  * Rules:
  * - NEW -> OPEN, IN_PROGRESS, CANCELLED
@@ -25,7 +25,7 @@ const STATUS_TRANSITIONS: Record<TicketStatus, readonly TicketStatus[]> = {
 };
 
 /**
- * Checks whether transitioning from `from` status to `to` status is allowed by BR-22.
+ * Checks whether transitioning from `from` status to `to` status is allowed by BR-15, BR-16.
  */
 export function isValidStatusTransition(
   from: TicketStatus,
@@ -39,7 +39,7 @@ export function isValidStatusTransition(
 }
 
 /**
- * Returns the list of permitted next statuses for a given ticket status (BR-22).
+ * Returns the list of permitted next statuses for a given Ticket status (BR-15).
  */
 export function getPermittedTransitions(from: TicketStatus): TicketStatus[] {
   const allowed = STATUS_TRANSITIONS[from];

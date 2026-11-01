@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { apiFetch } from "../api/client";
+import { fileSubmissionKey, resetFileSubmissionKey, useSubmissionKey } from "../api/submissions";
 import AttachmentUploader from "../components/AttachmentUploader";
 import FormField from "../components/FormField";
 import ReferenceSelect, {
@@ -10,7 +11,6 @@ import ReferenceSelect, {
 import StateBlock from "../components/StateBlock";
 import SubmitButton from "../components/SubmitButton";
 import { useAuth } from "../auth/AuthContext";
-import { useRequester } from "../context/RequesterContext";
 
 interface CreatedTicket {
   id: number;
@@ -20,26 +20,38 @@ interface CreatedTicket {
 }
 
 export interface AttachmentOutcome {
+  id: string;
+  file: File;
   filename: string;
   status: "uploaded" | "failed";
   error?: string;
 }
 
-export function CreateTicket() {
-  let user: { name: string } | null = null;
+async function uploadFile(ticketId: number, file: File, id = fileSubmissionKey(file)): Promise<AttachmentOutcome> {
+  const identity = { id, file, filename: file.name };
+  const body = new FormData();
+  body.append("file", file);
   try {
-    user = useAuth().user;
+    const response = await apiFetch(`/api/tickets/${ticketId}/attachments`, {
+      method: "POST", headers: { "Idempotency-Key": id }, body,
+    });
+    if (response.ok) {
+      resetFileSubmissionKey(file);
+      return { ...identity, status: "uploaded" };
+    }
+    const data = await response.json().catch(() => null);
+    return { ...identity, status: "failed",
+      error: data?.error?.fields?.file || data?.error?.message || "Upload failed. Please retry." };
   } catch {
-    // outside AuthProvider
+    return { ...identity, status: "failed", error: "Upload failed. Please retry." };
   }
-  let selectedRequester: { name: string } | null = null;
-  try {
-    selectedRequester = useRequester().selectedRequester;
-  } catch {
-    // outside RequesterProvider
-  }
-  const requesterDisplayName = user?.name || selectedRequester?.name || "";
+}
 
+export function CreateTicket() {
+  const { user } = useAuth();
+  const requesterDisplayName = user?.name || "";
+
+  const submission = useSubmissionKey();
   const [categories, setCategories] = useState<ReferenceOption[]>([]);
   const [relatedSystems, setRelatedSystems] = useState<ReferenceOption[]>([]);
   const [loadingReferences, setLoadingReferences] = useState(true);
@@ -53,12 +65,28 @@ export function CreateTicket() {
 
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [createdTicket, setCreatedTicket] = useState<CreatedTicket | null>(
     null,
   );
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [fileOutcomes, setFileOutcomes] = useState<AttachmentOutcome[]>([]);
+  const retryingRef = useRef(false);
+  const [retrying, setRetrying] = useState(false);
+  const retryFile = async (id: string) => {
+    const pending = fileOutcomes.find(outcome => outcome.id === id);
+    if (!createdTicket || !pending || pending.status !== "failed" || retryingRef.current) return;
+    retryingRef.current = true;
+    setRetrying(true);
+    try {
+      const outcome = await uploadFile(createdTicket.id, pending.file, pending.id);
+      setFileOutcomes(prev => prev.map(item => item.id === id ? outcome : item));
+    } finally {
+      retryingRef.current = false;
+      setRetrying(false);
+    }
+  };
 
   const loadReferenceData = () => {
     setLoadingReferences(true);
@@ -92,6 +120,7 @@ export function CreateTicket() {
   }, []);
 
   const resetForm = () => {
+    submission.reset();
     setCategoryId("");
     setRelatedSystemId("");
     setRequestedPriority("MEDIUM");
@@ -106,6 +135,7 @@ export function CreateTicket() {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (submittingRef.current) return;
 
     // Enforce busy state in handler (BR-24, AC-16)
     if (submitting) return;
@@ -141,21 +171,21 @@ export function CreateTicket() {
 
     setErrors({});
     setApiError(null);
+    submittingRef.current = true;
     setSubmitting(true);
 
     try {
+      const body = JSON.stringify({
+        summary: trimmedSummary, description: trimmedDescription,
+        categoryId: Number(categoryId), relatedSystemId: Number(relatedSystemId), requestedPriority,
+      });
       const response = await apiFetch("/api/tickets", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Idempotency-Key": submission.forBody(body),
         },
-        body: JSON.stringify({
-          summary: trimmedSummary,
-          description: trimmedDescription,
-          categoryId: Number(categoryId),
-          relatedSystemId: Number(relatedSystemId),
-          requestedPriority,
-        }),
+        body,
       });
 
       if (!response.ok) {
@@ -176,49 +206,15 @@ export function CreateTicket() {
 
       // Two-phase upload: upload attachments one by one after ticket creation (ADR-0006, BR-41)
       const outcomes: AttachmentOutcome[] = [];
-      if (selectedFiles.length > 0) {
-        for (const file of selectedFiles) {
-          const formData = new FormData();
-          formData.append("file", file);
-
-          try {
-            const attachRes = await apiFetch(
-              `/api/tickets/${ticket.id}/attachments`,
-              {
-                method: "POST",
-                body: formData,
-              },
-            );
-
-            if (attachRes.ok) {
-              outcomes.push({ filename: file.name, status: "uploaded" });
-            } else {
-              const errData = await attachRes.json().catch(() => ({}));
-              const errorMsg =
-                errData?.error?.fields?.file ||
-                errData?.error?.message ||
-                "Upload failed";
-              outcomes.push({
-                filename: file.name,
-                status: "failed",
-                error: errorMsg,
-              });
-            }
-          } catch {
-            outcomes.push({
-              filename: file.name,
-              status: "failed",
-              error: "Network error",
-            });
-          }
-        }
-      }
+      for (const file of selectedFiles) outcomes.push(await uploadFile(ticket.id, file));
 
       setFileOutcomes(outcomes);
       setCreatedTicket(ticket);
+      submission.reset();
     } catch {
       setApiError("Unable to reach the server. Please try again.");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -280,7 +276,7 @@ export function CreateTicket() {
                   <ul className="list-group list-group-flush bg-transparent">
                     {fileOutcomes.map((outcome) => (
                       <li
-                        key={outcome.filename}
+                        key={outcome.id}
                         className="list-group-item bg-transparent d-flex align-items-center justify-content-between px-0 py-2"
                       >
                         <span
@@ -294,9 +290,12 @@ export function CreateTicket() {
                             Uploaded
                           </span>
                         ) : (
-                          <span className="badge bg-danger-subtle text-danger">
-                            Failed: {outcome.error}
-                          </span>
+                          <div className="d-flex flex-wrap align-items-center gap-2">
+                            <span className="badge bg-danger-subtle text-danger">Failed: {outcome.error}</span>
+                            <button type="button" className="btn btn-outline-danger btn-sm"
+                              disabled={retrying} onClick={() => retryFile(outcome.id)}
+                              aria-label={`Retry ${outcome.filename}`}>Retry</button>
+                          </div>
                         )}
                       </li>
                     ))}
@@ -314,6 +313,7 @@ export function CreateTicket() {
                 <button
                   type="button"
                   className="btn btn-outline-primary"
+                  disabled={retrying}
                   onClick={resetForm}
                 >
                   Create Another

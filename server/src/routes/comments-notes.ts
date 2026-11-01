@@ -7,6 +7,7 @@ import {
 import { formatZodErrors, sendError } from "../errors";
 import { requireAuth } from "../middleware/auth";
 import { prisma } from "../prisma";
+import { createOnce, submissionKey, validateSubmissionKey } from "../submissions";
 import { parseTicketId } from "../tickets/parse-ticket-id";
 
 export const commentsNotesRouter = express.Router();
@@ -77,7 +78,7 @@ commentsNotesRouter.get("/:id/comments", requireAuth, async (req: Request, res: 
 });
 
 // POST /api/tickets/:id/comments (FR-07, FR-14, BR-04, BR-25, BR-26, BR-27, AC-14)
-commentsNotesRouter.post("/:id/comments", requireAuth, async (req: Request, res: Response) => {
+commentsNotesRouter.post("/:id/comments", requireAuth, validateSubmissionKey, async (req: Request, res: Response) => {
   const user = req.user;
   if (!user) {
     sendError(res, "UNAUTHENTICATED");
@@ -113,25 +114,18 @@ commentsNotesRouter.post("/:id/comments", requireAuth, async (req: Request, res:
       return;
     }
 
-    const comment = await prisma.comment.create({
-      data: {
-        ticketId,
-        authorId: user.id,
-        content: parseResult.data.content,
-      },
-      select: {
-        id: true,
-        content: true,
-        createdAt: true,
-        author: {
-          select: {
-            id: true,
-            name: true,
-            role: true,
-          },
-        },
-      },
-    });
+    const key = submissionKey(req, parseResult.data);
+    const select = {
+      id: true, content: true, createdAt: true,
+      author: { select: { id: true, name: true, role: true } },
+    } as const;
+    const comment = await createOnce(key,
+      () => prisma.comment.findUnique({ where: { submissionKey: key! }, select }),
+      () => prisma.comment.create({
+        data: { ticketId, authorId: user.id, content: parseResult.data.content, submissionKey: key },
+        select,
+      }),
+    );
 
     res.status(201).json({
       id: comment.id,
@@ -214,7 +208,7 @@ commentsNotesRouter.get("/:id/notes", requireAuth, async (req: Request, res: Res
 });
 
 // POST /api/tickets/:id/notes (FR-14, BR-04, BR-17, BR-25, BR-26, BR-27, AC-08, AC-15)
-commentsNotesRouter.post("/:id/notes", requireAuth, async (req: Request, res: Response) => {
+commentsNotesRouter.post("/:id/notes", requireAuth, validateSubmissionKey, async (req: Request, res: Response) => {
   const user = req.user;
   if (!user) {
     sendError(res, "UNAUTHENTICATED");
@@ -250,25 +244,18 @@ commentsNotesRouter.post("/:id/notes", requireAuth, async (req: Request, res: Re
       return;
     }
 
-    const note = await prisma.internalNote.create({
-      data: {
-        ticketId,
-        authorId: user.id,
-        content: parseResult.data.content,
-      },
-      select: {
-        id: true,
-        content: true,
-        createdAt: true,
-        author: {
-          select: {
-            id: true,
-            name: true,
-            role: true,
-          },
-        },
-      },
-    });
+    const key = submissionKey(req, parseResult.data);
+    const select = {
+      id: true, content: true, createdAt: true,
+      author: { select: { id: true, name: true, role: true } },
+    } as const;
+    const note = await createOnce(key,
+      () => prisma.internalNote.findUnique({ where: { submissionKey: key! }, select }),
+      () => prisma.internalNote.create({
+        data: { ticketId, authorId: user.id, content: parseResult.data.content, submissionKey: key },
+        select,
+      }),
+    );
 
     res.status(201).json({
       id: note.id,

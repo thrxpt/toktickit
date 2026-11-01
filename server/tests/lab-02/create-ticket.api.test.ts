@@ -1,7 +1,8 @@
 import request from "supertest";
+import { requesterSession } from "../setup/requester-session";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
-import app from "../../src/app";
+import app from "../setup/test-app";
 import { prisma } from "../../src/prisma";
 import { truncateTransactionalData } from "../setup/truncate";
 
@@ -16,7 +17,7 @@ afterAll(async () => {
 describe("Create Ticket API", () => {
   async function getActiveContext() {
     const requester = await prisma.requester.findFirstOrThrow({
-      where: { isActive: true },
+      where: { role: "REQUESTER", mustChangePassword: false, isActive: true },
     });
     const category = await prisma.category.findFirstOrThrow({
       where: { isActive: true },
@@ -28,7 +29,7 @@ describe("Create Ticket API", () => {
   }
 
   describe("API-01 — Create a valid Ticket (AC-08, AC-09)", () => {
-    it("responds 201, sets Location, stores row with status NEW and requesterId from header", async () => {
+    it("responds 201, sets Location, stores row with status NEW and requesterId from session", async () => {
       const { requester, category, relatedSystem } = await getActiveContext();
 
       const payload = {
@@ -41,7 +42,7 @@ describe("Create Ticket API", () => {
 
       const response = await request(app)
         .post("/api/tickets")
-        .set("X-Requester-Id", String(requester.id))
+        .set("Cookie", await requesterSession(requester.id))
         .send(payload);
 
       expect(response.status).toBe(201);
@@ -84,12 +85,12 @@ describe("Create Ticket API", () => {
 
       const res1 = await request(app)
         .post("/api/tickets")
-        .set("X-Requester-Id", String(requester.id))
+        .set("Cookie", await requesterSession(requester.id))
         .send(payload);
 
       const res2 = await request(app)
         .post("/api/tickets")
-        .set("X-Requester-Id", String(requester.id))
+        .set("Cookie", await requesterSession(requester.id))
         .send({
           ...payload,
           summary: "Second ticket report",
@@ -111,7 +112,7 @@ describe("Create Ticket API", () => {
 
       const response = await request(app)
         .post("/api/tickets")
-        .set("X-Requester-Id", String(requester.id))
+        .set("Cookie", await requesterSession(requester.id))
         .send({
           summary: "a".repeat(151),
           description: "Valid description of at least ten characters.",
@@ -139,7 +140,7 @@ describe("Create Ticket API", () => {
 
       const response = await request(app)
         .post("/api/tickets")
-        .set("X-Requester-Id", String(requester.id))
+        .set("Cookie", await requesterSession(requester.id))
         .send({
           summary: "Valid summary",
           description: "Valid description of at least ten characters.",
@@ -164,7 +165,7 @@ describe("Create Ticket API", () => {
 
       const response = await request(app)
         .post("/api/tickets")
-        .set("X-Requester-Id", String(requester.id))
+        .set("Cookie", await requesterSession(requester.id))
         .send({
           summary: "Valid summary",
           description: "Valid description of at least ten characters.",
@@ -194,7 +195,7 @@ describe("Create Ticket API", () => {
 
       const response = await request(app)
         .post("/api/tickets")
-        .set("X-Requester-Id", String(requester.id))
+        .set("Cookie", await requesterSession(requester.id))
         .send({
           summary: "Valid summary",
           description: "Valid description of at least ten characters.",
@@ -227,7 +228,7 @@ describe("Create Ticket API", () => {
 
       const response = await request(app)
         .post("/api/tickets")
-        .set("X-Requester-Id", String(requester.id))
+        .set("Cookie", await requesterSession(requester.id))
         .send({
           summary: "Valid summary",
           description: "Valid description of at least ten characters.",
@@ -256,7 +257,7 @@ describe("Create Ticket API", () => {
   describe("API-06 — requesterId in body rejection (AC-18, BR-04)", () => {
     it("responds 400 REQUESTER_ID_IN_BODY and creates no Ticket when requesterId is in body", async () => {
       const activeRequesters = await prisma.requester.findMany({
-        where: { isActive: true },
+        where: { role: "REQUESTER", mustChangePassword: false, isActive: true },
         take: 2,
       });
       const requesterA = activeRequesters[0];
@@ -266,7 +267,7 @@ describe("Create Ticket API", () => {
 
       const response = await request(app)
         .post("/api/tickets")
-        .set("X-Requester-Id", String(requesterA.id))
+        .set("Cookie", await requesterSession(requesterA.id))
         .send({
           summary: "Valid summary",
           description: "Valid description of at least ten characters.",
@@ -289,53 +290,25 @@ describe("Create Ticket API", () => {
     });
   });
 
-  describe("API-07 — Missing X-Requester-Id (BR-04)", () => {
-    it("responds 400 REQUESTER_CONTEXT_MISSING when header is omitted", async () => {
-      const response = await request(app).post("/api/tickets").send({ summary: "Test ticket" });
-
-      expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        error: {
-          code: "REQUESTER_CONTEXT_MISSING",
-          message: expect.any(String),
-        },
-      });
-    });
-
-    it("responds 400 REQUESTER_CONTEXT_MISSING when header is empty string", async () => {
-      const response = await request(app)
-        .post("/api/tickets")
-        .set("X-Requester-Id", "")
-        .send({ summary: "Test ticket" });
-
-      expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        error: {
-          code: "REQUESTER_CONTEXT_MISSING",
-          message: expect.any(String),
-        },
-      });
+  describe("API-07 — Missing session (Lab 4 BR-30)", () => {
+    it.each([undefined, ""])("responds 401 without a session, ignoring header %s", async (header) => {
+      const operation = request(app).post("/api/tickets");
+      if (header !== undefined) operation.set("X-Requester-Id", header);
+      const response = await operation.send({ summary: "Test ticket" });
+      expect(response.status).toBe(401);
+      expect(response.body.error.code).toBe("UNAUTHENTICATED");
+      expect(await prisma.ticket.count()).toBe(0);
     });
   });
 
-  describe("API-08 — Header naming an inactive Requester (AC-05, BR-05)", () => {
-    it("responds 400 REQUESTER_INACTIVE when header names an inactive Requester", async () => {
-      const inactiveRequester = await prisma.requester.findFirstOrThrow({
-        where: { isActive: false },
-      });
-
-      const response = await request(app)
-        .post("/api/tickets")
-        .set("X-Requester-Id", String(inactiveRequester.id))
-        .send({ summary: "Test ticket" });
-
-      expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        error: {
-          code: "REQUESTER_INACTIVE",
-          message: expect.any(String),
-        },
-      });
+  describe("API-08 — Inactive Requester (Lab 4 BR-30)", () => {
+    it("rejects login for an inactive Requester", async () => {
+      const user = await prisma.user.findFirstOrThrow({ where: { email: "daniel.okafor@example.ac.th" } });
+      const response = await request(app).post("/api/auth/login")
+        .send({ email: user.email, password: "Password123!" });
+      expect(response.status).toBe(401);
+      expect(response.body.error.code).toBe("ACCOUNT_INACTIVE");
+      expect(await prisma.ticket.count()).toBe(0);
     });
   });
 });

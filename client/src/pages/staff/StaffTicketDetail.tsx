@@ -1,11 +1,13 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import apiFetch from "../../api/client";
+import apiFetch, { apiErrorMessage } from "../../api/client";
 import { useAuth } from "../../auth/useAuth";
 import Badge from "../../components/Badge";
 import ReadOnlyField from "../../components/ReadOnlyField";
 import StateBlock from "../../components/StateBlock";
+import ActionsTakenPanel from "../../components/tickets/ActionsTakenPanel";
+import ConflictAlert from "../../components/tickets/ConflictAlert";
 import InternalNotes from "../../components/tickets/InternalNotes";
 import PublicComments from "../../components/tickets/PublicComments";
 import type {
@@ -15,7 +17,11 @@ import type {
 } from "../../types/ticket";
 import { formatDate } from "../../utils/date";
 import { formatFileSize } from "../../utils/file";
-import { getPermittedTransitions } from "../../utils/status-machine";
+
+type PendingChange =
+  | { field: "owner"; value: number | null; label: string }
+  | { field: "priority"; value: ITPriority; label: string }
+  | { field: "status"; value: TicketStatus; label: string };
 
 interface AssigneeOption {
   id: number;
@@ -51,13 +57,25 @@ export function StaffTicketDetail() {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"comments" | "notes" | "attachments">("attachments");
-  const [savingOwner, setSavingOwner] = useState(false);
-  const [savingPriority, setSavingPriority] = useState(false);
-  const [savingStatus, setSavingStatus] = useState(false);
+  const [activeTab, setActiveTab] = useState<"comments" | "notes" | "attachments" | "actions">("attachments");
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
+  const [needsReload, setNeedsReload] = useState(false);
+  const [showConflict, setShowConflict] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [actionsCount, setActionsCount] = useState<number | null>(null);
+  const updateActionVersion = useCallback((version: number) => {
+    setTicket(prev => prev ? { ...prev, version } : prev);
+  }, []);
+  const updateCommentCount = useCallback((count: number) => {
+    setTicket(prev => prev ? { ...prev, publicCommentsCount: count } : prev);
+  }, []);
+  const updateNoteCount = useCallback((count: number) => {
+    setTicket(prev => prev ? { ...prev, internalNotesCount: count } : prev);
+  }, []);
   const showFeedback = (msg: string) => {
     setFeedbackMessage(msg);
     setTimeout(() => {
@@ -65,9 +83,9 @@ export function StaffTicketDetail() {
     }, 4000);
   };
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (preserveEditors = false) => {
     if (!id) return;
-    setLoading(true);
+    if (!preserveEditors) setLoading(true);
     setError(null);
     setNotFound(false);
 
@@ -92,141 +110,108 @@ export function StaffTicketDetail() {
 
       const ticketData = (await ticketRes.json()) as StaffTicketDetailDto;
       setTicket(ticketData);
+      setNeedsReload(false);
+      setShowConflict(false);
 
       if (assigneesRes.ok) {
         const assigneesData = (await assigneesRes.json()) as AssigneeOption[];
         setAssignees(assigneesData);
       }
+      return true;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Unable to reach server");
+      const message = err instanceof Error ? err.message : "Unable to reach server";
+      if (preserveEditors) setErrorMessage(message);
+      else setError(message);
     } finally {
       setLoading(false);
     }
   }, [id]);
 
+  const reloadForActions = async () => {
+    if (!await loadData(true)) throw new Error("Unable to reload Ticket.");
+  };
+
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Shared owner update helper (AC-11, BR-18, BR-23)
-  const updateOwner = async (newOwnerId: number | null, successMessage?: string) => {
-    if (!ticket) return;
-    const selectedAssignee = newOwnerId
-      ? assignees.find((a) => a.id === newOwnerId) ??
-        (user?.id === newOwnerId ? { id: user.id, name: user.name } : null)
-      : null;
-
-    setSavingOwner(true);
+  const saveChange = async (change: PendingChange) => {
+    if (savingRef.current) return;
+    if (!ticket || saving || needsReload) return;
+    if (change.field === "status" && !ticket.permittedTransitions?.includes(change.value)) {
+      setErrorMessage("This status change is no longer permitted. Choose one of the available transitions.");
+      return;
+    }
+    savingRef.current = true;
+    setSaving(true);
+    setPendingChange(change);
     setErrorMessage(null);
+    setFeedbackMessage(null);
+    const payload = change.field === "owner"
+      ? { ownerId: change.value }
+      : change.field === "priority"
+        ? { itPriority: change.value }
+        : { status: change.value };
 
     try {
-      const res = await apiFetch(`/api/staff/tickets/${ticket.id}/owner`, {
+      const res = await apiFetch(`/api/staff/tickets/${ticket.id}/${change.field}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId: newOwnerId }),
+        body: JSON.stringify({ ...payload, expectedVersion: ticket.version }),
       });
-
+      const data = await res.json().catch(() => null);
+      if (res.status === 409 && data?.error?.code === "STALE_UPDATE") {
+        setNeedsReload(true);
+        setShowConflict(true);
+        return;
+      }
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error?.message || "Failed to update ticket owner.");
+        setErrorMessage(apiErrorMessage(data, "Unable to update Ticket. Please try again."));
+        return;
       }
 
-      const data = await res.json();
-      setTicket((prev) =>
-        prev
-          ? {
-              ...prev,
-              ticketOwner:
-                newOwnerId && selectedAssignee
-                  ? { id: selectedAssignee.id, name: selectedAssignee.name }
-                  : null,
-              status: data.status,
-            }
-          : null,
-      );
-      showFeedback(
-        successMessage ?? (newOwnerId ? "Owner updated." : "Ticket unassigned."),
-      );
+      setTicket(prev => {
+        if (!prev) return prev;
+        const updated = { ...prev, version: data.ticketVersion };
+        if (change.field === "owner") {
+          const assignee = assignees.find(a => a.id === change.value)
+            ?? (user?.id === change.value ? user : null);
+          updated.ticketOwner = assignee ? { id: assignee.id, name: assignee.name } : null;
+          updated.status = data.status;
+          updated.permittedTransitions = data.permittedTransitions;
+        } else if (change.field === "priority") updated.itPriority = data.itPriority;
+        else {
+          updated.status = data.status;
+          updated.permittedTransitions = data.permittedTransitions;
+        }
+        return updated;
+      });
+      setPendingChange(null);
+      showFeedback(change.field === "owner"
+        ? (change.value === user?.id ? "Ticket claimed successfully." : change.value ? "Owner updated." : "Ticket unassigned.")
+        : change.field === "priority" ? "IT Priority updated." : "Ticket status updated.");
     } catch (err: unknown) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "Failed to update owner.",
-      );
+      setErrorMessage("Unable to update Ticket. Please try again.");
     } finally {
-      setSavingOwner(false);
+      savingRef.current = false;
+      setSaving(false);
     }
   };
 
-  // Claim unassigned ticket (AC-11, BR-23)
   const handleClaim = () => {
-    if (user) {
-      updateOwner(user.id, "Ticket claimed successfully.");
-    }
+    if (user) void saveChange({ field: "owner", value: user.id, label: `Ticket Owner: ${user.name}` });
   };
-
-  // Reassign or unassign owner (AC-11, BR-18)
   const handleOwnerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    const newOwnerId = value ? parseInt(value, 10) : null;
-    updateOwner(newOwnerId);
+    const ownerId = e.target.value ? Number(e.target.value) : null;
+    void saveChange({ field: "owner", value: ownerId, label: `Ticket Owner: ${assignees.find(a => a.id === ownerId)?.name ?? "Unassigned"}` });
   };
-
-  // Update IT Priority (AC-12, BR-19, BR-20)
-  const handlePriorityChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (!ticket) return;
-    const newPriority = e.target.value as ITPriority;
-
-    setSavingPriority(true);
-    setErrorMessage(null);
-
-    try {
-      const res = await apiFetch(`/api/staff/tickets/${ticket.id}/priority`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itPriority: newPriority }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error?.message || "Failed to update IT Priority.");
-      }
-
-      setTicket((prev) => (prev ? { ...prev, itPriority: newPriority } : null));
-      showFeedback("IT Priority updated.");
-    } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "Failed to update IT Priority.");
-    } finally {
-      setSavingPriority(false);
-    }
+  const handlePriorityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as ITPriority;
+    void saveChange({ field: "priority", value, label: `IT Priority: ${IT_PRIORITY_OPTIONS.find(p => p.value === value)?.label}` });
   };
-
-  // Execute validated status transition (AC-13, BR-21, BR-22)
-  const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (!ticket) return;
-    const newStatus = e.target.value as TicketStatus;
-    if (newStatus === ticket.status) return;
-
-    setSavingStatus(true);
-    setErrorMessage(null);
-
-    try {
-      const res = await apiFetch(`/api/staff/tickets/${ticket.id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error?.message || "Failed to transition status.");
-      }
-
-      setTicket((prev) => (prev ? { ...prev, status: newStatus } : null));
-      showFeedback("Ticket status updated.");
-    } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "Failed to transition status.");
-    } finally {
-      setSavingStatus(false);
-    }
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as TicketStatus;
+    if (value !== ticket?.status) void saveChange({ field: "status", value, label: `Current Status: ${STATUS_LABELS[value]}` });
   };
 
   if (loading) {
@@ -272,7 +257,9 @@ export function StaffTicketDetail() {
     );
   }
 
-  const permittedTransitions = getPermittedTransitions(ticket.status);
+  const permittedTransitions = ticket.permittedTransitions ?? [];
+  const pendingStatusUnavailable = pendingChange?.field === "status"
+    && !permittedTransitions.includes(pendingChange.value);
 
   return (
     <div className="container py-4">
@@ -297,6 +284,19 @@ export function StaffTicketDetail() {
           />
         </div>
       )}
+
+      {showConflict && <ConflictAlert onReload={() => void loadData(true)} onDismiss={() => setShowConflict(false)} />}
+      {pendingChange && !saving && (
+        <div className="alert alert-warning zen-pending-change mb-3">
+          <p>Pending {pendingChange.label}</p>
+          {pendingStatusUnavailable && !needsReload && <p>This status change is no longer permitted. Choose a current transition or discard the pending change.</p>}
+          <div className="d-flex flex-wrap gap-2">
+            <button type="button" className="btn btn-primary" disabled={needsReload || pendingStatusUnavailable} onClick={() => void saveChange(pendingChange)}>Retry change</button>
+            <button type="button" className="btn btn-outline-secondary" onClick={() => setPendingChange(null)}>Discard change</button>
+          </div>
+        </div>
+      )}
+      {needsReload && !showConflict && <button type="button" className="btn btn-primary mb-3" onClick={() => void loadData(true)}>Reload ticket</button>}
 
       {/* Ticket Header */}
       <div className="card shadow-sm mb-4">
@@ -338,9 +338,12 @@ export function StaffTicketDetail() {
                   className="form-select form-select-sm"
                   value={ticket.ticketOwner?.id ?? ""}
                   onChange={handleOwnerChange}
-                  disabled={savingOwner}
+                  disabled={saving || needsReload}
                 >
                   <option value="">Unassigned</option>
+                  {ticket.ticketOwner && !assignees.some(assignee => assignee.id === ticket.ticketOwner?.id) && (
+                    <option value={ticket.ticketOwner.id} disabled>{ticket.ticketOwner.name}</option>
+                  )}
                   {assignees.map((assignee) => (
                     <option key={assignee.id} value={assignee.id}>
                       {assignee.name}
@@ -352,9 +355,9 @@ export function StaffTicketDetail() {
                     type="button"
                     className="btn btn-outline-primary btn-sm text-nowrap"
                     onClick={handleClaim}
-                    disabled={savingOwner}
+                    disabled={saving || needsReload}
                   >
-                    {savingOwner ? "Claiming…" : "Claim"}
+                    {saving ? "Claiming…" : "Claim"}
                   </button>
                 )}
               </div>
@@ -372,7 +375,7 @@ export function StaffTicketDetail() {
                   className="form-select form-select-sm"
                   value={ticket.itPriority}
                   onChange={handlePriorityChange}
-                  disabled={savingPriority}
+                  disabled={saving || needsReload}
                 >
                   {IT_PRIORITY_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -380,7 +383,7 @@ export function StaffTicketDetail() {
                     </option>
                   ))}
                 </select>
-                {savingPriority && (
+                {saving && (
                   <span className="spinner-border spinner-border-sm text-secondary" role="status" />
                 )}
               </div>
@@ -388,31 +391,40 @@ export function StaffTicketDetail() {
 
             {/* Current Status Control */}
             <div className="col-12 col-md-4">
-              <label htmlFor="staff-ticket-status" className="form-label fw-bold small text-secondary">
-                Current Status
-              </label>
-              <div className="d-flex align-items-center gap-2">
-                <select
-                  id="staff-ticket-status"
-                  aria-label="Current Status"
-                  className="form-select form-select-sm"
-                  value={ticket.status}
-                  onChange={handleStatusChange}
-                  disabled={savingStatus || permittedTransitions.length === 0}
-                >
-                  <option value={ticket.status}>
-                    {STATUS_LABELS[ticket.status]} (Current)
-                  </option>
-                  {permittedTransitions.map((nextStatus) => (
-                    <option key={nextStatus} value={nextStatus}>
-                      {STATUS_LABELS[nextStatus]}
-                    </option>
-                  ))}
-                </select>
-                {savingStatus && (
-                  <span className="spinner-border spinner-border-sm text-secondary" role="status" />
-                )}
-              </div>
+              {ticket.status === "CANCELLED" ? (
+                <>
+                  <ReadOnlyField id="staff-ticket-status" label="Current Status" value={STATUS_LABELS[ticket.status]} />
+                  <p className="small text-body-secondary mb-0">This Ticket is cancelled; no further status changes are possible.</p>
+                </>
+              ) : (
+                <>
+                  <label htmlFor="staff-ticket-status" className="form-label fw-bold small text-secondary">
+                    Current Status
+                  </label>
+                  <div className="d-flex align-items-center gap-2">
+                    <select
+                      id="staff-ticket-status"
+                      aria-label="Current Status"
+                      className="form-select form-select-sm"
+                      value={ticket.status}
+                      onChange={handleStatusChange}
+                      disabled={saving || needsReload || permittedTransitions.length === 0}
+                    >
+                      <option value={ticket.status} disabled>
+                        {STATUS_LABELS[ticket.status]} (Current)
+                      </option>
+                      {permittedTransitions.map((nextStatus) => (
+                        <option key={nextStatus} value={nextStatus}>
+                          {STATUS_LABELS[nextStatus]}
+                        </option>
+                      ))}
+                    </select>
+                    {saving && (
+                      <span className="spinner-border spinner-border-sm text-secondary" role="status" />
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Read-only Context Attributes */}
@@ -508,10 +520,16 @@ export function StaffTicketDetail() {
                 Internal Notes ({ticket.internalNotesCount})
               </button>
             </li>
+            <li className="nav-item" role="presentation">
+              <button type="button" className={`nav-link ${activeTab === "actions" ? "active fw-bold" : ""}`} id="actions-tab" aria-controls="actions-panel" onClick={() => setActiveTab("actions")} role="tab" aria-selected={activeTab === "actions"}>Actions Taken{actionsCount !== null ? ` (${actionsCount})` : ''}</button>
+            </li>
           </ul>
         </div>
 
         <div className="card-body">
+          <div id="actions-panel" role="tabpanel" aria-labelledby="actions-tab" hidden={activeTab !== "actions"}>
+            <ActionsTakenPanel key={ticket.id} ticketId={ticket.id} version={ticket.version} canWrite disabled={saving || needsReload} onVersionChange={updateActionVersion} onCountChange={setActionsCount} onReload={reloadForActions} />
+          </div>
           {/* Attachments Tab */}
           {activeTab === "attachments" && (
             <div>
@@ -566,11 +584,7 @@ export function StaffTicketDetail() {
           {activeTab === "comments" && (
             <PublicComments
               ticketId={ticket.id}
-              onCommentCountChange={(count) =>
-                setTicket((prev) =>
-                  prev ? { ...prev, publicCommentsCount: count } : prev,
-                )
-              }
+              onCommentCountChange={updateCommentCount}
             />
           )}
 
@@ -578,11 +592,7 @@ export function StaffTicketDetail() {
           {activeTab === "notes" && (
             <InternalNotes
               ticketId={ticket.id}
-              onNoteCountChange={(count) =>
-                setTicket((prev) =>
-                  prev ? { ...prev, internalNotesCount: count } : prev,
-                )
-              }
+              onNoteCountChange={updateNoteCount}
             />
           )}
         </div>

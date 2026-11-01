@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
-import { useRequester } from "../context/RequesterContext";
 import type { AuthenticatedUser, UserRole } from "../types/auth";
 import { getDefaultRouteForRole } from "../utils/navigation";
 import { Badge } from "./Badge";
@@ -17,8 +16,6 @@ export interface AppShellProps {
   breadcrumbs?: BreadcrumbItem[];
   user?: AuthenticatedUser | null;
   onLogout?: () => void;
-  requesterName?: string;
-  onChangeRequester?: () => void;
 }
 
 function getInitials(name: string): string {
@@ -36,18 +33,23 @@ function getNavLinksForRole(
   switch (role) {
     case "REQUESTER":
       return [
+        { to: "/dashboard", label: "Dashboard", end: true },
         { to: "/tickets", label: "My Tickets", end: true },
         { to: "/tickets/new", label: "Create Ticket", end: false },
       ];
     case "IT_STAFF":
-      return [{ to: "/staff/queue", label: "Ticket Queue", end: false }];
-    case "ADMINISTRATOR":
-      return [{ to: "/admin/users", label: "Users", end: false }];
-    default:
       return [
-        { to: "/tickets", label: "My Tickets", end: true },
-        { to: "/tickets/new", label: "Create Ticket", end: false },
+        { to: "/dashboard", label: "Dashboard", end: true },
+        { to: "/staff/queue", label: "Ticket Queue", end: false },
       ];
+    case "ADMINISTRATOR":
+      return [
+        { to: "/dashboard", label: "Dashboard", end: true },
+        { to: "/staff/queue", label: "Ticket Queue", end: false },
+        { to: "/admin/users", label: "Users", end: false },
+      ];
+    default:
+      return [];
   }
 }
 
@@ -56,8 +58,6 @@ export function AppShell({
   breadcrumbs,
   user: propUser,
   onLogout: propOnLogout,
-  requesterName: propRequesterName,
-  onChangeRequester,
 }: AppShellProps) {
   const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
@@ -90,62 +90,45 @@ export function AppShell({
     };
   }, [profileOpen]);
 
-  let contextUser: AuthenticatedUser | null = null;
-  let contextLogout: (() => Promise<void>) | undefined;
+  let auth: ReturnType<typeof useAuth> | undefined;
   try {
-    const auth = useAuth();
-    contextUser = auth.user;
-    contextLogout = auth.logout;
+    auth = useAuth();
   } catch {
-    // Rendered outside AuthProvider in an isolated test
+    // Standalone shell previews supply the user through props.
   }
-
-  let contextRequesterName: string | undefined;
-  try {
-    const requesterCtx = useRequester();
-    contextRequesterName = requesterCtx.selectedRequester?.name;
-  } catch {
-    // Rendered outside RequesterProvider
-  }
-
-  const activeUser = propUser !== undefined ? propUser : contextUser;
-  const isLab3Auth = activeUser !== null && activeUser !== undefined;
-  const requesterName =
-    propRequesterName || contextRequesterName || "Development Requester";
+  const activeUser = propUser !== undefined ? propUser : auth?.user;
+  const logoutRef = useRef(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const navLinks = getNavLinksForRole(activeUser?.role);
 
   const handleLogout = async () => {
+    if (logoutRef.current) return;
+    logoutRef.current = true;
+    setLoggingOut(true);
+    setLogoutError(null);
     setProfileOpen(false);
-    if (propOnLogout) {
-      propOnLogout();
-    } else if (contextLogout) {
-      await contextLogout();
-      navigate("/login", { replace: true });
-    } else {
-      navigate("/login", { replace: true });
+    try {
+      if (propOnLogout) propOnLogout();
+      else {
+        await auth?.logout();
+        navigate("/login", { replace: true });
+      }
+    } catch {
+      setLogoutError("Unable to sign out. Please try again.");
+    } finally {
+      logoutRef.current = false;
+      setLoggingOut(false);
     }
   };
 
   const brandTarget = activeUser
     ? getDefaultRouteForRole(activeUser.role)
-    : "/tickets";
+    : "/login";
 
   return (
     <div className="min-vh-100 d-flex flex-column bg-body">
-      {/* Persistent quiet notice (Lab 2 mode only) */}
-      {!isLab3Auth && (
-        <aside
-          className="zen-notice py-1 text-center"
-          role="note"
-          aria-label="Development notice"
-        >
-          <div className="container px-3">
-            Development Requester is a testing mechanism, not authentication.
-          </div>
-        </aside>
-      )}
-
       {/* Zen Green Header */}
       <header className="zen-header text-white shadow-sm">
         <nav className="navbar navbar-expand-md navbar-dark p-0">
@@ -192,7 +175,7 @@ export function AppShell({
 
             {/* Right side: User/Requester Profile + Mobile Toggler */}
             <div className="d-flex align-items-center gap-2">
-              {isLab3Auth ? (
+              {activeUser ? (
                 <div className="d-flex align-items-center gap-2">
                   {/* User Initial Badge Avatar */}
                   <span className="zen-avatar" aria-hidden="true">
@@ -212,6 +195,7 @@ export function AppShell({
                     <button
                       type="button"
                       className="btn btn-sm text-white d-flex align-items-center gap-1 border border-white-50 ms-1"
+                      disabled={loggingOut}
                       aria-label="User profile"
                       aria-expanded={profileOpen}
                       onClick={() => setProfileOpen((prev) => !prev)}
@@ -245,75 +229,7 @@ export function AppShell({
                   </div>
                 </div>
               ) : (
-                /* Lab 2 Fallback: Requester Profile Menu */
-                <div className="dropdown position-relative" ref={dropdownRef}>
-                  <button
-                    type="button"
-                    className="btn btn-sm text-white d-flex align-items-center gap-1 border border-white-50"
-                    aria-label="Requester profile"
-                    aria-expanded={profileOpen}
-                    onClick={() => setProfileOpen((prev) => !prev)}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    <span
-                      className="d-inline-block text-truncate"
-                      style={{ maxWidth: "160px" }}
-                    >
-                      {requesterName}
-                    </span>
-                    <span className="small" aria-hidden="true">
-                      ▾
-                    </span>
-                  </button>
-
-                  {profileOpen && (
-                    <ul className="dropdown-menu dropdown-menu-end show position-absolute mt-1 shadow">
-                      <li>
-                        <span className="dropdown-item-text text-muted small">
-                          Acting as <strong>{requesterName}</strong>
-                        </span>
-                      </li>
-                      <li>
-                        <hr className="dropdown-divider" />
-                      </li>
-                      <li>
-                        {onChangeRequester ? (
-                          <button
-                            type="button"
-                            className="dropdown-item"
-                            onClick={() => {
-                              setProfileOpen(false);
-                              onChangeRequester();
-                            }}
-                          >
-                            Change Requester
-                          </button>
-                        ) : (
-                          <Link
-                            to="/select-requester"
-                            className="dropdown-item"
-                            onClick={() => setProfileOpen(false)}
-                          >
-                            Change Requester
-                          </Link>
-                        )}
-                      </li>
-                    </ul>
-                  )}
-                </div>
+                <Link to="/login" className="btn btn-outline-light">Sign In</Link>
               )}
 
               {/* Mobile Navbar Toggler */}
@@ -387,6 +303,7 @@ export function AppShell({
         className="container my-4 flex-grow-1"
         style={{ maxWidth: "1200px" }}
       >
+        {logoutError && <div className="alert alert-danger" role="alert">{logoutError}</div>}
         {children}
       </main>
     </div>

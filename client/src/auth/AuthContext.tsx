@@ -6,7 +6,6 @@ import type { AuthenticatedUser } from "../types/auth";
 export interface AuthContextValue {
   user: AuthenticatedUser | null;
   loading: boolean;
-  isLegacyTest: boolean;
   login: (credentials: {
     email: string;
     password: string;
@@ -27,7 +26,6 @@ export const AuthContext = createContext<AuthContextValue | undefined>(
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLegacyTest, setIsLegacyTest] = useState(false);
 
   const refreshUser = async (): Promise<AuthenticatedUser | null> => {
     try {
@@ -50,6 +48,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
+    localStorage.removeItem("toktickit_requester_id");
+
     async function initAuth() {
       try {
         const res = await apiFetch("/api/auth/me");
@@ -58,10 +58,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (isMounted) {
             if (data && data.user) {
               setUser(data.user);
-            } else if (Array.isArray(data)) {
-              // Lab 2 legacy test environment where fetch was mocked to return mockActiveRequesters
-              setIsLegacyTest(true);
-              setUser(null);
             } else {
               setUser(null);
             }
@@ -110,24 +106,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await res.json();
     localStorage.removeItem("toktickit_requester_id");
-    setIsLegacyTest(false);
     setUser(data.user);
     return data.user;
   };
 
   const logout = async (): Promise<void> => {
-    try {
-      await apiFetch("/api/auth/logout", { method: "POST" });
-    } finally {
-      localStorage.removeItem("toktickit_requester_id");
-      setIsLegacyTest(false);
-      setUser(null);
-    }
+    const response = await apiFetch("/api/auth/logout", { method: "POST" });
+    // A 401 confirms that the expired/invalid session is already unauthenticated.
+    if (!response.ok && response.status !== 401) throw new Error("Unable to sign out. Please try again.");
+    localStorage.removeItem("toktickit_requester_id");
+    setUser(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, isLegacyTest, login, logout, refreshUser }}
+      value={{ user, loading, login, logout, refreshUser }}
     >
       {children}
     </AuthContext.Provider>

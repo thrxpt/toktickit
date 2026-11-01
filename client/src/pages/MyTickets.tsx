@@ -7,7 +7,6 @@ import Pagination from "../components/Pagination";
 import StateBlock from "../components/StateBlock";
 import Toolbar from "../components/Toolbar";
 import { useAuth } from "../auth/AuthContext";
-import { useRequester } from "../context/RequesterContext";
 import type { TicketListItem, TicketListMeta } from "../types/ticket";
 import { formatDate } from "../utils/date";
 
@@ -17,19 +16,7 @@ interface CategoryOption {
 }
 
 export function MyTickets() {
-  let user: { id: number; name: string } | null = null;
-  try {
-    user = useAuth().user;
-  } catch {
-    // outside AuthProvider
-  }
-  let selectedRequester: { id: number; name: string } | null = null;
-  try {
-    selectedRequester = useRequester().selectedRequester;
-  } catch {
-    // outside RequesterProvider
-  }
-  const activeRequester = user || selectedRequester;
+  const { user: activeRequester } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const searchInputId = useId();
@@ -41,6 +28,7 @@ export function MyTickets() {
   const search = searchParams.get("search") || "";
   const categoryId = searchParams.get("categoryId") || "";
   const requestedPriority = searchParams.get("requestedPriority") || "";
+  const statusGroup = searchParams.get("statusGroup") || "";
   const status = searchParams.get("status") || "";
   const sort = searchParams.get("sort") || "createdAt";
   const order = searchParams.get("order") || "desc";
@@ -112,6 +100,7 @@ export function MyTickets() {
     if (search.trim()) params.set("search", search.trim());
     if (categoryId) params.set("categoryId", categoryId);
     if (requestedPriority) params.set("requestedPriority", requestedPriority);
+    if (statusGroup) params.set("statusGroup", statusGroup);
     if (status) params.set("status", status);
     if (sort) params.set("sort", sort);
     if (order) params.set("order", order);
@@ -164,6 +153,7 @@ export function MyTickets() {
     categoryId,
     requestedPriority,
     status,
+    statusGroup,
     sort,
     order,
     page,
@@ -206,7 +196,9 @@ export function MyTickets() {
   };
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    updateParam({ status: e.target.value || null, page: "1" });
+    const value = e.target.value;
+    const group = value === "open" || value === "resolved";
+    updateParam({ status: group ? null : value || null, statusGroup: group ? value : null, page: "1" });
   };
 
   const handleClearFilters = () => {
@@ -235,7 +227,7 @@ export function MyTickets() {
   };
 
   const hasActiveFilters = Boolean(
-    search.trim() || categoryId || requestedPriority || status,
+    search.trim() || categoryId || requestedPriority || status || statusGroup,
   );
 
   const renderSortIndicator = (
@@ -330,11 +322,20 @@ export function MyTickets() {
           id={statusSelectId}
           className="form-select"
           aria-label="Filter by status"
-          value={status}
+          value={statusGroup || status}
           onChange={handleStatusChange}
         >
           <option value="">All Statuses</option>
+          <option value="open">Open Tickets</option>
+          <option value="resolved">Resolved Tickets</option>
           <option value="NEW">New</option>
+          <option value="OPEN">Open</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="WAITING_FOR_REQUESTER">Waiting for Requester</option>
+          <option value="RESOLVED">Resolved</option>
+          <option value="CLOSED">Closed</option>
+          <option value="REOPENED">Reopened</option>
+          <option value="CANCELLED">Cancelled</option>
         </select>
       </div>
     </div>

@@ -18,12 +18,13 @@ import {
   writeAttachmentFile,
 } from "../attachments/storage";
 import { sendError } from "../errors";
-import { extractSessionToken, requireAuth } from "../middleware/auth";
+import { requireAuth } from "../middleware/auth";
 import {
   rejectRequesterIdInBody,
   requireRequesterContext,
 } from "../middleware/requester-context";
 import { prisma } from "../prisma";
+import { createOnce, submissionKey, validateSubmissionKey } from "../submissions";
 import {
   serializeActiveAttachment,
   serializeAttachments,
@@ -52,7 +53,7 @@ async function checkTicketOwnershipAndLimit(
 ): Promise<void> {
   const requesterId = req.requesterId;
   if (!requesterId) {
-    sendError(res, "REQUESTER_CONTEXT_MISSING");
+    sendError(res, "UNAUTHENTICATED");
     return;
   }
 
@@ -88,7 +89,10 @@ async function checkTicketOwnershipAndLimit(
       },
     });
 
-    if (activeCount >= 5) {
+    // A keyed replay needs its validated file fingerprint before lookup. Multer
+    // still caps buffering at 5 MB; fresh keys on a full Ticket stop before I/O.
+    res.locals.attachmentLimitReached = activeCount >= 5;
+    if (res.locals.attachmentLimitReached && !req.header("Idempotency-Key")) {
       sendError(res, "ATTACHMENT_LIMIT_REACHED");
       return;
     }
@@ -129,7 +133,7 @@ export async function getTicketAttachments(
 ): Promise<void> {
   const requesterId = req.requesterId;
   if (!requesterId) {
-    sendError(res, "REQUESTER_CONTEXT_MISSING");
+    sendError(res, "UNAUTHENTICATED");
     return;
   }
 
@@ -175,6 +179,7 @@ export async function getTicketAttachments(
 
 // POST /api/tickets/:ticketId/attachments (FR-12, BR-04, BR-32, BR-33, BR-34, BR-35, BR-37, BR-40, BR-41)
 export const postTicketAttachmentHandlers = [
+  validateSubmissionKey,
   checkTicketOwnershipAndLimit,
   handleSingleUpload,
   rejectRequesterIdInBody,
@@ -211,32 +216,72 @@ export const postTicketAttachmentHandlers = [
       return;
     }
 
+    const mimeType = typeValidation.mimeType;
     const storageKey = crypto.randomUUID();
+    let fileMayExist = false;
+    let committed = false;
 
     try {
-      await writeAttachmentFile(storageKey, file.buffer);
-
-      const attachment = await prisma.attachment.create({
-        data: {
-          ticketId,
-          originalFilename: file.originalname,
-          mimeType: typeValidation.mimeType,
-          sizeBytes: file.size,
-          storageKey,
-          uploadedById: requesterId,
-        },
-        include: {
-          uploadedBy: { select: { id: true, name: true } },
-        },
+      const key = submissionKey(req, {
+        filename: file.originalname, mimeType,
+        bytes: crypto.createHash("sha256").update(file.buffer).digest("hex"),
       });
+      const include = { uploadedBy: { select: { id: true, name: true } } } as const;
+      const attachment = await createOnce(key,
+        () => prisma.attachment.findUnique({ where: { submissionKey: key! }, include }),
+        async () => {
+          if (res.locals.attachmentLimitReached) return null;
+          return prisma.$transaction(async tx => {
+            // BR-35: serialize new uploads, including distinct keys, on this Ticket.
+            await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id = ${ticketId} FOR UPDATE`;
+            if (key) {
+              const existing = await tx.attachment.findUnique({ where: { submissionKey: key }, include });
+              if (existing) return existing;
+            }
+            const count = await tx.attachment.count({ where: { ticketId, removedAt: null } });
+            if (count >= 5) return null;
+            fileMayExist = true;
+            await writeAttachmentFile(storageKey, file.buffer);
+            return tx.attachment.create({
+              data: {
+                ticketId, originalFilename: file.originalname, mimeType,
+                sizeBytes: file.size, storageKey, uploadedById: requesterId, submissionKey: key,
+              },
+              include,
+            });
+          });
+        },
+      );
+      committed = attachment?.storageKey === storageKey;
+      if (!attachment) {
+        sendError(res, "ATTACHMENT_LIMIT_REACHED");
+        return;
+      }
+
+      if (attachment.removedAt) {
+        sendError(res, "ATTACHMENT_NOT_FOUND");
+        return;
+      }
 
       res
         .status(201)
         .header("Location", `/api/attachments/${attachment.id}/content`)
         .json(serializeActiveAttachment(attachment));
     } catch {
-      await deleteAttachmentFile(storageKey);
-      sendError(res, "DATABASE_UNAVAILABLE");
+      if (fileMayExist && !committed) {
+        try {
+          // Wait for the upload's lock to settle an uncertain commit before
+          // checking visibility; an unlocked read could miss an in-flight commit.
+          const referenced = await prisma.$transaction(async tx => {
+            await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id = ${ticketId} FOR UPDATE`;
+            return tx.attachment.findUnique({ where: { storageKey }, select: { id: true } });
+          });
+          if (!referenced) await deleteAttachmentFile(storageKey);
+        } catch {
+          // Unknown database outcome: an inert orphan is safer than deleting live evidence.
+        }
+      }
+      if (!res.headersSent) sendError(res, "DATABASE_UNAVAILABLE");
     }
   },
 ];
@@ -279,108 +324,26 @@ async function streamAttachmentContent(
 
 // GET /api/attachments/:id/content (FR-13, BR-36, BR-37, BR-39, BR-40, AC-35, AC-37, AC-40)
 // Permitted roles per specification.md §8: Requester / Staff
-attachmentsRouter.get("/:id/content", async (req: Request, res: Response) => {
-  const idResult = z
-    .string()
-    .regex(/^[1-9]\d*$/)
-    .safeParse(req.params.id);
+attachmentsRouter.get("/:id/content", requireAuth, async (req: Request, res: Response) => {
+  const idResult = z.string().regex(/^[1-9]\d*$/).safeParse(req.params.id);
   if (!idResult.success) {
     sendError(res, "ATTACHMENT_NOT_FOUND");
     return;
   }
-
-  const id = parseInt(idResult.data, 10);
-
-  const sessionToken = extractSessionToken(req);
-  if (sessionToken) {
-    await requireAuth(req, res, async () => {
-      const user = req.user;
-      if (!user) {
-        sendError(res, "UNAUTHENTICATED");
-        return;
-      }
-
-      try {
-        let attachment;
-        if (user.role === "IT_STAFF") {
-          // IT Staff can access active attachments on any ticket (specification.md §8)
-          attachment = await prisma.attachment.findFirst({
-            where: {
-              id,
-              removedAt: null,
-            },
-          });
-        } else if (user.role === "REQUESTER") {
-          // Requester can only access active attachments on tickets they own (BR-40, AC-40)
-          attachment = await prisma.attachment.findFirst({
-            where: {
-              id,
-              removedAt: null,
-              ticket: { requesterId: user.id },
-            },
-          });
-        } else {
-          // Administrators are segregated to user management and cannot access ticket attachments (BR-14, ADR-0008)
-          sendError(res, "FORBIDDEN");
-          return;
-        }
-
-        if (!attachment) {
-          sendError(res, "ATTACHMENT_NOT_FOUND");
-          return;
-        }
-
-        await streamAttachmentContent(res, attachment);
-      } catch {
-        sendError(res, "DATABASE_UNAVAILABLE");
-      }
-    });
-    return;
-  }
-
-  // Lab 2 backward compatibility mode using X-Requester-Id header (ADR-0003, ADR-0009)
-  const header = req.header("X-Requester-Id");
-  if (!header || header.trim() === "") {
-    sendError(res, "UNAUTHENTICATED");
-    return;
-  }
-
-  const trimmed = header.trim();
-  if (!/^[1-9]\d*$/.test(trimmed)) {
-    sendError(res, "REQUESTER_CONTEXT_INVALID");
-    return;
-  }
-
-  const requesterId = parseInt(trimmed, 10);
+  const user = req.user!;
   try {
-    const requester = await prisma.requester.findUnique({
-      where: { id: requesterId },
-      select: { id: true, isActive: true },
-    });
-
-    if (!requester) {
-      sendError(res, "REQUESTER_CONTEXT_INVALID");
-      return;
-    }
-
-    if (!requester.isActive) {
-      sendError(res, "REQUESTER_INACTIVE");
-      return;
-    }
-
+    // BR-30, ADR-0010: session ownership for Requesters, operational reads for Staff/Admin.
     const attachment = await prisma.attachment.findFirst({
       where: {
-        id,
+        id: Number(idResult.data),
         removedAt: null,
-        ticket: { requesterId: requester.id },
+        ...(user.role === "REQUESTER" ? { ticket: { requesterId: user.id } } : {}),
       },
     });
-
     if (!attachment) {
       sendError(res, "ATTACHMENT_NOT_FOUND");
       return;
     }
-
     await streamAttachmentContent(res, attachment);
   } catch {
     sendError(res, "DATABASE_UNAVAILABLE");
@@ -395,7 +358,7 @@ attachmentsRouter.post(
   async (req: Request, res: Response) => {
     const requesterId = req.requesterId;
     if (!requesterId) {
-      sendError(res, "REQUESTER_CONTEXT_MISSING");
+      sendError(res, "UNAUTHENTICATED");
       return;
     }
 

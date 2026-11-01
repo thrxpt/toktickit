@@ -15,6 +15,7 @@ export type TicketStatus =
   | "CANCELLED";
 
 export interface StaffQueueTicketItem {
+  version: number;
   id: number;
   ticketNumber: string;
   summary: string;
@@ -46,6 +47,7 @@ export interface StaffQueueResponse {
 }
 
 export interface TicketListItem {
+  version: number;
   id: number
   ticketNumber: string
   summary: string
@@ -95,6 +97,7 @@ export interface AttachmentDto {
 }
 
 export interface TicketDetail {
+  version: number;
   id: number
   ticketNumber: string
   summary: string
@@ -143,6 +146,8 @@ export interface InternalNoteDto {
 }
 
 export interface StaffTicketDetailDto {
+  version: number;
+  permittedTransitions: TicketStatus[];
   id: number;
   ticketNumber: string;
   summary: string;
@@ -173,4 +178,17 @@ export interface StaffTicketDetailDto {
   attachments: AttachmentDto[];
   publicCommentsCount: number;
   internalNotesCount: number;
+}
+
+export interface ActionTakenDto {
+  id: number;
+  ticketId: number;
+  description: string;
+  result: string;
+  performedBy: CommentAuthor;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

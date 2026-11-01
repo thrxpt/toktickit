@@ -3,14 +3,14 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 
 import AppShell from '../../../src/components/AppShell'
-import { RequesterProvider, STORAGE_KEY } from '../../../src/context/RequesterContext'
+import { RequesterSession, requester } from "../../helpers/RequesterSession"
 import CreateTicket from '../../../src/pages/CreateTicket'
 
 describe('STYLE-06 — Accessible names on icon-only controls (AC-46)', () => {
   it('exposes accessible names on every icon-only control in the shell', () => {
     render(
       <MemoryRouter initialEntries={['/tickets']}>
-        <AppShell>
+        <AppShell user={requester}>
           <div>Content</div>
         </AppShell>
       </MemoryRouter>,
@@ -27,24 +27,24 @@ describe('STYLE-06 — Accessible names on icon-only controls (AC-46)', () => {
     expect(profileMenu.getAttribute('aria-label') || profileMenu.textContent).toBeTruthy()
   })
 
-  it('renders persistent notice stating Development Requester is a testing mechanism (BR-03)', () => {
+  it('removes the Development Requester notice (Lab 4 BR-30)', () => {
     render(
       <MemoryRouter initialEntries={['/tickets']}>
-        <AppShell>
+        <AppShell user={requester}>
           <div>Content</div>
         </AppShell>
       </MemoryRouter>,
     )
 
     expect(
-      screen.getByText(/Development Requester.*testing mechanism.*not authentication/i),
-    ).toBeInTheDocument()
+      screen.queryByText(/Development Requester.*testing mechanism.*not authentication/i),
+    ).not.toBeInTheDocument()
   })
 
   it('indicates active navigation link with aria-current="page"', () => {
     render(
       <MemoryRouter initialEntries={['/tickets']}>
-        <AppShell>
+        <AppShell user={requester}>
           <div>Content</div>
         </AppShell>
       </MemoryRouter>,
@@ -74,22 +74,16 @@ describe('STYLE-07 — Keyboard traversal of Create Ticket (AC-45)', () => {
           json: async () => [{ id: 1, name: 'Corporate Laptop' }],
         } as Response)
       }
-      if (url === '/api/requesters') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [{ id: 1, name: 'Jennifer Anderson' }],
-        } as Response)
-      }
+
       return Promise.resolve({ ok: true, json: async () => ({}) } as Response)
     })
 
-    localStorage.setItem(STORAGE_KEY, '1')
 
     render(
       <MemoryRouter initialEntries={['/tickets/new']}>
-        <RequesterProvider>
+        <RequesterSession>
           <CreateTicket />
-        </RequesterProvider>
+        </RequesterSession>
       </MemoryRouter>,
     )
 

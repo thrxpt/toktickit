@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { createTicket, REQUESTER_A, selectRequester } from "./helpers";
+import { createTicket, REQUESTER_A, loginRequester } from "./helpers";
 
 async function assertNoHorizontalScroll(page: Page): Promise<void> {
   const { scrollWidth, clientWidth } = await page.evaluate(() => ({
@@ -16,9 +16,9 @@ test.describe("Responsive Layout and Viewports", () => {
   test.beforeAll(async ({ browser }) => {
     // Ensure at least one ticket exists for detail and list views
     const page = await browser.newPage();
-    await selectRequester(page, REQUESTER_A);
+    await loginRequester(page, REQUESTER_A);
     const { ticketId } = await createTicket(page, {
-      summary: "Responsive Layout Test Ticket",
+      summary: "E2E Responsive Layout Test Ticket",
       description: "Used across RESP-01, RESP-02, and RESP-03 viewport tests.",
     });
     sampleTicketId = ticketId;
@@ -27,7 +27,7 @@ test.describe("Responsive Layout and Viewports", () => {
 
   test("RESP-01 — Three screens at 1440 px (AC-42)", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await selectRequester(page, REQUESTER_A);
+    await loginRequester(page, REQUESTER_A);
 
     // 1. Create Ticket at 1440 px
     await page.goto("/tickets/new");
@@ -67,7 +67,7 @@ test.describe("Responsive Layout and Viewports", () => {
 
   test("RESP-02 — Three screens at 800 px (AC-42)", async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 1024 });
-    await selectRequester(page, REQUESTER_A);
+    await loginRequester(page, REQUESTER_A);
 
     // 1. Create Ticket at 800 px
     await page.goto("/tickets/new");
@@ -107,7 +107,7 @@ test.describe("Responsive Layout and Viewports", () => {
 
   test("RESP-03 — Three screens at 390 px (AC-42, AC-43)", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await selectRequester(page, REQUESTER_A);
+    await loginRequester(page, REQUESTER_A);
 
     // 1. Create Ticket at 390 px
     await page.goto("/tickets/new");
@@ -150,7 +150,7 @@ test.describe("Responsive Layout and Viewports", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await selectRequester(page, REQUESTER_A);
+    await loginRequester(page, REQUESTER_A);
 
     await page.goto("/tickets");
 

@@ -64,6 +64,7 @@ model User {
   removedAttachments  Attachment[] @relation("AttachmentRemover")
   comments            Comment[]
   internalNotes       InternalNote[]
+  performedActions    ActionTaken[]
 
   @@index([role, isActive])
 }
@@ -88,7 +89,9 @@ model Category {
 
 model Ticket {
   id           Int    @id @default(autoincrement())
+  submissionKey String? @unique
   ticketNumber String @unique
+  version      Int    @default(0)
 
   requesterId     Int
   requester       User          @relation("TicketRequester", fields: [requesterId], references: [id])
@@ -113,8 +116,11 @@ model Ticket {
   attachments   Attachment[]
   comments      Comment[]
   internalNotes InternalNote[]
+  actionsTaken  ActionTaken[]
 
   @@index([requesterId, createdAt(sort: Desc)])
+  @@index([requesterId, updatedAt(sort: Desc)])
+  @@index([updatedAt(sort: Desc)])
   @@index([categoryId])
   @@index([status])
   @@index([requestedPriority])
@@ -124,6 +130,7 @@ model Ticket {
 
 model Attachment {
   id       Int    @id @default(autoincrement())
+  submissionKey String? @unique
   ticketId Int
   ticket   Ticket @relation(fields: [ticketId], references: [id])
 
@@ -146,6 +153,7 @@ model Attachment {
 
 model Comment {
   id        Int      @id @default(autoincrement())
+  submissionKey String? @unique
   ticketId  Int
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict)
   authorId  Int
@@ -158,12 +166,31 @@ model Comment {
 
 model InternalNote {
   id        Int      @id @default(autoincrement())
+  submissionKey String? @unique
   ticketId  Int
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict)
   authorId  Int
   author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
   content   String
   createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt(sort: Asc)])
+}
+
+model ActionTaken {
+  id               Int      @id @default(autoincrement())
+  seedKey          String?  @unique
+  ticketId         Int
+  ticket           Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  description      String
+  result           String
+  performedById    Int
+  performedBy      User     @relation(fields: [performedById], references: [id], onDelete: Restrict)
+  followUpRequired Boolean  @default(false)
+  followUpNote     String?
+  attachmentNotes  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([ticketId, createdAt(sort: Asc)])
 }

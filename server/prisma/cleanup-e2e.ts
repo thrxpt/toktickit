@@ -1,10 +1,11 @@
-// Cleanup script for Lab 3 E2E test residue.
+// Cleanup script for Lab 4 E2E test residue.
 // Removes transactional records (tickets, attachments, comments, notes) and throwaway
 // accounts created by Playwright E2E specs, restoring the database to pristine seed state.
 import { PrismaPg } from "@prisma/adapter-pg";
 
+import { deleteAttachmentFile } from "../src/attachments/storage";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { seedReferenceData } from "./seed-data";
+import { demoTicketNumbers, seedReferenceData } from "./seed-data";
 
 async function main(): Promise<void> {
   const databaseUrl = process.env.DATABASE_URL;
@@ -33,6 +34,10 @@ async function main(): Promise<void> {
 
     // 2. Child-first sequential deletion to satisfy FK restrict constraints
     if (ticketIds.length > 0) {
+      await prisma.actionTaken.deleteMany({ where: { ticketId: { in: ticketIds } } });
+      const files = await prisma.attachment.findMany({
+        where: { ticketId: { in: ticketIds } }, select: { storageKey: true },
+      });
       const attachments = await prisma.attachment.deleteMany({
         where: { ticketId: { in: ticketIds } },
       });
@@ -45,6 +50,7 @@ async function main(): Promise<void> {
       const tickets = await prisma.ticket.deleteMany({
         where: { id: { in: ticketIds } },
       });
+      for (const file of files) await deleteAttachmentFile(file.storageKey);
       console.log(
         `Deleted ${tickets.count} E2E tickets (${attachments.count} attachments, ` +
           `${comments.count} comments, ${notes.count} notes)`,
@@ -74,21 +80,32 @@ async function main(): Promise<void> {
       );
     }
 
-    // 4. Delete throwaway E2E user accounts
-    const users = await prisma.user.deleteMany({
+    const temporaryUserFilter = {
+      OR: [
+        { email: { startsWith: "taylor.reed." } },
+        { email: { startsWith: "e2e." } },
+        { email: { startsWith: "temp.admin." } },
+      ],
+    };
+    // BR-26: restore demo work logs and remove E2E performers' dependents
+    // before deleting the temporary accounts (restrict FK).
+    await prisma.actionTaken.deleteMany({
       where: {
+        seedKey: null,
         OR: [
-          { email: { startsWith: "taylor.reed." } },
-          { email: { startsWith: "e2e." } },
-          { email: { startsWith: "temp.admin." } },
+          { ticket: { ticketNumber: { in: demoTicketNumbers } } },
+          { performedBy: temporaryUserFilter },
         ],
       },
     });
+
+    // 4. Delete throwaway E2E user accounts
+    const users = await prisma.user.deleteMany({ where: temporaryUserFilter });
     if (users.count > 0) {
       console.log(`Deleted ${users.count} throwaway E2E test users`);
     }
 
-    // 5. Restore seeded reference accounts to exact documented state
+    // 5. Restore reference accounts and the full Lab 4 demo baseline
     await seedReferenceData(prisma);
     console.log("✓ Database restored to pristine seed state");
   } catch (error) {

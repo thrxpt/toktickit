@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
-import apiFetch from "../../api/client";
+import apiFetch, { apiErrorMessage } from "../../api/client";
+import { useSubmissionKey } from "../../api/submissions";
 import Badge from "../Badge";
 import StateBlock from "../StateBlock";
 import type { CommentDto } from "../../types/ticket";
@@ -16,12 +17,14 @@ export function PublicComments({
   ticketId,
   onCommentCountChange,
 }: PublicCommentsProps) {
+  const submission = useSubmissionKey();
   const [comments, setComments] = useState<CommentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const loadComments = useCallback(async () => {
@@ -51,40 +54,45 @@ export function PublicComments({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     const trimmed = content.trim();
     if (!trimmed || trimmed.length > 2000 || submitting) {
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     setSubmitError(null);
 
     try {
+      const body = JSON.stringify({ content: trimmed });
       const res = await apiFetch(`/api/tickets/${ticketId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Idempotency-Key": submission.forBody(body),
         },
-        body: JSON.stringify({ content: trimmed }),
+        body,
       });
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
-        throw new Error(
-          errorData?.error?.message || `Failed to post comment (${res.status})`,
-        );
+        setSubmitError(apiErrorMessage(errorData, "Unable to post comment. Please try again."));
+        return;
       }
 
       const created = (await res.json()) as CommentDto;
-      const updated = [...comments, created];
+      const updated = comments.some(item => item.id === created.id) ? comments : [...comments, created];
       setComments(updated);
+      submission.reset();
       setContent("");
       onCommentCountChange?.(updated.length);
     } catch (err: unknown) {
       setSubmitError(
-        err instanceof Error ? err.message : "Unable to post comment",
+        "Unable to post comment. Please try again.",
       );
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

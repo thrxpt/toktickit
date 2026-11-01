@@ -1,6 +1,7 @@
 import express, { type Request, type Response } from "express";
 import { z } from "zod";
 
+import { STATUS_GROUPS } from "../dashboard/status-groups";
 import { formatZodErrors, sendError } from "../errors";
 import type { Prisma } from "../generated/prisma/client";
 import {
@@ -8,12 +9,20 @@ import {
   requireRequesterContext,
 } from "../middleware/requester-context";
 import { prisma } from "../prisma";
+import { validateSubmissionKey } from "../submissions";
 import { serializeAttachments } from "../tickets/attachment-serializer";
 import { handleCreateTicket } from "../tickets/create-ticket";
 import {
   getTicketAttachments,
   postTicketAttachmentHandlers,
 } from "./attachments";
+
+import {
+  expectedVersionSchema,
+  updateTicketAtVersion,
+} from "../tickets/ticket-version";
+
+const resolutionSchema = z.object({ expectedVersion: expectedVersionSchema }).strict();
 
 const listTicketsQuerySchema = z
   .object({
@@ -55,6 +64,7 @@ const listTicketsQuerySchema = z
         },
       )
       .optional(),
+    statusGroup: z.enum(["open", "resolved"]).optional(),
     sort: z
       .enum(["createdAt", "ticketNumber", "updatedAt"], {
         message: "Sort field must be createdAt, ticketNumber, or updatedAt",
@@ -82,7 +92,11 @@ const listTicketsQuerySchema = z
         val !== undefined ? (parseInt(val, 10) as 10 | 20 | 50) : 10,
       ),
   })
-  .strict();
+  .strict()
+  .refine((data) => !(data.status && data.statusGroup), {
+    path: ["statusGroup"],
+    message: "Status and statusGroup are mutually exclusive",
+  });
 
 export const ticketsRouter = express.Router();
 ticketsRouter.use(requireRequesterContext);
@@ -105,6 +119,7 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
     categoryId,
     requestedPriority,
     status,
+    statusGroup,
     sort,
     order,
     page,
@@ -155,6 +170,8 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
       where.status = status;
     }
 
+    if (statusGroup) where.status = { in: [...STATUS_GROUPS[statusGroup]] };
+
     // Sorting always carries id: 'desc' as a stable secondary tiebreak (BR-28, AC-28)
     const orderBy: Prisma.TicketOrderByWithRelationInput[] = [
       { [sort]: order },
@@ -173,6 +190,7 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
         select: {
           id: true,
           ticketNumber: true,
+          version: true,
           summary: true,
           requestedPriority: true,
           status: true,
@@ -206,7 +224,7 @@ ticketsRouter.get("/", async (req: Request, res: Response) => {
 });
 
 // POST /api/tickets (FR-05, FR-06, BR-01, BR-02, BR-11, BR-12)
-ticketsRouter.post("/", rejectRequesterIdInBody, handleCreateTicket);
+ticketsRouter.post("/", rejectRequesterIdInBody, validateSubmissionKey, handleCreateTicket);
 
 // GET /api/tickets/:ticketId/attachments (FR-11, BR-07, BR-35, BR-39)
 ticketsRouter.get("/:ticketId/attachments", getTicketAttachments);
@@ -218,7 +236,7 @@ ticketsRouter.post("/:ticketId/attachments", ...postTicketAttachmentHandlers);
 ticketsRouter.get("/:id", async (req: Request, res: Response) => {
   const requesterId = req.requesterId;
   if (!requesterId) {
-    sendError(res, "REQUESTER_CONTEXT_MISSING");
+    sendError(res, "UNAUTHENTICATED");
     return;
   }
 
@@ -278,6 +296,7 @@ ticketsRouter.get("/:id", async (req: Request, res: Response) => {
     const baseResponse = {
       id: ticket.id,
       ticketNumber: ticket.ticketNumber,
+      version: ticket.version,
       summary: ticket.summary,
       description: ticket.description,
       requestedPriority: ticket.requestedPriority,
@@ -311,7 +330,7 @@ ticketsRouter.get("/:id", async (req: Request, res: Response) => {
 ticketsRouter.post("/:id/resolve-indication", async (req: Request, res: Response) => {
   const requesterId = req.requesterId;
   if (!requesterId) {
-    sendError(res, "REQUESTER_CONTEXT_MISSING");
+    sendError(res, "UNAUTHENTICATED");
     return;
   }
 
@@ -325,6 +344,12 @@ ticketsRouter.post("/:id/resolve-indication", async (req: Request, res: Response
   }
 
   const id = parseInt(idResult.data, 10);
+  const parsed = resolutionSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    sendError(res, "VALIDATION_FAILED", formatZodErrors(parsed.error));
+    return;
+  }
+  const { expectedVersion } = parsed.data;
 
   try {
     const ticket = await prisma.ticket.findFirst({
@@ -335,11 +360,17 @@ ticketsRouter.post("/:id/resolve-indication", async (req: Request, res: Response
       select: {
         id: true,
         status: true,
+        version: true,
       },
     });
 
     if (!ticket) {
       sendError(res, "TICKET_NOT_FOUND");
+      return;
+    }
+
+    if (ticket.version !== expectedVersion) {
+      sendError(res, "STALE_UPDATE");
       return;
     }
 
@@ -351,14 +382,17 @@ ticketsRouter.post("/:id/resolve-indication", async (req: Request, res: Response
       return;
     }
 
-    const updated = await prisma.ticket.update({
-      where: { id: ticket.id },
-      data: { resolvedByRequester: true },
-      select: { id: true, resolvedByRequester: true },
+    const updated = await updateTicketAtVersion(ticket.id, expectedVersion, {
+      resolvedByRequester: true,
     });
+    if (!updated) {
+      sendError(res, "STALE_UPDATE");
+      return;
+    }
 
     res.status(200).json({
       id: updated.id,
+      ticketVersion: updated.version,
       resolvedByRequester: updated.resolvedByRequester,
       message:
         "Problem indicated as resolved. IT Staff will review and formally close the ticket.",

@@ -18,6 +18,7 @@ const mockStaffUser: AuthenticatedUser = {
 const mockTickets: StaffQueueTicketItem[] = [
   {
     id: 101,
+    version: 0,
     ticketNumber: "TKT-2026-000101",
     summary: "Wi-Fi connection drops in Building C",
     categoryName: "Network",
@@ -38,6 +39,7 @@ const mockTickets: StaffQueueTicketItem[] = [
   },
   {
     id: 102,
+    version: 0,
     ticketNumber: "TKT-2026-000102",
     summary: "Printer toner empty in Lab 3",
     categoryName: "Hardware",
