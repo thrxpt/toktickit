@@ -23,10 +23,10 @@ submitted verdicts. Merge dates are UTC and are recorded separately from approva
 
 The change-request and follow-up narratives below are historical snapshots; their
 then-pending statements do not override the later approval records. Issues
-#49–#55 are closed on GitHub; parent #48 remains open until the release PR merges.
-[PR #62](https://github.com/thrxpt/toktickit/pull/62) implements Issue 28 / #55 and was approved and merged into `lab4-staging`.
-GitHub issue closure does not certify the remaining reviewed release into `main`;
-[release.md](release.md) records verification and release gates separately.
+#49–#55 and parent #48 are closed on GitHub. PR #62 was approved and merged into
+`lab4-staging`; [release PR #63](https://github.com/thrxpt/toktickit/pull/63) was
+approved and merged into `main`. Documentation PR #64 remains a separate reviewed
+follow-up. [release.md](release.md) records execution evidence and outstanding gates.
 
 ---
 
@@ -332,12 +332,18 @@ peer-review gate; the staging-to-main release requires its own peer verdict.
 
 **Pull Request URL:** <https://github.com/thrxpt/toktickit/pull/63>
 
-**Direction:** `lab4-staging` → `main`. Closes parent [#48](https://github.com/thrxpt/toktickit/issues/48)
-on merge; references Issue 28 / [#55](https://github.com/thrxpt/toktickit/issues/55).
-Parent #48 was reopened so its closure follows the release merge.
+**Direction:** `lab4-staging` → `main`. References Issue 28 /
+[#55](https://github.com/thrxpt/toktickit/issues/55). Parent
+[#48](https://github.com/thrxpt/toktickit/issues/48) closed automatically when this
+release merged.
 
-**Peer verdict:** Pending. The #62 approval covers the final feature PR, not this
-release. No release approval or completed merge is claimed.
+**Latest peer verdict:** [Approved by @fahsai-02, 2026-11-01](https://github.com/thrxpt/toktickit/pull/63#pullrequestreview-5728892082)
+on `e26f6bd10decf31ba7494da217ddd9828ed2b5dd` at **15:49:41 UTC**. This is a
+separate approval of the release PR, in addition to the earlier #62 approval.
+The submitted review does not claim an additional test run.
+
+**Merge:** PR #63 merged into `main` on **2026-11-01 at 15:49:53 UTC**, producing
+`8ff194ccc3b686b30d64e29aada292a7c9c3b07b`. Parent #48 closed at 15:49:55 UTC.
 
 **Post-merge staging verification (2026-11-01):** tested
 `e26f6bd10decf31ba7494da217ddd9828ed2b5dd` after #62 merged. `pnpm test` passed
@@ -349,10 +355,26 @@ isolated `toktickit_release_pr_test` sequentially. The harness applied all seven
 migrations and seeded it; browser teardown restored the demo baseline. This is
 agent execution evidence for AC-22 / REG-01, separate from human peer review.
 
-The reviewer/release records are submitted through a companion docs PR into
-staging because integration branches advance only through peer-reviewed PRs.
-The release still requires that documentation merge, its own peer approval,
-and verification of the released `main` head. See [release.md](release.md).
+**Released-head verification (2026-11-01):** checked out the actual `main` merge
+`8ff194c` and reran the full commands: **526 unit/API/UI/style tests** and
+**29 Chromium E2E cases** passed, zero skipped; `pnpm build` passed. The committed
+tree also matches the verified staging tree exactly. This is agent execution
+evidence, not a test claim attributed to the peer reviewer. See
+[release.md](release.md) for runtime, database isolation and recovery details.
+
+### Documentation follow-up — #64
+
+**Pull Request URL:** <https://github.com/thrxpt/toktickit/pull/64>
+
+**Direction:** `docs/lab4-release-review-record` → `lab4-staging`; linked to
+Issue 28 / [#55](https://github.com/thrxpt/toktickit/issues/55).
+
+**Peer verdict:** Pending. PR #63 merged before this documentation PR. The original
+application release is approved, merged and verified; its review records still
+need to reach `main`. After #64 receives peer approval and merges into staging,
+a separate documentation-only `lab4-staging` → `main` PR will carry these records.
+Neither integration branch is advanced directly, and no approval of this follow-up
+is implied by the earlier release approval.
 
 ---
 
