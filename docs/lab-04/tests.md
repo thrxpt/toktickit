@@ -499,3 +499,73 @@ Review-fix verification (2026-10-31): full suite passed with 326 server and
 flag. `pnpm build` (root E2E typecheck plus both package builds), `git diff --check`,
 and both headless Chromium E2E-02 journeys passed. Updated workflow screenshots
 were regenerated during that isolated run.
+
+### Issue 27 implementation evidence (#54)
+
+The dashboard test seams are the HTTP endpoints, rendered pages with URL
+navigation, and the headless Chromium journey. Metric boundaries are exercised
+through the HTTP seam rather than a separate client-side metric helper (FR-15).
+
+| Coverage | Implementation |
+| --- | --- |
+| API-16–API-19 | `server/tests/lab-04/requester-dashboard.api.test.ts`: session isolation including forged identity header, open/resolved boundaries, five-row recent ordering, zeros, RBAC, invalid/conflicting groups, full drill-down collections |
+| API-20, API-21, API-24, API-25 | `server/tests/lab-04/staff-dashboard.api.test.ts`: owner/status/priority counts, owner projection, all zero keys, Administrator accounts, omitted Staff accounts, demo performance budget, account-only and safe total failure |
+| UI-02, UI-10, UI-11 | `client/tests/lab-04/RequesterDashboard.test.tsx`: empty dashboard, group and sort forwarding, pagination retention, mutually exclusive filters, session required despite legacy browser storage |
+| UI-01, UI-03, UI-10, UI-12 | `client/tests/lab-04/StaffDashboard.test.tsx`: metric links, caption semantics without skipped heading levels, per-card retry without a duplicate page retry, loading/forbidden, account-only failure, active Dashboard navigation, URL-synchronized account role filters |
+| E2E-03 | `e2e/lab-04/dashboards.spec.ts`: all roles, Requester group/recent links, Staff and Administrator queue, Administrator dashboard Ticket link to Detail and successful attachment download, account role/Total links, zero-Ticket Requester, mobile overflow |
+
+The existing Lab 2 routing and Lab 3 shell/login/password-change, authorization,
+and Administrator ticket-operation cases adopt FR-16 and ADR-0010. No tests are
+skipped. Dashboard indexes have additive migration and rollback SQL.
+
+### Issue 27 review follow-up — #60
+
+The default Playwright configuration retains `e2e/lab-03`; Lab 4 uses the dedicated
+`playwright.lab4.config.ts`. Discovery verification found four Lab 3 files for the
+default command and three Lab 4 files for the dedicated command. The final release
+Issue 28 owns migration of the legacy Lab 2 identity flows and the full regression
+run; this follow-up does not claim a green all-lab E2E run.
+
+UI-01/UI-03 assertions first reproduced the caption heading skip and duplicate
+page-level retry. Both now pass, preserving the contract's per-card Retry and
+accessible error summary. E2E-03 now creates a Ticket with an attachment as a
+Requester, follows its recent-list link as Administrator, and downloads the file.
+The existing isolated API evidence covers the corresponding role authorization.
+Dashboard screenshots at 1280 px and 390 px are committed under
+`artifacts/lab-04/screenshots/dashboards/` and were visually inspected.
+
+Verification (2026-11-01): 23 focused client tests passed with
+`NODE_OPTIONS=--no-experimental-webstorage`; `pnpm build` passed root typechecking
+and both package builds. Headless Chromium E2E-03 passed with the §6 exported
+test-database configuration and `CI=1`. The UI detector and `git diff --check`
+reported no findings.
+
+Dashboard consistency limitation: the array-form Prisma transaction uses the
+database's default read-committed isolation. A concurrent Ticket write can make a
+count and recent list reflect different committed moments. BR-21/FR-15 require
+backend-computed metrics, not a single point-in-time snapshot; no stronger isolation
+or new concurrency contract is introduced here.
+
+### Issue 27 re-review follow-up — #60 (R1)
+
+R1 reproduced before the fix: E2E-01 timed out waiting for `/tickets` after
+successful Requester login navigated to `/dashboard`. Updated all eight post-login
+waits in E2E-01 and both E2E-02 journeys to assert `/dashboard` for Requester,
+IT Staff, and Administrator, as required by FR-16 and ui-spec.md §3.1. All existing
+workflow, authorization, concurrency, and Actions Taken assertions remain intact.
+
+UI-12 now checks title-case account captions and unchanged per-role destinations
+for Requester, IT Staff, and Administrator (N1); the assertion failed before the
+caption fix. E2E-03 follows the updated Requester caption. Dashboard desktop/mobile
+screenshots were regenerated and visually inspected.
+
+Verification (2026-11-01, Node 24.18.0): the entire `CI=1 pnpm test:e2e:lab4`
+suite passed (four tests across all three files), ten focused dashboard client tests
+passed with `NODE_OPTIONS=--no-experimental-webstorage`, and `pnpm build` passed
+root typechecking and both package builds. The database setup probe also passed
+all eight UNIT-02 cases. Browser verification used the exported `server/.env.test`
+URL (`toktickit_test`), separate from development. Teardown deleted five E2E
+Tickets and their attachment; direct queries afterward found zero `E2E ` Tickets
+and zero Attachment rows (N2). The fixture appears in screenshots because they are
+taken during the journey, before teardown. No cleanup implementation change was
+needed. Legacy Lab 2/3 E2E suites were not rerun.

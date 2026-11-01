@@ -15,7 +15,8 @@ test.describe("Administrator User Management and Safety Rules (AC-16 to AC-20)",
     // 1. Log in as Administrator
     await page.setViewportSize({ width: 1280, height: 800 });
     await login(page, TEST_USERS.admin.email, TEST_USERS.admin.password);
-    await page.waitForURL("**/admin/users");
+    await page.waitForURL("**/dashboard");
+    await page.goto("/admin/users");
 
     // Capture User List screenshot
     await expect(page.locator('h1:has-text("User Management")')).toBeVisible();

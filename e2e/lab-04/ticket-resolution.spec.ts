@@ -6,7 +6,7 @@ test("E2E-02 — AC-08–AC-11, AC-23: creation, advisory resolution, conflict, 
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 1280, height: 900 });
   await login(page, TEST_USERS.requester.email, TEST_USERS.requester.password);
-  await page.waitForURL("**/tickets");
+  await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto("/tickets/new");
   await page.locator("#categoryId").selectOption({ index: 1 });
   await page.locator("#relatedSystemId").selectOption({ index: 1 });
@@ -28,7 +28,7 @@ test("E2E-02 — AC-08–AC-11, AC-23: creation, advisory resolution, conflict, 
   const admin = await adminContext.newPage();
   try {
     await login(admin, TEST_USERS.admin.email, TEST_USERS.admin.password);
-    await admin.waitForURL("**/admin/users");
+    await expect(admin).toHaveURL(/\/dashboard$/);
     await admin.getByRole("link", { name: "Ticket Queue", exact: true }).click();
     await expect(admin.getByRole("heading", { name: "Ticket Queue", exact: true })).toBeVisible();
     await admin.goto(`/staff/tickets/${ticket.id}`);
@@ -114,7 +114,7 @@ test("E2E-02 — AC-08–AC-11, AC-23: creation, advisory resolution, conflict, 
 
 test("E2E-02 — AC-23, ADR-0010: Staff assigns an owned Ticket to Administrator; Administrator takes over from Staff", async ({ page }) => {
   await login(page, TEST_USERS.requester.email, TEST_USERS.requester.password);
-  await page.waitForURL("**/tickets");
+  await expect(page).toHaveURL(/\/dashboard$/);
   const categories = await (await page.request.get("/api/categories")).json();
   const systems = await (await page.request.get("/api/related-systems")).json();
   const created = await page.request.post("/api/tickets", { data: {
@@ -126,7 +126,7 @@ test("E2E-02 — AC-23, ADR-0010: Staff assigns an owned Ticket to Administrator
   const ticket = await created.json();
   await logout(page);
   await login(page, TEST_USERS.staff.email, TEST_USERS.staff.password);
-  await page.waitForURL("**/staff/queue");
+  await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto(`/staff/tickets/${ticket.id}`);
   await page.getByRole("button", { name: "Claim", exact: true }).click();
   const owner = page.getByRole("combobox", { name: "Ticket Owner" });
@@ -142,7 +142,7 @@ test("E2E-02 — AC-23, ADR-0010: Staff assigns an owned Ticket to Administrator
   await expect(owner).toBeEnabled();
   await logout(page);
   await login(page, TEST_USERS.admin.email, TEST_USERS.admin.password);
-  await page.waitForURL("**/admin/users");
+  await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto(`/staff/tickets/${ticket.id}`);
   await expect(owner.locator("option:checked")).toHaveText(TEST_USERS.staff.name);
   await expect(page.getByRole("button", { name: "Claim", exact: true })).toHaveCount(0);

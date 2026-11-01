@@ -5,7 +5,7 @@ test("E2E-01, RESP-01 — AC-01, AC-02, AC-03, AC-18, AC-19: staff records and e
   page,
 }) => {
   await login(page, TEST_USERS.requester.email, TEST_USERS.requester.password);
-  await page.waitForURL("**/tickets");
+  await expect(page).toHaveURL(/\/dashboard$/);
   const categories = await (await page.request.get("/api/categories")).json();
   const systems = await (await page.request.get("/api/related-systems")).json();
   const created = await page.request.post("/api/tickets", {
@@ -21,7 +21,7 @@ test("E2E-01, RESP-01 — AC-01, AC-02, AC-03, AC-18, AC-19: staff records and e
   const ticket = await created.json();
   await logout(page);
   await login(page, TEST_USERS.staff.email, TEST_USERS.staff.password);
-  await page.waitForURL("**/staff/queue");
+  await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto(`/staff/tickets/${ticket.id}`);
   await page.getByRole("tab", { name: /Actions Taken/ }).click();
   await page.getByRole("button", { name: "Record Action" }).click();
@@ -154,7 +154,7 @@ test("E2E-01, RESP-01 — AC-01, AC-02, AC-03, AC-18, AC-19: staff records and e
   }
   await logout(page);
   await login(page, TEST_USERS.requester.email, TEST_USERS.requester.password);
-  await page.waitForURL("**/tickets");
+  await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto(`/tickets/${ticket.id}`);
   const panel = page.getByRole("region", {
     name: "Actions Taken",

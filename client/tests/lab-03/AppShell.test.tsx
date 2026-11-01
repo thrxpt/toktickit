@@ -231,7 +231,7 @@ describe("UI-15 — Role-based navigation hides unauthorized links (FR-20)", () 
     ).not.toBeInTheDocument();
   });
 
-  it("AC-23, ADR-0010 — Administrator sees Users and Ticket Queue, but no Requester destinations", async () => {
+  it("AC-23, ADR-0010 — Administrator sees Dashboard, Users and Ticket Queue, but no Requester destinations", async () => {
     const user: AuthenticatedUser = {
       id: 3,
       name: "Sarah Jenkins",

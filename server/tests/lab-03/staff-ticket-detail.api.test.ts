@@ -167,7 +167,7 @@ describe("GET /api/staff/tickets/:id (FR-10, BR-14, BR-15)", () => {
       .set("Cookie", admin.cookie);
 
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ id: ticket.id, version: 0, permittedTransitions: ["OPEN", "IN_PROGRESS", "CANCELLED"] });
+    expect(res.body).toMatchObject({ id: ticket.id, summary: ticket.summary, version: ticket.version, permittedTransitions: ["OPEN", "IN_PROGRESS", "CANCELLED"] });
   });
 
   it("returns 404 for nonexistent ticket ID", async () => {
@@ -414,7 +414,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
       .send({ ownerId: admin.user.id, expectedVersion: ticket.version });
 
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ ticketOwnerId: admin.user.id, status: "OPEN", ticketVersion: 1 });
+    expect(res.body).toMatchObject({ ticketId: ticket.id, ticketOwnerId: admin.user.id, status: "OPEN", ticketVersion: ticket.version + 1 });
   });
 });
 
@@ -520,7 +520,7 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
       .send({ itPriority: "HIGH", expectedVersion: ticket.version });
 
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ itPriority: "HIGH", ticketVersion: 1 });
+    expect(res.body).toMatchObject({ ticketId: ticket.id, itPriority: "HIGH", ticketVersion: ticket.version + 1 });
   });
 });
 
@@ -645,6 +645,6 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
       .send({ status: "IN_PROGRESS", expectedVersion: ticket.version });
 
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ status: "IN_PROGRESS", ticketVersion: 1 });
+    expect(res.body).toMatchObject({ ticketId: ticket.id, status: "IN_PROGRESS", ticketVersion: ticket.version + 1 });
   });
 });

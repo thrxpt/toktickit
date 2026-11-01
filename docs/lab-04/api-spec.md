@@ -316,6 +316,10 @@ Drill-down:
 
 - **403 FORBIDDEN**: Requester.
 - `userCounts` is omitted, not null, for IT Staff.
+- If only Administrator account aggregation fails, return `200` with the ticket
+  metrics and omit `userCounts`; the Accounts group renders its recoverable error
+  state (FR-14). Retrying reloads the authoritative dashboard response. A ticket
+  aggregation failure returns the standard `500 DATABASE_UNAVAILABLE` envelope.
 
 ---
 

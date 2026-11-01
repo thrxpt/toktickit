@@ -220,3 +220,70 @@ E2E-02 journeys. The disposable-database reproduction applied all five migration
 from an empty database. Review feedback and classifications are recorded in
 reviewer.md; the PR retains its existing Changes Requested verdict pending a new
 human review.
+
+## Issue 27 — Role dashboards (#54)
+
+Implemented against the four Lab 4 contract documents: session-scoped Requester
+metrics, shared operational metrics with Administrator accounts, dashboard
+navigation and landing routes, reusable MetricCard/DashboardList components,
+Requester grouped-status drill-downs, URL-synchronized User Management filters,
+and additive recent-read indexes with rollback SQL. The Administrator queue and
+Ticket Detail guards adopt ADR-0010 so dashboard drill-downs work end to end.
+Legacy identity retirement and Actions Taken UI remain with their owning Issues.
+
+TDD used the contract's HTTP, rendered-component/navigation, and Chromium seams.
+Separate Standards and Spec reviewers inspected the staged implementation against
+starting commit `26cc067`. Findings were corrected: sessionless dashboard redirect
+when legacy storage survives, role-shaped loading sections, retained unavailable
+metric frames with retries, and 44 px recent-list drill-down targets. The reviews
+reported no unrelated scope additions or further smell findings.
+
+Validation: `NODE_OPTIONS=--no-experimental-webstorage pnpm test` passed 461 tests
+(159 client, 302 server), zero skipped. `pnpm typecheck`, `pnpm build`, and
+`pnpm test:e2e:lab4` passed. The Chromium journey includes all three roles,
+Requester grouped/recent list destinations, Administrator account-role and Total
+links, Administrator queue access, a zero-Ticket Requester, and mobile overflow.
+Desktop and 390 px mobile dashboard screenshots were visually inspected. The
+Impeccable mechanical detector returned no findings. Verification used a separate
+local PostgreSQL container; API tests used `toktickit_test`, never development data.
+
+### Issue 27 human review follow-up — #60
+
+User prompt: "Check my partner comment. If it's valid, you can fix."
+Fact-checked @fahsai-02's review on `aca4cab` against merged head `f303ed7`.
+The earlier merge already incorporated Administrator attachment access, active
+operational-role assignment targets, the dedicated Lab 4 Playwright configuration,
+and both Issues' documentation. Restored the default Lab 3 E2E discovery scope;
+the legacy identity retirement remains with Issue 28.
+
+Two rendered assertions failed for skipped metric heading levels and duplicate
+retry controls before the fixes. Metric labels now use caption paragraphs, and
+the accessible error summary retains per-card retry without a second page retry.
+Applied the specific formatting requests. Extended E2E-03 to follow an Administrator
+dashboard Ticket link and download its attachment, and saved its desktop/mobile
+screenshots as committed evidence. The review classifications and remaining
+read-committed consistency limitation are recorded in reviewer.md and tests.md.
+
+Verification: 23 focused client tests, the production build/root typecheck, and
+isolated headless Chromium E2E-03 passed. Screenshot inspection and the UI detector
+found no new layout or mechanical issues. No GitHub reply was posted; the human
+Changes Requested verdict still requires human re-review.
+
+### Issue 27 re-review follow-up — #60 (R1)
+
+User prompt: "Check reviewer comment. If it's valid, you can fix."
+Checked @fahsai-02's re-review on `abe67f7` against the current contract and code.
+Reproduced the Requester login timeout in E2E-01, then updated all eight outdated
+post-login waits in E2E-01/E2E-02 to the shared `/dashboard` landing page. Existing
+journey assertions remain intact. Adopted the account-label casing suggestion;
+UI-12 failed first, then passed with title-case captions and unchanged role URLs.
+Updated E2E-03's caption locator and regenerated the two dashboard screenshots.
+
+All four Lab 4 Chromium journeys passed against the exported test-database URL,
+along with ten focused dashboard client tests, eight UNIT-02 setup-probe cases,
+and the production build/root typecheck. Visually inspected the dashboard evidence.
+The alleged fixture residue is already handled by existing teardown: five Tickets
+and one Attachment were deleted, and direct queries confirmed no E2E Tickets or
+Attachments remained. No cleanup code change was necessary. Legacy E2E was not
+rerun; Issue 28's retirement inventory remains intact. Recorded classifications
+and a draft reply in reviewer.md; no new GitHub reply or approval was posted.
