@@ -5,18 +5,19 @@
 
 ## Pull Requests I authored (reviewed by my partner)
 
-| PR | Branch | Latest peer verdict | PR state |
-| --- | --- | --- | --- |
-| [#56](https://github.com/thrxpt/toktickit/pull/56) | feature/22-lab4-contract | [Approved, 2026-10-29](https://github.com/thrxpt/toktickit/pull/56#pullrequestreview-5699573824) | Merged 2026-10-29 |
-| [#57](https://github.com/thrxpt/toktickit/pull/57) | feature/23-stale-update-guard | [Approved, 2026-10-29](https://github.com/thrxpt/toktickit/pull/57#pullrequestreview-5704764074) | Merged 2026-10-29 |
-| [#58](https://github.com/thrxpt/toktickit/pull/58) | feature/24-actions-taken-foundation | [Approved, 2026-10-30](https://github.com/thrxpt/toktickit/pull/58#pullrequestreview-5710802852) | Merged 2026-10-30 |
-| [#59](https://github.com/thrxpt/toktickit/pull/59) | feature/25-actions-taken-ui | [Approved, 2026-10-31](https://github.com/thrxpt/toktickit/pull/59#pullrequestreview-5722170413) | Merged 2026-10-31 |
-| [#60](https://github.com/thrxpt/toktickit/pull/60) | feature/27-role-dashboards | [Approved, 2026-11-01](https://github.com/thrxpt/toktickit/pull/60#pullrequestreview-5727849545) | Merged 2026-11-01 |
-| [#61](https://github.com/thrxpt/toktickit/pull/61) | feature/26-ticket-workflow | [Approved, 2026-10-31](https://github.com/thrxpt/toktickit/pull/61#pullrequestreview-5724299806) | Merged 2026-10-31 |
-| [#62](https://github.com/thrxpt/toktickit/pull/62) | feat/final-release | Pending — no submitted peer review | Open |
+| Issue | PR | Branch | Latest peer verdict | PR state |
+| --- | --- | --- | --- | --- |
+| 22 ([#49](https://github.com/thrxpt/toktickit/issues/49)) | [#56](https://github.com/thrxpt/toktickit/pull/56) | feature/22-lab4-contract | [Approved, 2026-10-29](https://github.com/thrxpt/toktickit/pull/56#pullrequestreview-5699573824) | Merged 2026-10-29 |
+| 23 ([#50](https://github.com/thrxpt/toktickit/issues/50)) | [#57](https://github.com/thrxpt/toktickit/pull/57) | feature/23-stale-update-guard | [Approved, 2026-10-29](https://github.com/thrxpt/toktickit/pull/57#pullrequestreview-5704764074) | Merged 2026-10-29 |
+| 24 ([#51](https://github.com/thrxpt/toktickit/issues/51)) | [#58](https://github.com/thrxpt/toktickit/pull/58) | feature/24-actions-taken-foundation | [Approved, 2026-10-30](https://github.com/thrxpt/toktickit/pull/58#pullrequestreview-5710802852) | Merged 2026-10-30 |
+| 25 ([#52](https://github.com/thrxpt/toktickit/issues/52)) | [#59](https://github.com/thrxpt/toktickit/pull/59) | feature/25-actions-taken-ui | [Approved, 2026-10-31](https://github.com/thrxpt/toktickit/pull/59#pullrequestreview-5722170413) | Merged 2026-10-31 |
+| 26 ([#53](https://github.com/thrxpt/toktickit/issues/53)) | [#61](https://github.com/thrxpt/toktickit/pull/61) | feature/26-ticket-workflow | [Approved, 2026-10-31](https://github.com/thrxpt/toktickit/pull/61#pullrequestreview-5724299806) | Merged 2026-10-31 |
+| 27 ([#54](https://github.com/thrxpt/toktickit/issues/54)) | [#60](https://github.com/thrxpt/toktickit/pull/60) | feature/27-role-dashboards | [Approved, 2026-11-01](https://github.com/thrxpt/toktickit/pull/60#pullrequestreview-5727849545) | Merged 2026-11-01 |
+| 28 ([#55](https://github.com/thrxpt/toktickit/issues/55)) | [#62](https://github.com/thrxpt/toktickit/pull/62) | feat/final-release | Pending — no submitted peer review | Open |
 
 Checked against GitHub PR metadata and submitted reviews on **2026-11-01**.
-This table covers every authored Lab 4 PR targeting `lab4-staging`; earlier labs
+Ordered by repository Issue 22–28 (GitHub #49–#55). This table covers every
+authored Lab 4 PR targeting `lab4-staging`; earlier labs
 keep their own review records. Approval links above point to @fahsai-02's actual
 submitted verdicts. Merge dates are UTC and are recorded separately from approval.
 
