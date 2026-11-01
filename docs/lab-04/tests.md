@@ -372,9 +372,11 @@ above when verifying against a disposable database.
 
 ## 7. Final Results
 
-Feature-branch verification is recorded in [release.md](release.md). Counts below
-are distinct contract IDs, not individual runner cases (513 Vitest/Supertest and
-29 Playwright cases passed). REG-01 remains pending its required integration run.
+Feature-branch and post-merge staging verification are recorded in [release.md](release.md).
+Counts below are distinct contract IDs, not individual runner cases. On staging
+head `e26f6bd`, 526 Vitest/Supertest and 29 Playwright cases passed with zero skips
+(2026-11-01). REG-01 / AC-22 integration verification passes; the reviewed release
+and released-head verification remain pending in PR #63.
 
 | Level | Planned IDs | Passing locally | Skipped | Status |
 | --- | --- | --- | --- | --- |
@@ -384,8 +386,8 @@ are distinct contract IDs, not individual runner cases (513 Vitest/Supertest and
 | UI Style | 3 | 3 | 0 | Pass |
 | Responsive | 4 | 4 | 0 | Pass |
 | E2E | 4 | 4 | 0 | Pass |
-| Regression suite | 1 | — | 0 | Feature branch green; staging run pending reviewed merge |
-| **Total** | **56** | **55** | **0** | **Integration/release gates pending** |
+| Regression suite | 1 | 1 | 0 | Pass on post-merge staging head `e26f6bd` |
+| **Total** | **56** | **56** | **0** | **Staging green; release gates pending** |
 
 Known limitations to carry into the release evidence:
 
