@@ -286,12 +286,134 @@ release is claimed.
 
 ## Pull Requests I reviewed for my partner
 
-| PR | Branch | Reviewer verdict |
-| --- | --- | --- |
-| — | — | — |
+| Partner Issue | PR | Branch | My latest verdict | PR state |
+| --- | --- | --- | --- | --- |
+| 24 ([#77](https://github.com/fahsai-02/toktickit/issues/77)) | [#84](https://github.com/fahsai-02/toktickit/pull/84) | feature/24-sprint4-engineering-contract | [Approved, 2026-10-08](https://github.com/fahsai-02/toktickit/pull/84#pullrequestreview-5454321885) | Merged 2026-10-08 |
+| 25 ([#78](https://github.com/fahsai-02/toktickit/issues/78)) | [#85](https://github.com/fahsai-02/toktickit/pull/85) | feature/25-actions-taken-foundation | [Approved, 2026-10-12](https://github.com/fahsai-02/toktickit/pull/85#pullrequestreview-5493210087) | Merged 2026-10-12 |
+| 26 ([#79](https://github.com/fahsai-02/toktickit/issues/79)) | [#86](https://github.com/fahsai-02/toktickit/pull/86) | feature/26-actions-taken-ui | [Approved, 2026-10-28](https://github.com/fahsai-02/toktickit/pull/86#pullrequestreview-5686676601) | Merged 2026-10-28 |
+| 27 ([#80](https://github.com/fahsai-02/toktickit/issues/80)) | [#87](https://github.com/fahsai-02/toktickit/pull/87) | feature/27-ticket-workflow-resolution-gate | [Approved, 2026-10-30](https://github.com/fahsai-02/toktickit/pull/87#pullrequestreview-5710614383) | Merged 2026-10-30 |
+| 28 ([#81](https://github.com/fahsai-02/toktickit/issues/81)) | [#88](https://github.com/fahsai-02/toktickit/pull/88) | feature/28-role-dashboards | [Approved, 2026-10-31](https://github.com/fahsai-02/toktickit/pull/88#pullrequestreview-5723479993) | Merged 2026-10-31 |
+| 29 ([#82](https://github.com/fahsai-02/toktickit/issues/82)) | [#89](https://github.com/fahsai-02/toktickit/pull/89) | feature/29-comprehensive-testing | [Approved, 2026-11-01](https://github.com/fahsai-02/toktickit/pull/89#pullrequestreview-5727857545) | Merged 2026-11-01 |
 
-No partner-authored Lab 4 PR review has been recorded here. This section is
-separate from the seven PRs authored above.
+Source: submitted reviews by **@thrxpt** on **@fahsai-02's** Lab 4 PRs in
+[`fahsai-02/toktickit`](https://github.com/fahsai-02/toktickit), checked on
+**2026-11-01**. Ordered by the partner repository's Issue 24–29 (GitHub #77–#82),
+whose numbering differs from this repository. Merge dates are UTC.
+
+The summaries below record the reviews already posted, including corrections and
+verification limits. They are not new reviews or fresh test runs. Requirement
+IDs, fields, metrics, and contract exceptions in this section refer to the
+**partner's contract**, not this repository's Lab 4 contract.
+
+### Partner Issue 24 — Sprint 4 engineering contract, PR #84
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/84>
+
+**My initial review:** [Changes requested, 2026-10-06](https://github.com/fahsai-02/toktickit/pull/84#pullrequestreview-5424674385)
+on `ad1227f`. I requested four corrections: calculate the urgent Ticket aggregate
+independently of the ten-row preview; explain the handout test-ID remapping;
+justify the operational status-card selection; and document why merged Lab 3
+material appeared in the Lab 4 contract PR.
+
+**Partner follow-up / my final verdict:** [Approved, 2026-10-08](https://github.com/fahsai-02/toktickit/pull/84#pullrequestreview-5454321885)
+on `6f23f5c`. My approval confirms an authoritative urgent count and matching
+API-34 plan, the explicit test-ID note, AD-21 for status metrics, and AD-22 for
+scope traceability. The PR merged into `lab4-staging` on 2026-10-08.
+
+### Partner Issue 25 — Actions Taken foundation, PR #85
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/85>
+
+**My review and verdict:** [Approved, 2026-10-12](https://github.com/fahsai-02/toktickit/pull/85#pullrequestreview-5493210087)
+on `89d4fee`, with zero blocking defects or contract deviations. The review covers
+the additive ActionTaken migration, session-derived attribution, authorization,
+versioned action updates, seed sequence alignment, and isolated rollback testing.
+
+The submitted verification record lists Prisma validation, server build and
+16 unit tests, plus 201 client tests and the client build. Non-blocking nits
+concerned naming the five-minute future allowance, simplifying a redundant version
+ternary, and grouping route validation helpers. No separate change request or
+follow-up approval was required. Merged on 2026-10-12.
+
+### Partner Issue 26 — Actions Taken UI, PR #86
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/86>
+
+**My initial review:** [Changes requested, 2026-10-22](https://github.com/fahsai-02/toktickit/pull/86#pullrequestreview-5612346243)
+on `52b679e`. Findings covered unlayered Actions Taken CSS, the omitted read-only
+Performed By field, `403` responses masked as empty lists, and inconsistent
+Requester Notes column styling. Non-blocking observations included duplicated
+presentation logic, form-state grouping, tablet layout, and an unrequested
+character-counter warning state.
+
+**Partner follow-up / my final verdict:** [Approved, 2026-10-28](https://github.com/fahsai-02/toktickit/pull/86#pullrequestreview-5686676601)
+on `2aadcf0`, after reviewing `4663a5c` and `2aadcf0`. Styles moved into the
+required CSS layer; forbidden responses gained visible errors and regression
+coverage; shared `ActionList` presentation removed duplication and kept formatting
+consistent. I accepted the documented rationale for omitting the drawer performer
+field rather than claiming that a field had been added. The list-layout amendment
+was recorded in the partner's contract.
+
+The approval references 229 client tests and client-build commands. Permission-error
+Retry and older test-reference wording remained non-blocking nits. Merged on
+2026-10-28.
+
+### Partner Issue 27 — Ticket workflow and resolution gate, PR #87
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/87>
+
+**My review sequence:**
+
+| Submitted review | Reviewed head | Findings / outcome |
+| --- | --- | --- |
+| [Changes requested, 2026-10-29](https://github.com/fahsai-02/toktickit/pull/87#pullrequestreview-5698837146) | `f9a5266` | Reject `version: null`; keep the client status helper's version optional as specified; clarify which writes increment Ticket.version. Also noted repeated conflict envelopes and missing UI traceability. |
+| [Changes requested, 2026-10-29](https://github.com/fahsai-02/toktickit/pull/87#pullrequestreview-5705654843) | `b75075c` | Original items were addressed and 18 focused client tests passed. Found a remaining Refresh defect: the resolution-summary textbox retained old local text instead of the server's latest value. |
+| [Approved, 2026-10-30](https://github.com/fahsai-02/toktickit/pull/87#pullrequestreview-5710614383) | `c429f74` | Follow-ups `f03e450` / `c429f74` synchronize the textbox, clear obsolete feedback, preserve failure feedback, and extend UI-30. No new standards/spec findings. |
+
+The final review records 235 client tests across 20 files and a passing client
+build. Server tests were not rerun in that final pass because those follow-up
+commits did not change the backend. Merged on 2026-10-30.
+
+### Partner Issue 28 — Role dashboards, PR #88
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/88>
+
+**My review sequence:**
+
+| Submitted review | Reviewed head | Findings / outcome |
+| --- | --- | --- |
+| [Changes requested, 2026-10-30](https://github.com/fahsai-02/toktickit/pull/88#pullrequestreview-5716145950) | `ad493a1` | Correct role landing pages, Recent Actions destinations, zero-activity Create Ticket links, and missing planned dashboard tests. Initially also flagged CSS-layer placement. |
+| [Changes requested, 2026-10-31](https://github.com/fahsai-02/toktickit/pull/88#pullrequestreview-5721836507) | `381b8b5` | Confirmed those functional fixes and **withdrew my mistaken CSS-layer finding**. Requested loading skeletons/live announcements and tab-only URL changes that do not reload Ticket Detail. |
+| [Changes requested, 2026-10-31](https://github.com/fahsai-02/toktickit/pull/88#pullrequestreview-5722041526) | `652988b` | Loading and tab synchronization were fixed; skeletons still omitted attention/Create Ticket, priority, and urgent-list sections. |
+| [Changes requested, 2026-10-31](https://github.com/fahsai-02/toktickit/pull/88#pullrequestreview-5722337305) | `24a345a` | Three reserved list rows did not cover the API's five recent or ten urgent Tickets, leaving a layout shift. |
+| [Approved, 2026-10-31](https://github.com/fahsai-02/toktickit/pull/88#pullrequestreview-5723479993) | `24499b5` | Five reserved rows plus a fixed-height scroll region for additional urgent rows resolved the layout finding; 264 client tests across 24 files passed. |
+
+The final approval retained a non-blocking documentation nit: the UI contract's
+approval paragraph still said nothing had been built/run despite recorded
+implementation evidence. This record does not claim that nit was subsequently
+fixed. Merged on 2026-10-31.
+
+### Partner Issue 29 — Comprehensive testing, PR #89
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/89>
+
+**My initial review:** [Changes requested, 2026-11-01](https://github.com/fahsai-02/toktickit/pull/89#pullrequestreview-5727188869)
+on `eed11a0`. E2E-06 ignored all `4xx` console failures instead of only expected
+URL/status pairs. REG-01 was also marked Pass while the evidence reported 209
+passed / 73 skipped and all Lab 2 E2E files were skipped, contrary to the then-current
+contract.
+
+**Partner follow-up / my final verdict:** [Approved, 2026-11-01](https://github.com/fahsai-02/toktickit/pull/89#pullrequestreview-5727857545)
+on `4b8d85b`. The filters were narrowed to known status/URL pairs, and the
+**partner's v1.4 contract explicitly accepted the Lab 2 skip exception** in AC-17
+and its Definition of Done. My approval accepted REG-01 under that amended
+contract; it did not claim that the skipped cases were now passing. This exception
+does not waive this repository's zero-skip release requirement.
+
+The approval retained non-blocking documentation corrections: give the skip
+exception an unused decision ID instead of reusing AD-21, put the v1.4 amendment
+in the amendment table, and update the test plan's source version. No new test run
+is asserted by that approval. Merged on 2026-11-01.
 
 ---
 
