@@ -158,7 +158,7 @@ describe("GET /api/staff/tickets/:id (FR-10, BR-14, BR-15)", () => {
     expect(res.body.ticketOwner).toBeNull();
   });
 
-  it("permits Administrator Ticket Detail (Lab 4 BR-20, ADR-0010)", async () => {
+  it("AC-23, ADR-0010 — permits the Administrator ticket operation", async () => {
     const admin = await loginAs("admin@toktickit.com");
     const ticket = await createTicket();
 
@@ -167,7 +167,7 @@ describe("GET /api/staff/tickets/:id (FR-10, BR-14, BR-15)", () => {
       .set("Cookie", admin.cookie);
 
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ id: ticket.id, summary: ticket.summary });
+    expect(res.body).toMatchObject({ id: ticket.id, summary: ticket.summary, version: ticket.version, permittedTransitions: ["OPEN", "IN_PROGRESS", "CANCELLED"] });
   });
 
   it("returns 404 for nonexistent ticket ID", async () => {
@@ -234,6 +234,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
       ticketVersion: 1,
       ticketOwnerId: staff.user.id,
       status: "OPEN",
+      permittedTransitions: ["IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
       message: "Ticket ownership updated.",
     });
 
@@ -263,6 +264,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
       ticketVersion: 1,
       ticketOwnerId: staff.user.id,
       status: "IN_PROGRESS",
+      permittedTransitions: ["WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
       message: "Ticket ownership updated.",
     });
 
@@ -402,7 +404,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
     expect(res.body.error.code).toBe("FORBIDDEN");
   });
 
-  it("permits Administrator caller (Lab 4 BR-20, ADR-0010)", async () => {
+  it("AC-23, ADR-0010 — permits the Administrator ticket operation", async () => {
     const admin = await loginAs("admin@toktickit.com");
     const ticket = await createTicket();
 
@@ -412,7 +414,7 @@ describe("API-11 — IT Staff claims and reassigns ticket ownership (AC-11, BR-1
       .send({ ownerId: admin.user.id, expectedVersion: ticket.version });
 
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ ticketId: ticket.id, ticketOwnerId: admin.user.id, ticketVersion: ticket.version + 1 });
+    expect(res.body).toMatchObject({ ticketId: ticket.id, ticketOwnerId: admin.user.id, status: "OPEN", ticketVersion: ticket.version + 1 });
   });
 });
 
@@ -508,7 +510,7 @@ describe("API-12 — IT Staff updates IT Priority (AC-12, BR-19, BR-20)", () => 
     expect(res.body.error.code).toBe("FORBIDDEN");
   });
 
-  it("permits Administrator caller (Lab 4 BR-20, ADR-0010)", async () => {
+  it("AC-23, ADR-0010 — permits the Administrator ticket operation", async () => {
     const admin = await loginAs("admin@toktickit.com");
     const ticket = await createTicket();
 
@@ -537,6 +539,7 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
       ticketId: ticket.id,
       ticketVersion: 1,
       status: "IN_PROGRESS",
+      permittedTransitions: ["WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
       message: "Status updated successfully.",
     });
 
@@ -632,7 +635,7 @@ describe("API-13 — IT Staff executes validated status transition (AC-13, BR-22
     expect(res.body.error.code).toBe("FORBIDDEN");
   });
 
-  it("permits Administrator caller (Lab 4 BR-20, ADR-0010)", async () => {
+  it("AC-23, ADR-0010 — permits the Administrator ticket operation", async () => {
     const admin = await loginAs("admin@toktickit.com");
     const ticket = await createTicket({ status: "OPEN" });
 

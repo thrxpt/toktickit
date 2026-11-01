@@ -43,7 +43,11 @@ function getNavLinksForRole(
     case "IT_STAFF":
       return [{ to: "/dashboard", label: "Dashboard", end: true }, { to: "/staff/queue", label: "Ticket Queue", end: false }];
     case "ADMINISTRATOR":
-      return [{ to: "/dashboard", label: "Dashboard", end: true }, { to: "/staff/queue", label: "Ticket Queue", end: false }, { to: "/admin/users", label: "Users", end: false }];
+      return [
+        { to: "/dashboard", label: "Dashboard", end: true },
+        { to: "/staff/queue", label: "Ticket Queue", end: false },
+        { to: "/admin/users", label: "Users", end: false },
+      ];
     default:
       return [
         { to: "/tickets", label: "My Tickets", end: true },

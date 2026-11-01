@@ -6,6 +6,23 @@ import App from "../../src/App";
 import type { AuthenticatedUser } from "../../src/types/auth";
 
 describe("AppRoutes — Lab 3 routing, authentication guards, and role access (FR-02, FR-06, BR-02, AC-02, AC-03)", () => {
+  it("AC-23, ADR-0010 — lets an Administrator navigate to Ticket Queue", async () => {
+    globalThis.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = input.toString();
+      if (url === "/api/auth/me") return { ok: true, status: 200, json: async () => ({ user: {
+        id: 3, name: "Administrator", email: "admin@toktickit.com", role: "ADMINISTRATOR", mustChangePassword: false,
+      } }) } as Response;
+      if (url.startsWith("/api/staff/tickets")) return { ok: true, status: 200, json: async () => ({
+        items: [], pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+      }) } as Response;
+      return { ok: true, status: 200, json: async () => [] } as Response;
+    });
+    render(<MemoryRouter initialEntries={["/staff/queue"]}><App /></MemoryRouter>);
+    await screen.findByRole("heading", { name: "Ticket Queue" });
+    expect(screen.getByRole("link", { name: "Ticket Queue" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Users" })).toBeInTheDocument();
+  });
+
   beforeEach(() => {
     localStorage.clear();
   });

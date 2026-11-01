@@ -16,6 +16,7 @@ describe('UI-22 — App Routing — Route table and shell placeholders', () => {
       const url = typeof input === 'string' ? input : input.toString()
       if (url === '/api/auth/me') return Promise.resolve({ ok: true, json: async () => ({ user: { id: 1, name: 'Jennifer Anderson', email: 'jennifer.anderson@example.ac.th', role: 'REQUESTER', mustChangePassword: false } }) } as Response)
       if (url === '/api/dashboard/requester') return Promise.resolve({ ok: true, json: async () => ({ openTickets: 0, waitingForRequester: 0, recentlyUpdated: [], recentlyResolved: [] }) } as Response)
+      if (url.endsWith('/actions')) return Promise.resolve(new Response('[]'))
       if (url === '/api/requesters') {
         return Promise.resolve({
           ok: true,

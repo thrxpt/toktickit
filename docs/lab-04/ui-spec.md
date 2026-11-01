@@ -218,12 +218,18 @@ Detail. API-19, UI-11, and E2E-03 verify the destination behavior (AC-15).
 
 ### 3.5 Workflow Feedback on Ticket Detail
 
+- The **Ticket Owner** dropdown lists active IT Staff and Administrators from the
+  assignees endpoint, so either operational role can reassign an already-owned
+  Ticket to an Administrator (AC-23, ADR-0010). A stored owner absent from the
+  active targets remains visible as a disabled current-owner option.
 - The **Current Status** dropdown lists only `permittedTransitions` from the
   server payload, plus the current status as the selected, non-selectable option.
 - When no transitions are permitted (`CANCELLED` only, which is terminal), the
   control renders as a read-only field with an explanation ("This Ticket is
   cancelled; no further status changes are possible."). A `CLOSED` Ticket still
   offers `REOPENED`.
+- `CANCELLED` is terminal for status transitions only (BR-15). Owner and IT Priority
+  remain editable by operational roles under the existing version guard.
 - On success: the status badge, the dropdown options, and the `version` refresh from
   the response; a success message appears.
 - On `409`: `ConflictAlert` with **Reload ticket**; the chosen value is not applied.

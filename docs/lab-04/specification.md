@@ -340,7 +340,8 @@ Full payloads, validation, authorization, status codes, and error envelopes are 
 
 The additive response fields are `version` (all Ticket payloads),
 `ticketVersion` (mutation responses), and `permittedTransitions` (the IT Staff and
-Administrator Ticket detail payload). Existing payload keys keep their meaning, so
+Administrator Ticket detail and owner/status mutation payloads). Existing payload
+keys keep their meaning, so
 Lab 2–3 clients continue to parse responses.
 
 ---

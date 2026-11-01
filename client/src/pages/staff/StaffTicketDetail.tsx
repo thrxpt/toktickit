@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import ActionsTakenPanel from "../../components/tickets/ActionsTakenPanel";
 import apiFetch from "../../api/client";
 import { useAuth } from "../../auth/useAuth";
 import Badge from "../../components/Badge";
@@ -16,7 +17,6 @@ import type {
 } from "../../types/ticket";
 import { formatDate } from "../../utils/date";
 import { formatFileSize } from "../../utils/file";
-import { getPermittedTransitions } from "../../utils/status-machine";
 
 type PendingChange =
   | { field: "owner"; value: number | null; label: string }
@@ -57,7 +57,7 @@ export function StaffTicketDetail() {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"comments" | "notes" | "attachments">("attachments");
+  const [activeTab, setActiveTab] = useState<"comments" | "notes" | "attachments" | "actions">("attachments");
   const [saving, setSaving] = useState(false);
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
   const [needsReload, setNeedsReload] = useState(false);
@@ -65,6 +65,16 @@ export function StaffTicketDetail() {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [actionsCount, setActionsCount] = useState<number | null>(null);
+  const updateActionVersion = useCallback((version: number) => {
+    setTicket(prev => prev ? { ...prev, version } : prev);
+  }, []);
+  const updateCommentCount = useCallback((count: number) => {
+    setTicket(prev => prev ? { ...prev, publicCommentsCount: count } : prev);
+  }, []);
+  const updateNoteCount = useCallback((count: number) => {
+    setTicket(prev => prev ? { ...prev, internalNotesCount: count } : prev);
+  }, []);
   const showFeedback = (msg: string) => {
     setFeedbackMessage(msg);
     setTimeout(() => {
@@ -106,6 +116,7 @@ export function StaffTicketDetail() {
         const assigneesData = (await assigneesRes.json()) as AssigneeOption[];
         setAssignees(assigneesData);
       }
+      return true;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unable to reach server";
       if (preserveEditors) setErrorMessage(message);
@@ -115,12 +126,20 @@ export function StaffTicketDetail() {
     }
   }, [id]);
 
+  const reloadForActions = async () => {
+    if (!await loadData(true)) throw new Error("Unable to reload Ticket.");
+  };
+
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   const saveChange = async (change: PendingChange) => {
     if (!ticket || saving || needsReload) return;
+    if (change.field === "status" && !ticket.permittedTransitions?.includes(change.value)) {
+      setErrorMessage("This status change is no longer permitted. Choose one of the available transitions.");
+      return;
+    }
     setSaving(true);
     setPendingChange(change);
     setErrorMessage(null);
@@ -153,8 +172,12 @@ export function StaffTicketDetail() {
             ?? (user?.id === change.value ? user : null);
           updated.ticketOwner = assignee ? { id: assignee.id, name: assignee.name } : null;
           updated.status = data.status;
+          updated.permittedTransitions = data.permittedTransitions;
         } else if (change.field === "priority") updated.itPriority = data.itPriority;
-        else updated.status = data.status;
+        else {
+          updated.status = data.status;
+          updated.permittedTransitions = data.permittedTransitions;
+        }
         return updated;
       });
       setPendingChange(null);
@@ -227,7 +250,9 @@ export function StaffTicketDetail() {
     );
   }
 
-  const permittedTransitions = getPermittedTransitions(ticket.status);
+  const permittedTransitions = ticket.permittedTransitions ?? [];
+  const pendingStatusUnavailable = pendingChange?.field === "status"
+    && !permittedTransitions.includes(pendingChange.value);
 
   return (
     <div className="container py-4">
@@ -257,8 +282,9 @@ export function StaffTicketDetail() {
       {pendingChange && !saving && (
         <div className="alert alert-warning zen-pending-change mb-3">
           <p>Pending {pendingChange.label}</p>
+          {pendingStatusUnavailable && !needsReload && <p>This status change is no longer permitted. Choose a current transition or discard the pending change.</p>}
           <div className="d-flex flex-wrap gap-2">
-            <button type="button" className="btn btn-primary" disabled={needsReload} onClick={() => void saveChange(pendingChange)}>Retry change</button>
+            <button type="button" className="btn btn-primary" disabled={needsReload || pendingStatusUnavailable} onClick={() => void saveChange(pendingChange)}>Retry change</button>
             <button type="button" className="btn btn-outline-secondary" onClick={() => setPendingChange(null)}>Discard change</button>
           </div>
         </div>
@@ -308,6 +334,9 @@ export function StaffTicketDetail() {
                   disabled={saving || needsReload}
                 >
                   <option value="">Unassigned</option>
+                  {ticket.ticketOwner && !assignees.some(assignee => assignee.id === ticket.ticketOwner?.id) && (
+                    <option value={ticket.ticketOwner.id} disabled>{ticket.ticketOwner.name}</option>
+                  )}
                   {assignees.map((assignee) => (
                     <option key={assignee.id} value={assignee.id}>
                       {assignee.name}
@@ -355,31 +384,40 @@ export function StaffTicketDetail() {
 
             {/* Current Status Control */}
             <div className="col-12 col-md-4">
-              <label htmlFor="staff-ticket-status" className="form-label fw-bold small text-secondary">
-                Current Status
-              </label>
-              <div className="d-flex align-items-center gap-2">
-                <select
-                  id="staff-ticket-status"
-                  aria-label="Current Status"
-                  className="form-select form-select-sm"
-                  value={ticket.status}
-                  onChange={handleStatusChange}
-                  disabled={saving || needsReload || permittedTransitions.length === 0}
-                >
-                  <option value={ticket.status}>
-                    {STATUS_LABELS[ticket.status]} (Current)
-                  </option>
-                  {permittedTransitions.map((nextStatus) => (
-                    <option key={nextStatus} value={nextStatus}>
-                      {STATUS_LABELS[nextStatus]}
-                    </option>
-                  ))}
-                </select>
-                {saving && (
-                  <span className="spinner-border spinner-border-sm text-secondary" role="status" />
-                )}
-              </div>
+              {ticket.status === "CANCELLED" ? (
+                <>
+                  <ReadOnlyField id="staff-ticket-status" label="Current Status" value={STATUS_LABELS[ticket.status]} />
+                  <p className="small text-body-secondary mb-0">This Ticket is cancelled; no further status changes are possible.</p>
+                </>
+              ) : (
+                <>
+                  <label htmlFor="staff-ticket-status" className="form-label fw-bold small text-secondary">
+                    Current Status
+                  </label>
+                  <div className="d-flex align-items-center gap-2">
+                    <select
+                      id="staff-ticket-status"
+                      aria-label="Current Status"
+                      className="form-select form-select-sm"
+                      value={ticket.status}
+                      onChange={handleStatusChange}
+                      disabled={saving || needsReload || permittedTransitions.length === 0}
+                    >
+                      <option value={ticket.status} disabled>
+                        {STATUS_LABELS[ticket.status]} (Current)
+                      </option>
+                      {permittedTransitions.map((nextStatus) => (
+                        <option key={nextStatus} value={nextStatus}>
+                          {STATUS_LABELS[nextStatus]}
+                        </option>
+                      ))}
+                    </select>
+                    {saving && (
+                      <span className="spinner-border spinner-border-sm text-secondary" role="status" />
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Read-only Context Attributes */}
@@ -454,6 +492,9 @@ export function StaffTicketDetail() {
               </button>
             </li>
             <li className="nav-item" role="presentation">
+              <button type="button" className={`nav-link ${activeTab === "actions" ? "active fw-bold" : ""}`} id="actions-tab" aria-controls="actions-panel" onClick={() => setActiveTab("actions")} role="tab" aria-selected={activeTab === "actions"}>Actions Taken{actionsCount !== null ? ` (${actionsCount})` : ''}</button>
+            </li>
+            <li className="nav-item" role="presentation">
               <button
                 type="button"
                 className={`nav-link ${activeTab === "comments" ? "active fw-bold" : ""}`}
@@ -479,6 +520,9 @@ export function StaffTicketDetail() {
         </div>
 
         <div className="card-body">
+          <div id="actions-panel" role="tabpanel" aria-labelledby="actions-tab" hidden={activeTab !== "actions"}>
+            <ActionsTakenPanel key={ticket.id} ticketId={ticket.id} version={ticket.version} canWrite disabled={saving || needsReload} onVersionChange={updateActionVersion} onCountChange={setActionsCount} onReload={reloadForActions} />
+          </div>
           {/* Attachments Tab */}
           {activeTab === "attachments" && (
             <div>
@@ -533,11 +577,7 @@ export function StaffTicketDetail() {
           {activeTab === "comments" && (
             <PublicComments
               ticketId={ticket.id}
-              onCommentCountChange={(count) =>
-                setTicket((prev) =>
-                  prev ? { ...prev, publicCommentsCount: count } : prev,
-                )
-              }
+              onCommentCountChange={updateCommentCount}
             />
           )}
 
@@ -545,11 +585,7 @@ export function StaffTicketDetail() {
           {activeTab === "notes" && (
             <InternalNotes
               ticketId={ticket.id}
-              onNoteCountChange={(count) =>
-                setTicket((prev) =>
-                  prev ? { ...prev, internalNotesCount: count } : prev,
-                )
-              }
+              onNoteCountChange={updateNoteCount}
             />
           )}
         </div>

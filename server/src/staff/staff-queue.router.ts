@@ -117,7 +117,7 @@ const staffQueueQuerySchema = z
 export const staffQueueRouter = express.Router();
 
 // GET /api/staff/tickets (FR-09, AC-10, BR-14, BR-15, BR-18, BR-20, BR-21)
-// Operational roles only (Lab 4 BR-20, ADR-0010).
+// BR-20; ADR-0010 permits both operational roles.
 staffQueueRouter.get(
   "/",
   requireAuth,
